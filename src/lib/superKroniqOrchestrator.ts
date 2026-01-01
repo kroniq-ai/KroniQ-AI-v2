@@ -340,21 +340,58 @@ export function mapIntentToTool(intent: string): ToolType {
 
 /**
  * Main entry point - processes any user message
+ * ALL prompts go through Gemini orchestrator first for:
+ * 1. Better intent understanding (handles poor English)
+ * 2. Auto-enhancement of prompts
  * This is the ONLY function the UI should call
  */
 export async function processMessage(
     message: string,
-    userId?: string
+    userId?: string,
+    conversationHistory: Array<{ role: string; content: string }> = []
 ): Promise<OrchestrationResult> {
     try {
         // 1. Get user tier
         const tier = await getUserTier(userId);
 
-        // 2. Classify intent
-        const intent = classifyIntent(message);
-        const tool = mapIntentToTool(intent.intent);
+        // 2. FIRST: Send to Gemini orchestrator for interpretation and enhancement
+        // This handles poor English, typos, and auto-enhances prompts
+        const geminiOrchestrator = await import('./geminiOrchestrator');
 
-        // 3. Check usage limits
+        const emptyContext = {
+            longTerm: {},
+            shortTerm: {},
+            version: 1,
+            lastUpdated: new Date().toISOString()
+        };
+
+        const interpretation = await geminiOrchestrator.interpretRequest(
+            message,
+            conversationHistory,
+            emptyContext,
+            { userTier: tier as 'free' | 'starter' | 'pro' | 'premium' }
+        );
+
+        console.log('🧠 [Gemini Orchestrator] Intent:', interpretation.intent, 'Confidence:', interpretation.confidence);
+        console.log('✨ [Gemini Orchestrator] Enhanced prompt:', interpretation.enhancedPrompt?.substring(0, 100) + '...');
+
+        // 3. Check if orchestrator can self-answer (simple greetings, etc.)
+        if (interpretation.selfAnswer && interpretation.selfAnswerContent) {
+            return {
+                success: true,
+                tool: 'chat',
+                response: interpretation.selfAnswerContent,
+                _internal: {
+                    model: 'self-answer',
+                    complexity: 'low'
+                }
+            };
+        }
+
+        // 4. Map Gemini intent to our tool type
+        const tool = mapIntentToTool(interpretation.intent);
+
+        // 5. Check usage limits
         if (userId) {
             const usageStatus = await checkUsage(userId, tool, tier);
             if (!usageStatus.allowed) {
@@ -368,42 +405,50 @@ export async function processMessage(
             }
         }
 
-        // 4. Score complexity
-        const complexity = scoreComplexity(message, intent);
+        // 6. Use ENHANCED prompt from Gemini (this is the magic!)
+        const enhancedPrompt = interpretation.enhancedPrompt || message;
 
-        // 5. Select model (internal only)
-        const model = selectModel(intent, complexity, tier);
+        // 7. Select model based on complexity and tier
+        // Map Gemini complexity ('simple'|'medium'|'complex') to our levels ('low'|'medium'|'high')
+        const geminiComplexity = interpretation.complexity || 'medium';
+        const complexity: ComplexityLevel = geminiComplexity === 'simple' ? 'low' : geminiComplexity === 'complex' ? 'high' : 'medium';
 
-        // 6. Execute based on tool type
+        const model = interpretation.suggestedModel || selectModel(
+            { intent: tool as any, confidence: interpretation.confidence, suggestedStudio: 'Chat Studio', reasoning: '' },
+            complexity,
+            tier
+        );
+
+        // 8. Execute based on tool type WITH ENHANCED PROMPT
         let response: string | { url: string; type: string };
 
         switch (tool) {
             case 'chat':
             case 'code':
-                response = await executeChatRequest(message, model, tier);
+                response = await executeChatRequest(enhancedPrompt, model, tier);
                 break;
             case 'image':
-                response = await executeImageRequest(message, model, tier);
+                response = await executeImageRequest(enhancedPrompt, model, tier);
                 break;
             case 'video':
-                response = await executeVideoRequest(message, model, tier);
+                response = await executeVideoRequest(enhancedPrompt, model, tier);
                 break;
             case 'tts':
-                response = await executeTTSRequest(message, model, tier);
+                response = await executeTTSRequest(enhancedPrompt, model, tier);
                 break;
             case 'ppt':
-                response = await executePPTRequest(message, model, tier);
+                response = await executePPTRequest(enhancedPrompt, model, tier);
                 break;
             default:
-                response = await executeChatRequest(message, model, tier);
+                response = await executeChatRequest(enhancedPrompt, model, tier);
         }
 
-        // 7. Record usage
+        // 9. Record usage
         if (userId) {
             await recordUsage(userId, tool, tier);
         }
 
-        // 8. Return result (never expose internals)
+        // 10. Return result (never expose internals)
         return {
             success: true,
             tool,
