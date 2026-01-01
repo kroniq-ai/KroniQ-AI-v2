@@ -1633,32 +1633,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
           </div>
         </section>
 
-        {/* ===== IMPRESSIVE STATS SECTION ===== */}
-        <section className="py-20 px-6 lg:px-16 relative">
-          {/* Animated glow orbs */}
-          <div className="absolute top-0 left-1/4 w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse pointer-events-none" />
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-teal-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
-
-          <div className="max-w-[1000px] mx-auto relative z-10">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { value: 70, suffix: '+', label: 'AI Models', icon: Bot, color: 'emerald' },
-                { value: 50, suffix: 'K+', label: 'Happy Users', icon: Star, color: 'teal' },
-                { value: 10, suffix: 'M+', label: 'Generations', icon: Zap, color: 'cyan' },
-                { value: 99.9, suffix: '%', label: 'Uptime', icon: Shield, color: 'green' },
-              ].map((stat) => (
-                <AnimatedStatCard
-                  key={stat.label}
-                  value={stat.value}
-                  suffix={stat.suffix}
-                  label={stat.label}
-                  icon={stat.icon}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ===== WHY KRONIQ SECTION ===== */}
         <section className="py-24 px-6 lg:px-16">
           <div className="max-w-[1200px] mx-auto">
