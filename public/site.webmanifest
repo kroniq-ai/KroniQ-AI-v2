@@ -1,0 +1,68 @@
+{
+    "name": "KroniQ AI",
+    "short_name": "KroniQ",
+    "description": "All-in-One AI Platform - Access 70+ AI models including ChatGPT, Claude, Gemini for chat, images, video, music and more",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0e27",
+    "theme_color": "#00FFF0",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon-logo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/favicon-logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "utilities",
+        "business"
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "AI Chat",
+            "short_name": "Chat",
+            "description": "Start AI Chat with 70+ models",
+            "url": "/chat",
+            "icons": [
+                {
+                    "src": "/favicon-logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Image Generator",
+            "short_name": "Image",
+            "description": "Generate AI Images",
+            "url": "/image",
+            "icons": [
+                {
+                    "src": "/favicon-logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Video Generator",
+            "short_name": "Video",
+            "description": "Create AI Videos",
+            "url": "/video",
+            "icons": [
+                {
+                    "src": "/favicon-logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ]
+}

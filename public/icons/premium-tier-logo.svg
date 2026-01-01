@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="premiumGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:1" />
+    </linearGradient>
+    <filter id="premiumShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#F59E0B" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#10B981" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Crown shape for Premium tier -->
+  <path d="M8 44L14 24l10 10 8-20 8 20 10-10 6 20H8z" 
+        fill="url(#premiumGlow)" 
+        filter="url(#premiumShadow)"
+        stroke="#FBBF24"
+        stroke-width="1.5"/>
+  <!-- Crown gems -->
+  <circle cx="32" cy="20" r="4" fill="#FCD34D"/>
+  <circle cx="18" cy="28" r="3" fill="#34D399"/>
+  <circle cx="46" cy="28" r="3" fill="#34D399"/>
+</svg>
