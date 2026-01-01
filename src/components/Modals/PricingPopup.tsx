@@ -25,12 +25,12 @@ const PLANS = [
         gradient: 'from-emerald-600/20 to-teal-600/20',
         accentColor: 'emerald',
         limits: {
-            messages: 'Token-based',  // Users spend tokens per message
-            images: '2/month',
+            messages: 'Token-based',
+            images: '2/mo',
             videos: '—',
             music: '—',
             ppt: '—',
-            tts: '5/day',
+            tts: '10/mo',
         },
         tierLevel: 0,
     },
@@ -47,12 +47,12 @@ const PLANS = [
         gradient: 'from-emerald-500/20 to-cyan-500/20',
         accentColor: 'emerald',
         limits: {
-            messages: 'Unlimited*',  // Token-based, no daily limit
-            images: '3/day',
-            videos: '1/day',
-            music: '1/day',
-            ppt: '1/day',
-            tts: '10/day',
+            messages: 'Unlimited*',
+            images: '30/mo',
+            videos: '4/mo',
+            music: '10/mo',
+            ppt: '10/mo',
+            tts: '50/mo',
         },
         tier: 'starter' as const,
         tierLevel: 1,
@@ -61,10 +61,10 @@ const PLANS = [
     {
         id: 'pro',
         name: 'Pro',
-        price: 12,
+        price: 10,
         period: 'month',
-        tokens: '200K',
-        tokensNum: 200000,
+        tokens: '220K',
+        tokensNum: 220000,
         description: 'For creators',
         icon: Zap,
         logo: '/stripe-pro.png',
@@ -72,12 +72,12 @@ const PLANS = [
         accentColor: 'emerald',
         popular: true,
         limits: {
-            messages: 'Unlimited*',  // Token-based, no daily limit
-            images: '5/day',
-            videos: '1/day',
-            music: '2/day',
-            ppt: '2/day',
-            tts: '20/day',
+            messages: 'Unlimited*',
+            images: '50/mo',
+            videos: '10/mo',
+            music: '25/mo',
+            ppt: '25/mo',
+            tts: '120/mo',
         },
         tier: 'pro' as const,
         tierLevel: 2,
@@ -86,22 +86,22 @@ const PLANS = [
     {
         id: 'premium',
         name: 'Premium',
-        price: 29,
+        price: 20,
         period: 'month',
-        tokens: '500K',
-        tokensNum: 500000,
+        tokens: '560K',
+        tokensNum: 560000,
         description: 'Ultimate power',
         icon: Crown,
         logo: '/stripe-premium.png',
         gradient: 'from-emerald-300/30 to-teal-300/30',
         accentColor: 'emerald',
         limits: {
-            messages: 'Unlimited*',  // Token-based, no daily limit
-            images: '11/day',
-            videos: '3/day',
-            music: '5/day',
-            ppt: '5/day',
-            tts: '50/day',
+            messages: 'Unlimited*',
+            images: '80/mo',
+            videos: '15/mo',
+            music: '35/mo',
+            ppt: '35/mo',
+            tts: '200/mo',
         },
         tier: 'premium' as const,
         tierLevel: 3,
@@ -322,7 +322,7 @@ export const PricingPopup: React.FC<PricingPopupProps> = ({ isOpen, onClose }) =
 
                                         {/* Generation Limits */}
                                         <div className="mb-4 flex-grow">
-                                            <p className={`text-[10px] font-bold mb-2 uppercase tracking-wider ${isLight ? 'text-emerald-600/50' : 'text-emerald-400/50'}`}>Daily Generation Limits</p>
+                                            <p className={`text-[10px] font-bold mb-2 uppercase tracking-wider ${isLight ? 'text-emerald-600/50' : 'text-emerald-400/50'}`}>Monthly Generation Limits</p>
                                             <div className="grid grid-cols-2 gap-2">
                                                 {(Object.entries(LIMIT_ICONS) as [keyof typeof LIMIT_ICONS, typeof Image][])
                                                     .map(([key]) => {
@@ -389,7 +389,7 @@ export const PricingPopup: React.FC<PricingPopupProps> = ({ isOpen, onClose }) =
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Zap className={`w-4 h-4 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
-                                    <span>Limits reset daily</span>
+                                    <span>Limits reset monthly</span>
                                 </div>
                             </div>
                         </div>
