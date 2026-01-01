@@ -196,7 +196,7 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
         // CHECK LIMIT BEFORE GENERATION
         const limitCheck = await checkGenerationLimit(user.uid, 'video');
         if (!limitCheck.canGenerate) {
-            showToast('error', 'Daily Limit Reached', limitCheck.message);
+            showToast('error', 'Monthly Limit Reached', limitCheck.message);
             return;
         }
 

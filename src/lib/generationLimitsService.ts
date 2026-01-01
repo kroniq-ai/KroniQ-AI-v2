@@ -235,13 +235,13 @@ export async function incrementGenerationCount(
 }
 
 export function getGenerationLimitText(type: GenerationType, tier: TierType): string {
-  const dailyLimit = TIER_DAILY_LIMITS[tier][type];
+  const monthlyLimit = TIER_MONTHLY_LIMITS[tier][type];
 
-  if (dailyLimit === 0) {
+  if (monthlyLimit === 0) {
     return 'Not available';
   }
 
-  return `${dailyLimit}/day`;
+  return `${monthlyLimit}/month`;
 }
 
 /**

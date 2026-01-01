@@ -191,7 +191,7 @@ export const ImageStudio: React.FC<ImageStudioProps> = ({ onClose, projectId: in
         // CHECK LIMIT BEFORE GENERATION
         const limitCheck = await checkGenerationLimit(user.uid, 'image');
         if (!limitCheck.canGenerate) {
-            showToast('error', 'Daily Limit Reached', limitCheck.message);
+            showToast('error', 'Monthly Limit Reached', limitCheck.message);
             return;
         }
 

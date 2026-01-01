@@ -182,7 +182,7 @@ export const PPTStudio: React.FC<PPTStudioProps> = ({ onClose, projectId: initia
     // CHECK LIMIT BEFORE GENERATION
     const limitCheck = await checkGenerationLimit(user.uid, 'ppt');
     if (!limitCheck.canGenerate) {
-      showToast('error', 'Daily Limit Reached', limitCheck.message);
+      showToast('error', 'Monthly Limit Reached', limitCheck.message);
       return;
     }
 

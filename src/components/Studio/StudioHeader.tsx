@@ -57,7 +57,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
             {generationLimit && (
               <div
                 className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-md sm:rounded-lg bg-white/5 border border-white/10"
-                title={generationLimit.isPaid ? 'Unlimited (token-based)' : `${generationLimit.limit - generationLimit.current} remaining today`}
+                title={generationLimit.isPaid ? 'Unlimited (token-based)' : `${generationLimit.limit - generationLimit.current} remaining this month`}
               >
                 <Icon className="w-3 h-3 sm:w-4 sm:h-4" style={{ color }} />
                 <span className="text-[10px] sm:text-xs font-medium text-white/80">

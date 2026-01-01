@@ -327,7 +327,7 @@ export const TTSStudio: React.FC<TTSStudioProps> = ({
     // CHECK LIMIT BEFORE GENERATION
     const limitCheck = await checkGenerationLimit(user.uid, 'tts');
     if (!limitCheck.canGenerate) {
-      showToast('error', 'Daily Limit Reached', limitCheck.message);
+      showToast('error', 'Monthly Limit Reached', limitCheck.message);
       return;
     }
 

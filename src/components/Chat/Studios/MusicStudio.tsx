@@ -208,7 +208,7 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
         // CHECK LIMIT BEFORE GENERATION
         const limitCheck = await checkGenerationLimit(user.uid, 'song');
         if (!limitCheck.canGenerate) {
-            showToast('error', 'Daily Limit Reached', limitCheck.message);
+            showToast('error', 'Monthly Limit Reached', limitCheck.message);
             return;
         }
 
