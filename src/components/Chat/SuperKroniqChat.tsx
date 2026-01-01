@@ -78,6 +78,7 @@ interface ChatMessage {
     pptStructure?: any; // PPT slide structure for preview
     pptFileName?: string; // PPT file name for download
     attachments?: { url: string; type: 'image' | 'document' | 'audio' | 'video'; name: string }[]; // User-attached files
+    feedback?: 'liked' | 'disliked'; // User feedback on response
 }
 
 interface SuperKroniqChatProps {
@@ -2314,6 +2315,14 @@ ${interpretation.enhancedPrompt}
                                                 <div className="flex items-center gap-1 pt-2">
                                                     {/* Copy */}
                                                     <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                await navigator.clipboard.writeText(message.content);
+                                                                showToast('success', 'Copied to clipboard!');
+                                                            } catch (err) {
+                                                                showToast('error', 'Failed to copy');
+                                                            }
+                                                        }}
                                                         className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
@@ -2330,9 +2339,19 @@ ${interpretation.enhancedPrompt}
 
                                                     {/* Thumbs Up */}
                                                     <button
+                                                        onClick={() => {
+                                                            setMessages(prev => prev.map(m =>
+                                                                m.id === message.id
+                                                                    ? { ...m, feedback: m.feedback === 'liked' ? undefined : 'liked' }
+                                                                    : m
+                                                            ));
+                                                            showToast('success', message.feedback === 'liked' ? 'Feedback removed' : 'Thanks for the feedback! 👍');
+                                                        }}
                                                         className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
-                                                            ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                            ${message.feedback === 'liked'
+                                                                ? 'bg-emerald-500/20 text-emerald-500'
+                                                                : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                         `}
                                                     >
                                                         <ThumbsUp className="w-4 h-4" />
@@ -2343,9 +2362,19 @@ ${interpretation.enhancedPrompt}
 
                                                     {/* Thumbs Down */}
                                                     <button
+                                                        onClick={() => {
+                                                            setMessages(prev => prev.map(m =>
+                                                                m.id === message.id
+                                                                    ? { ...m, feedback: m.feedback === 'disliked' ? undefined : 'disliked' }
+                                                                    : m
+                                                            ));
+                                                            showToast('info', message.feedback === 'disliked' ? 'Feedback removed' : 'Thanks for the feedback');
+                                                        }}
                                                         className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
-                                                            ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                            ${message.feedback === 'disliked'
+                                                                ? 'bg-red-500/20 text-red-500'
+                                                                : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                         `}
                                                     >
                                                         <ThumbsDown className="w-4 h-4" />
@@ -2354,16 +2383,35 @@ ${interpretation.enhancedPrompt}
                                                         </span>
                                                     </button>
 
-                                                    {/* Download */}
+                                                    {/* Shorter */}
                                                     <button
+                                                        onClick={() => handleMakeShorterLonger(message.id, 'shorter')}
+                                                        disabled={modifyingMessageId === message.id}
                                                         className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                            ${modifyingMessageId === message.id ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
                                                     >
-                                                        <Download className="w-4 h-4" />
+                                                        <Minus className="w-4 h-4" />
                                                         <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Download
+                                                            Shorter
+                                                        </span>
+                                                    </button>
+
+                                                    {/* Longer */}
+                                                    <button
+                                                        onClick={() => handleMakeShorterLonger(message.id, 'longer')}
+                                                        disabled={modifyingMessageId === message.id}
+                                                        className={`
+                                                            group/btn relative p-2 rounded-lg transition-all duration-200
+                                                            ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                            ${modifyingMessageId === message.id ? 'opacity-50 cursor-not-allowed' : ''}
+                                                        `}
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                            Longer
                                                         </span>
                                                     </button>
 
@@ -2383,7 +2431,7 @@ ${interpretation.enhancedPrompt}
                                                         </span>
                                                     </button>
 
-                                                    {/* More Options (includes Shorter, Longer, Turn into) */}
+                                                    {/* More Options - Turn into */}
                                                     <div className="relative">
                                                         <button
                                                             type="button"
@@ -2393,55 +2441,29 @@ ${interpretation.enhancedPrompt}
                                                                 ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                             `}
                                                         >
-                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                                                <circle cx="12" cy="6" r="2" />
-                                                                <circle cx="12" cy="12" r="2" />
-                                                                <circle cx="12" cy="18" r="2" />
-                                                            </svg>
+                                                            <Sparkles className="w-4 h-4" />
                                                             <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                                More
+                                                                Turn into...
                                                             </span>
                                                         </button>
 
                                                         {showConvertMenu === message.id && (
-                                                            <div className={`
-                                                                absolute bottom-full left-0 mb-1 py-1 rounded-lg border shadow-xl z-50 min-w-[140px]
-                                                                ${isDark ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-gray-200'}
-                                                            `}>
-                                                                <button
-                                                                    onClick={() => { handleMakeShorterLonger(message.id, 'shorter'); setShowConvertMenu(null); }}
-                                                                    disabled={modifyingMessageId === message.id}
-                                                                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-50 text-gray-700'} ${modifyingMessageId === message.id ? 'opacity-50' : ''}`}
-                                                                >
-                                                                    {modifyingMessageId === message.id ? (
-                                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                                    ) : (
-                                                                        <Minus className="w-4 h-4" />
-                                                                    )}
-                                                                    {modifyingMessageId === message.id ? 'Modifying...' : 'Shorter'}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => { handleMakeShorterLonger(message.id, 'longer'); setShowConvertMenu(null); }}
-                                                                    disabled={modifyingMessageId === message.id}
-                                                                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-50 text-gray-700'} ${modifyingMessageId === message.id ? 'opacity-50' : ''}`}
-                                                                >
-                                                                    {modifyingMessageId === message.id ? (
-                                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                                    ) : (
-                                                                        <Plus className="w-4 h-4" />
-                                                                    )}
-                                                                    {modifyingMessageId === message.id ? 'Modifying...' : 'Longer'}
-                                                                </button>
-                                                                <div className={`my-1 h-px ${isDark ? 'bg-white/10' : 'bg-gray-100'}`} />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => { setShowConvertMenu(null); setShowTurnIntoInput(message.id); setTurnIntoValue(''); }}
-                                                                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
-                                                                >
-                                                                    <Sparkles className="w-4 h-4" />
-                                                                    Turn into...
-                                                                </button>
-                                                            </div>
+                                                            <>
+                                                                <div className="fixed inset-0 z-40" onClick={() => setShowConvertMenu(null)} />
+                                                                <div className={`
+                                                                    absolute bottom-full left-0 mb-1 py-1 rounded-lg border shadow-xl z-50 min-w-[140px]
+                                                                    ${isDark ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-gray-200'}
+                                                                `}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => { setShowConvertMenu(null); setShowTurnIntoInput(message.id); setTurnIntoValue(''); }}
+                                                                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
+                                                                    >
+                                                                        <Sparkles className="w-4 h-4" />
+                                                                        Transform content...
+                                                                    </button>
+                                                                </div>
+                                                            </>
                                                         )}
 
                                                         {/* Premium Turn Into Input Popup */}
