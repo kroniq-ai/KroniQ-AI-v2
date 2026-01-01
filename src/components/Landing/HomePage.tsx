@@ -1544,8 +1544,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
 
         {/* ===== COMPETITOR COMPARISON SECTION ===== */}
         <section className="py-24 px-6 lg:px-16 relative overflow-hidden">
-          {/* Glowing background */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/5 rounded-full blur-[150px] pointer-events-none" />
+          {/* Enhanced glowing backgrounds with animation */}
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-500/15 rounded-full blur-[120px] animate-pulse pointer-events-none" />
+          <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] bg-teal-500/12 rounded-full blur-[100px] animate-pulse pointer-events-none" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-1/4 left-1/3 w-[450px] h-[450px] bg-cyan-500/10 rounded-full blur-[130px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
 
           <div className="max-w-[1200px] mx-auto relative z-10">
             <div className="text-center mb-16">
@@ -1603,8 +1606,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                   { feature: 'File/Image Upload', kroniq: '✓ All formats', chatgpt: '✓ Paid only', claude: '✓ Yes', gemini: '✓ Yes' },
                   { feature: 'Web Search', kroniq: '✓ Real-time', chatgpt: '✓ Paid only', claude: '✗ None', gemini: '✓ Yes' },
                   { feature: 'Smart Model Routing', kroniq: '✓ Auto-selects best', chatgpt: '✗ Manual', claude: '✗ Manual', gemini: '✗ Manual' },
-                  { feature: 'Free Tier', kroniq: '✓ 15K tokens/day', chatgpt: '✓ Limited GPT-4o mini', claude: '✓ Limited Haiku', gemini: '✓ Flash only' },
-                  { feature: 'Pro Price', kroniq: '$9.99/mo', chatgpt: '$20/mo', claude: '$20/mo', gemini: '$20/mo' },
+                  { feature: 'Free Tier', kroniq: '✓ 15K tokens/month', chatgpt: '✓ Limited GPT-4o mini', claude: '✓ Limited Haiku', gemini: '✓ Flash only' },
+                  { feature: 'Pro Price', kroniq: '$10/mo', chatgpt: '$20/mo', claude: '$20/mo', gemini: '$20/mo' },
                 ].map((row, idx) => (
                   <div key={row.feature} className={`grid grid-cols-5 gap-0 ${idx % 2 === 0 ? 'bg-white/[0.02]' : ''} hover:bg-white/[0.05] transition-colors`}>
                     <div className="p-3 sm:p-4 text-white/70 text-xs sm:text-sm font-medium">{row.feature}</div>

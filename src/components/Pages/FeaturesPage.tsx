@@ -131,14 +131,13 @@ const MessageToImageMockup = () => (
         </div>
         <div className="flex items-center gap-2">
           <ArrowRight className="w-4 h-4 text-emerald-400" />
-          <span className="text-emerald-400 text-xs">Generating with FLUX Pro...</span>
+          <span className="text-emerald-400 text-xs">Generated with FLUX Pro ✓</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="aspect-square rounded-lg bg-gradient-to-br from-emerald-500/30 to-teal-500/30 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-white/40" />
-            </div>
-          ))}
+          <img src="/mockup-image-1.png" alt="Futuristic city 1" className="aspect-square rounded-lg object-cover hover:scale-105 transition-transform cursor-pointer" />
+          <img src="/mockup-image-2.png" alt="Futuristic city 2" className="aspect-square rounded-lg object-cover hover:scale-105 transition-transform cursor-pointer" />
+          <img src="/mockup-image-3.png" alt="Futuristic city 3" className="aspect-square rounded-lg object-cover hover:scale-105 transition-transform cursor-pointer" />
+          <img src="/mockup-image-1.png" alt="Futuristic city 4" className="aspect-square rounded-lg object-cover hover:scale-105 transition-transform cursor-pointer opacity-90" />
         </div>
       </div>
     </div>
