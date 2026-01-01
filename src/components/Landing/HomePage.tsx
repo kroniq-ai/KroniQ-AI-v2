@@ -875,7 +875,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-teal-400" />
-                    <span>1,000 free tokens/month</span>
+                    <span>15,000 free tokens/day</span>
                   </div>
                 </div>
               </div>
@@ -1696,25 +1696,25 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
-                  name: 'Sarah Chen',
-                  role: 'Content Creator',
-                  avatar: '👩‍💼',
+                  name: 'Jason He',
+                  role: 'Software Engineer',
+                  avatar: '👨‍💻',
                   quote: 'KroniQ replaced 4 separate AI tools for me. The video and music generation is incredible!',
                   rating: 5,
                 },
                 {
-                  name: 'Marcus Johnson',
-                  role: 'Software Developer',
-                  avatar: '👨‍💻',
+                  name: 'Oscar Cardoza',
+                  role: 'Content Creator',
+                  avatar: '🎬',
                   quote: 'The smart routing is genius. I just ask my question and it picks the best model automatically.',
-                  rating: 5,
+                  rating: 4.5,
                 },
                 {
-                  name: 'Elena Rodriguez',
+                  name: 'Achyuth Reddy',
                   role: 'Marketing Director',
-                  avatar: '👩‍🎨',
+                  avatar: '📊',
                   quote: 'We saved over $200/month switching from separate subscriptions. The PPT generator is a game-changer.',
-                  rating: 5,
+                  rating: 4,
                 },
               ].map((testimonial) => (
                 <TestimonialCard
@@ -1941,7 +1941,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
             </div>
           </div>
         </footer>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
