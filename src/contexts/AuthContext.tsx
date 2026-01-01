@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const paymentSuccess = urlParams.get('payment_success');
     const tierParam = urlParams.get('tier');
 
-    if (paymentSuccess === 'true' && (tierParam === 'PRO' || tierParam === 'PREMIUM')) {
+    if (paymentSuccess === 'true' && (tierParam === 'PRO' || tierParam === 'PREMIUM' || tierParam === 'STARTER')) {
       // Immediately save to localStorage
       localStorage.setItem('kroniq_user_tier', tierParam);
       // Clear URL params
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Otherwise check localStorage
     const stored = localStorage.getItem('kroniq_user_tier');
-    if (stored === 'PRO' || stored === 'PREMIUM') return stored;
+    if (stored === 'PRO' || stored === 'PREMIUM' || stored === 'STARTER') return stored;
     return 'FREE';
   });
 
@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const pendingTier = localStorage.getItem('kroniq_pending_tier_sync');
       const storedTier = localStorage.getItem('kroniq_user_tier');
 
-      if (pendingTier === 'PRO' || pendingTier === 'PREMIUM') {
+      if (pendingTier === 'PRO' || pendingTier === 'PREMIUM' || pendingTier === 'STARTER') {
         console.log(`🔄 [AuthContext] Found pending tier sync: ${pendingTier}. Syncing to DB...`);
         try {
           const { error } = await supabase
@@ -168,13 +168,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const tier = data.plan.toUpperCase();
             console.log('   - Checking tier value:', tier);
 
-            if (tier === 'PRO' || tier === 'PREMIUM') {
+            if (tier === 'PRO' || tier === 'PREMIUM' || tier === 'STARTER') {
               console.log(`✅ [AuthContext] Restored tier from DB: ${tier}`);
               localStorage.setItem('kroniq_user_tier', tier);
               setUserTierState(tier as SubscriptionTier);
               return;
+            } else if (tier === 'FREE') {
+              console.log('ℹ️ [AuthContext] Tier is FREE');
             } else {
-              console.log('⚠️ [AuthContext] Tier value is not PRO or PREMIUM:', tier);
+              console.log('⚠️ [AuthContext] Unknown tier value:', tier);
             }
           } else {
             console.log('⚠️ [AuthContext] plan column is null or empty');
@@ -186,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If no paid tier in DB, check localStorage as fallback
         console.log('📦 [AuthContext] localStorage tier:', storedTier);
 
-        if (storedTier === 'PRO' || storedTier === 'PREMIUM') {
+        if (storedTier === 'PRO' || storedTier === 'PREMIUM' || storedTier === 'STARTER') {
           console.log('🔄 [AuthContext] localStorage has paid tier but DB does not. Syncing to DB...');
 
           // Sync localStorage tier to DB
@@ -216,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('❌ [AuthContext] Tier fetch exception:', err);
         // Fallback to localStorage
         const fallbackTier = localStorage.getItem('kroniq_user_tier');
-        if (fallbackTier === 'PRO' || fallbackTier === 'PREMIUM') {
+        if (fallbackTier === 'PRO' || fallbackTier === 'PREMIUM' || fallbackTier === 'STARTER') {
           setUserTierState(fallbackTier as SubscriptionTier);
         }
       }
@@ -262,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const paymentSuccess = urlParams.get('payment_success');
       const tierParam = urlParams.get('tier');
 
-      if (paymentSuccess === 'true' && (tierParam === 'PRO' || tierParam === 'PREMIUM')) {
+      if (paymentSuccess === 'true' && (tierParam === 'PRO' || tierParam === 'PREMIUM' || tierParam === 'STARTER')) {
         setUserTier(tierParam as SubscriptionTier);
         // Clear URL
         window.history.replaceState({}, '', window.location.pathname);

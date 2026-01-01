@@ -10,7 +10,7 @@
 
 import { generateKieVideo, KIE_MODELS } from './kieAIService';
 
-export type UserTier = 'FREE' | 'PRO' | 'PREMIUM';
+export type UserTier = 'FREE' | 'STARTER' | 'PRO' | 'PREMIUM';
 
 export interface VideoGenerationOptions {
   prompt: string;
@@ -29,6 +29,7 @@ export interface GeneratedVideo {
 // ===== TIER CHECKS =====
 
 export function isVideoAllowedForTier(tier: UserTier): boolean {
+  // STARTER, PRO, and PREMIUM can generate videos
   return tier !== 'FREE';
 }
 
@@ -43,7 +44,7 @@ export function getVideoModelsForTier(tier: UserTier) {
 
 export function getDefaultVideoModelForTier(tier: UserTier): string {
   if (tier === 'FREE') return '';
-  if (tier === 'PRO') return 'veo3_fast';
+  if (tier === 'PRO' || tier === 'STARTER') return 'veo3_fast';
   return 'veo3'; // Premium default
 }
 

@@ -1884,7 +1884,68 @@ ${interpretation.enhancedPrompt}
             }
             return; // Don't go through handleSendMessage
         } else if (targetLower.includes('video')) {
-            transformPrompt = `Create a ${targetType} based on this content:\n\n${sourceDescription}`;
+            // DIRECT VIDEO GENERATION - same pattern as image generation above
+            console.log('🎬 [TurnInto] Directly generating video from image:', sourceDescription.substring(0, 100));
+
+            // Add user message first
+            const userMsgId = `usr_${Date.now()}`;
+            setMessages(prev => [...prev, {
+                id: userMsgId,
+                role: 'user' as const,
+                content: `Turn this into a video`,
+                timestamp: new Date(),
+            }]);
+
+            // Set loading
+            setIsLoading(true);
+            setCurrentStatus('generating');
+
+            try {
+                const { generateVideoForTier } = await import('../../lib/videoService');
+                const videoTier = (userTier?.toUpperCase() === 'PREMIUM' ? 'PREMIUM' :
+                    userTier?.toUpperCase() === 'PRO' ? 'PRO' :
+                        userTier?.toUpperCase() === 'STARTER' ? 'PRO' : 'FREE') as 'FREE' | 'PRO' | 'PREMIUM';
+
+                // Create a detailed prompt from the source image description
+                const videoPrompt = `Create a cinematic video animation of: ${sourceDescription}. Style: smooth camera movements, high quality, visually stunning, 5-10 seconds.`;
+
+                const videoResult = await generateVideoForTier(videoPrompt, videoTier);
+
+                // Add the response with the video
+                const aiMsgId = `ai_${Date.now()}`;
+                setMessages(prev => [...prev, {
+                    id: aiMsgId,
+                    role: 'assistant' as const,
+                    content: `🎬 **Video Generated!**\n\nYour video is ready!`,
+                    timestamp: new Date(),
+                    mediaUrl: videoResult.url,
+                    mediaType: 'video',
+                    taskType: 'video',
+                }]);
+
+                showToast('success', `✨ Video created!`);
+            } catch (error: any) {
+                console.error('❌ [TurnInto] Video generation failed:', error);
+                const aiMsgId = `ai_${Date.now()}`;
+
+                // Check if upgrade required
+                const isUpgradeRequired = error.message?.includes('UPGRADE_REQUIRED');
+
+                setMessages(prev => [...prev, {
+                    id: aiMsgId,
+                    role: 'assistant' as const,
+                    content: isUpgradeRequired
+                        ? `🎬 **Video Generation Requires Upgrade**\n\nVideo generation is available for Pro and Premium subscribers. Upgrade to unlock this feature!`
+                        : `🎬 **Video Generation Failed**\n\n${error.message || 'Please try again.'}`,
+                    timestamp: new Date(),
+                    taskType: 'video',
+                }]);
+                showToast('error', isUpgradeRequired ? 'Upgrade required for video' : 'Video generation failed');
+            } finally {
+                setIsLoading(false);
+                setCurrentStatus('idle');
+            }
+            return; // Don't go through handleSendMessage
         } else if (targetLower.includes('ppt') || targetLower.includes('presentation') || targetLower.includes('slides')) {
             transformPrompt = `Create a professional presentation based on:\n\n${sourceDescription}`;
         } else if (targetLower.includes('tweet') || targetLower.includes('post')) {
