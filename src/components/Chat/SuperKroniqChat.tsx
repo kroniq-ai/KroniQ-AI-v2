@@ -2738,7 +2738,7 @@ ${interpretation.enhancedPrompt}
                 <div className="mx-auto" style={{ maxWidth: 'min(768px, calc(100% - 8px))' }}>
                     {/* Input Box with integrated plus menu */}
                     <div className={`
-                        relative flex items-center gap-2 h-12 px-3 rounded-xl border transition-all duration-300
+                        relative flex items-end gap-2 min-h-12 py-2 px-3 rounded-xl border transition-all duration-300
                         ${isDark
                             ? 'bg-white/5 border-white/20 focus-within:border-emerald-500/50'
                             : 'bg-white border-gray-200 focus-within:border-teal-400 shadow-sm'}
@@ -2898,18 +2898,26 @@ ${interpretation.enhancedPrompt}
                             </div>
                         )}
 
-                        <input
-                            type="text"
+                        <textarea
+                            ref={(el) => {
+                                // Auto-expand logic
+                                if (el) {
+                                    el.style.height = 'auto';
+                                    el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+                                }
+                            }}
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            placeholder="Ask me anything..."
+                            placeholder="Ask me anything... (Shift+Enter for new line)"
                             disabled={isLoading || clarifyingQuestions.length > 0}
+                            rows={1}
                             className={`
-                                flex-1 bg-transparent border-none outline-none text-sm
+                                flex-1 bg-transparent border-none outline-none text-sm resize-none overflow-y-auto
                                 ${isDark ? 'text-white placeholder-white/40' : 'text-gray-900 placeholder-gray-400'}
                                 ${isLoading ? 'opacity-50' : ''}
                             `}
+                            style={{ maxHeight: '150px', minHeight: '24px' }}
                         />
 
                         {/* Enhance Prompt button - Magic Wand */}

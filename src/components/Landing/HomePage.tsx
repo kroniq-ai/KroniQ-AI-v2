@@ -12,6 +12,7 @@ import {
 import { getTokenPacks, getTotalTokens } from '../../lib/subscriptionManagementService';
 import { trackPageVisit, trackGetStartedClick, trackEvent } from '../../lib/analyticsService';
 import { PageMeta } from '../SEO/PageMeta';
+import { supabase } from '../../lib/supabaseClient';
 
 interface HomePageProps {
   onGetStarted: () => void;
@@ -723,16 +724,42 @@ const PricingCard: React.FC<PricingCardProps> = ({ pack, index, onGetStarted }) 
 export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
   const [mounted, setMounted] = useState(false);
   const [tokenPacks, setTokenPacks] = useState<any[]>([]);
+  const [liveStats, setLiveStats] = useState({ totalUsers: 100, totalGenerations: 500 }); // Default fallback values
 
   useEffect(() => {
     setMounted(true);
     loadTokenPacks();
+    loadLiveStats();
     trackPageVisit({ pageName: 'home' });
   }, []);
 
   const loadTokenPacks = async () => {
     const packs = await getTokenPacks();
     setTokenPacks(packs);
+  };
+
+  const loadLiveStats = async () => {
+    try {
+      // Fetch total users from profiles table
+      const { count: userCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch total generations from daily_usage table
+      const { data: usageData } = await supabase
+        .from('daily_usage')
+        .select('count');
+
+      const totalGenerations = usageData?.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0) || 0;
+
+      setLiveStats({
+        totalUsers: userCount || 100,
+        totalGenerations: totalGenerations || 500
+      });
+    } catch (error) {
+      console.error('Error loading live stats:', error);
+      // Keep default values on error
+    }
   };
 
   const features = [
@@ -955,6 +982,38 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== LIVE STATS SECTION ===== */}
+        <section className="py-12 px-4 relative overflow-hidden">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {/* Total Users */}
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-emerald-400">
+                  {liveStats.totalUsers.toLocaleString()}+
+                </div>
+                <div className="text-sm text-white/50 mt-1">Happy Users</div>
+              </div>
+              {/* Total Generations */}
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-teal-400">
+                  {liveStats.totalGenerations.toLocaleString()}+
+                </div>
+                <div className="text-sm text-white/50 mt-1">AI Creations</div>
+              </div>
+              {/* AI Models */}
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-cyan-400">70+</div>
+                <div className="text-sm text-white/50 mt-1">AI Models</div>
+              </div>
+              {/* Studios */}
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-purple-400">8</div>
+                <div className="text-sm text-white/50 mt-1">Creative Studios</div>
               </div>
             </div>
           </div>
