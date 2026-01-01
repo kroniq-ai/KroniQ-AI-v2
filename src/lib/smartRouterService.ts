@@ -259,40 +259,40 @@ export function getDisplayName(): string {
     return 'KroniQ AI';
 }
 
-// ========== USAGE LIMITS ==========
+// ========== USAGE LIMITS (MONTHLY) ==========
 
 export const USAGE_LIMITS = {
-    // Daily limits that reset at midnight UTC (matching Terms of Service)
+    // Monthly limits - matching Terms of Service (January 2026)
     FREE: {
-        tokens: 15000,    // 15K per day
-        images: 3,        // per day
-        videos: 1,        // per day
-        music: 3,         // per day
-        ppt: 2,           // per day
-        tts: 5            // per day
+        tokens: 15000,    // 15K per month
+        images: 2,        // per month
+        videos: 0,        // not available
+        music: 0,         // not available
+        ppt: 0,           // not available
+        tts: 10           // per month
     },
     STARTER: {
-        tokens: 50000,    // 50K per day
-        images: 15,       // per day
-        videos: 3,        // per day
-        music: 10,        // per day
-        ppt: 10,          // per day
-        tts: 20           // per day
+        tokens: 100000,   // 100K per month
+        images: 30,       // per month
+        videos: 4,        // per month
+        music: 10,        // per month
+        ppt: 10,          // per month
+        tts: 50           // per month
     },
     PRO: {
-        tokens: 300000,   // 300K per day
-        images: 50,       // per day
-        videos: 10,       // per day
-        music: 40,        // per day
-        ppt: 30,          // per day
-        tts: 75           // per day
+        tokens: 220000,   // 220K per month
+        images: 50,       // per month
+        videos: 10,       // per month
+        music: 25,        // per month
+        ppt: 25,          // per month
+        tts: 120          // per month
     },
     PREMIUM: {
-        tokens: 1000000,  // 1M per day
-        images: 150,      // per day
-        videos: 30,       // per day
-        music: 120,       // per day
-        ppt: 100,         // per day
-        tts: 200          // per day
+        tokens: 560000,   // 560K per month
+        images: 80,       // per month
+        videos: 15,       // per month
+        music: 35,        // per month
+        ppt: 35,          // per month
+        tts: 200          // per month
     }
 };

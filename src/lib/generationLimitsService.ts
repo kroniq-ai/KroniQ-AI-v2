@@ -19,68 +19,76 @@ export interface GenerationLimitInfo {
   message: string;
 }
 
-// Daily limits for each tier - matching Terms of Service (January 2026)
-// All limits reset at midnight UTC
-export const TIER_DAILY_LIMITS: Record<TierType, Record<GenerationType, number>> = {
+// MONTHLY limits for each tier - matching Terms of Service (January 2026)
+// All limits reset at the start of each billing month
+export const TIER_MONTHLY_LIMITS: Record<TierType, Record<GenerationType, number>> = {
   FREE: {
-    image: 3,     // 3 images/day
-    video: 1,     // 1 video/day
-    song: 3,      // 3 music/day
-    tts: 5,       // 5 TTS/day
-    ppt: 2        // 2 PPT/day
+    image: 2,      // 2 images/month (loss leader)
+    video: 0,      // No video for free
+    song: 0,       // No music for free
+    tts: 10,       // 10 TTS/month
+    ppt: 0         // No PPT for free
   },
   STARTER: {
-    image: 15,    // 15/day
-    video: 3,     // 3/day
-    song: 10,     // 10/day
-    tts: 20,      // 20/day
-    ppt: 10       // 10/day
+    image: 30,     // 30/month
+    video: 4,      // 4/month
+    song: 10,      // 10/month
+    tts: 50,       // 50/month
+    ppt: 10        // 10/month
   },
   PRO: {
-    image: 50,    // 50/day
-    video: 10,    // 10/day
-    song: 40,     // 40/day
-    tts: 75,      // 75/day
-    ppt: 30       // 30/day
+    image: 50,     // 50/month
+    video: 10,     // 10/month
+    song: 25,      // 25/month
+    tts: 120,      // 120/month
+    ppt: 25        // 25/month
   },
   PREMIUM: {
-    image: 150,   // 150/day
-    video: 30,    // 30/day
-    song: 120,    // 120/day
-    tts: 200,     // 200/day
-    ppt: 100      // 100/day
+    image: 80,     // 80/month
+    video: 15,     // 15/month
+    song: 35,      // 35/month
+    tts: 200,      // 200/month
+    ppt: 35        // 35/month
   }
 };
 
-// Monthly limits for reference (daily * 30, approximate)
-export const TIER_MONTHLY_LIMITS: Record<TierType, Record<GenerationType, number>> = {
+// Token limits per month
+export const TIER_TOKEN_LIMITS: Record<TierType, number> = {
+  FREE: 15000,      // 15K/month
+  STARTER: 100000,  // 100K/month
+  PRO: 220000,      // 220K/month
+  PREMIUM: 560000   // 560K/month
+};
+
+// Keep daily limits for backwards compatibility (divide monthly by 30)
+export const TIER_DAILY_LIMITS: Record<TierType, Record<GenerationType, number>> = {
   FREE: {
-    image: 90,    // ~3/day * 30
-    video: 30,    // ~1/day * 30
-    song: 90,     // ~3/day * 30
-    tts: 150,     // ~5/day * 30
-    ppt: 60       // ~2/day * 30
+    image: 1,     // ~2/month
+    video: 0,
+    song: 0,
+    tts: 1,
+    ppt: 0
   },
   STARTER: {
-    image: 450,   // ~15/day * 30
-    video: 90,    // ~3/day * 30
-    song: 300,    // ~10/day * 30
-    tts: 600,     // ~20/day * 30
-    ppt: 300      // ~10/day * 30
+    image: 1,
+    video: 1,
+    song: 1,
+    tts: 2,
+    ppt: 1
   },
   PRO: {
-    image: 1500,  // ~50/day * 30
-    video: 300,   // ~10/day * 30
-    song: 1200,   // ~40/day * 30
-    tts: 2250,    // ~75/day * 30
-    ppt: 900      // ~30/day * 30
+    image: 2,
+    video: 1,
+    song: 1,
+    tts: 4,
+    ppt: 1
   },
   PREMIUM: {
-    image: 4500,  // ~150/day * 30
-    video: 900,   // ~30/day * 30
-    song: 3600,   // ~120/day * 30
-    tts: 6000,    // ~200/day * 30
-    ppt: 3000     // ~100/day * 30
+    image: 3,
+    video: 1,
+    song: 2,
+    tts: 7,
+    ppt: 2
   }
 };
 
@@ -98,6 +106,7 @@ function normalizeTier(tierString: string | undefined): TierType {
 
 /**
  * Check if user can generate content of a specific type
+ * Uses MONTHLY limits
  */
 export async function checkGenerationLimit(
   userId: string,
@@ -107,21 +116,23 @@ export async function checkGenerationLimit(
     const tierInfo = await getUserTier(userId);
     const tier = normalizeTier(tierInfo.tier);
     const isPaid = tier !== 'FREE';
-    const dailyLimit = TIER_DAILY_LIMITS[tier][generationType];
+    const monthlyLimit = TIER_MONTHLY_LIMITS[tier][generationType];
 
-    // Get current generation count from Supabase
-    const today = new Date().toISOString().split('T')[0];
+    // Get current month's usage from Supabase
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
+    // Sum up all usage for this month
     const { data, error } = await supabase
       .from('daily_usage')
       .select('*')
       .eq('user_id', userId)
-      .eq('date', today)
-      .single();
+      .gte('date', monthStart)
+      .lte('date', monthEnd);
 
     let current = 0;
     if (data && !error) {
-      // Map GenerationType to field names
       const fieldMap: Record<GenerationType, string> = {
         image: 'images_generated',
         video: 'videos_generated',
@@ -129,35 +140,34 @@ export async function checkGenerationLimit(
         tts: 'tts_generated',
         ppt: 'ppt_generated'
       };
-
       const fieldName = fieldMap[generationType];
-      current = data[fieldName] || 0;
+      // Sum all days in the month
+      current = data.reduce((sum, day) => sum + (day[fieldName] || 0), 0);
     }
 
-    const canGenerate = current < dailyLimit;
-    const remaining = dailyLimit - current;
+    const canGenerate = current < monthlyLimit;
+    const remaining = monthlyLimit - current;
 
     let message = '';
-    if (dailyLimit === 0) {
+    if (monthlyLimit === 0) {
       message = `${generationType} not available on ${tier} plan. Upgrade for access!`;
     } else if (canGenerate) {
-      message = `${remaining}/${dailyLimit} remaining today`;
+      message = `${remaining}/${monthlyLimit} remaining this month`;
     } else {
-      message = `Daily limit reached (${dailyLimit}/day). Try again tomorrow!`;
+      message = `Monthly limit reached (${monthlyLimit}/month). Upgrade or wait until next month!`;
     }
 
     return {
-      canGenerate: dailyLimit > 0 && canGenerate,
+      canGenerate: monthlyLimit > 0 && canGenerate,
       current,
-      limit: dailyLimit,
+      limit: monthlyLimit,
       isPaid,
       tier,
       message
     };
   } catch (error) {
     console.error('❌ Exception checking generation limit:', error);
-    // On error, check with conservative free tier limits
-    const fallbackLimit = TIER_DAILY_LIMITS.FREE[generationType];
+    const fallbackLimit = TIER_MONTHLY_LIMITS.FREE[generationType];
     return {
       canGenerate: fallbackLimit > 0,
       current: 0,
