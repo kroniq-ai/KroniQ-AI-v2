@@ -1460,39 +1460,39 @@ const ProjectsSection: React.FC<{ isDark: boolean; onOpenProject?: (projectId: s
                 }}
             >
                 <div className={`flex items-center justify-between px-3 py-2`}>
-                    <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                        Chats {isMultiSelectMode && selectedChatIds.size > 0 && `(${selectedChatIds.size} selected)`}
+                    <span className={`text-xs font-semibold uppercase tracking-wider flex-shrink-0 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        Chats {isMultiSelectMode && selectedChatIds.size > 0 && `(${selectedChatIds.size})`}
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 flex-wrap justify-end">
                         {isMultiSelectMode ? (
                             <>
                                 <button
                                     onClick={handleSelectAll}
-                                    className={`text-xs px-2 py-0.5 rounded ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
                                 >
                                     All
                                 </button>
                                 <button
                                     onClick={handleDeselectAll}
-                                    className={`text-xs px-2 py-0.5 rounded ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
                                 >
                                     None
                                 </button>
                                 <button
                                     onClick={() => setShowBulkDeleteConfirm(true)}
                                     disabled={selectedChatIds.size === 0}
-                                    className={`text-xs px-2 py-0.5 rounded ${selectedChatIds.size > 0 ? 'text-red-400 hover:bg-red-500/20' : 'text-gray-400 cursor-not-allowed'}`}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${selectedChatIds.size > 0 ? 'text-red-400 hover:bg-red-500/20' : 'text-gray-400 cursor-not-allowed'}`}
                                 >
-                                    Delete
+                                    Del
                                 </button>
                                 <button
                                     onClick={() => {
                                         setIsMultiSelectMode(false);
                                         setSelectedChatIds(new Set());
                                     }}
-                                    className={`text-xs px-2 py-0.5 rounded ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'text-white/60 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
                                 >
-                                    Cancel
+                                    ✕
                                 </button>
                             </>
                         ) : (
