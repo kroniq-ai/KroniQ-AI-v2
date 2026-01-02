@@ -1493,9 +1493,355 @@ Return ONLY the title, nothing else: `;
         log('warning', 'Name generation returned empty, using truncated message');
         return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
     } catch (error) {
-        log('error', `Chat name generation failed: ${error} `);
+        log('error', `Chat name generation failed: ${error}`);
         // Fallback: truncate original message
         return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+    }
+}
+
+// ===== PHASE 2: UNIFIED PROCESSING FLOW =====
+
+/**
+ * Fetch current usage limits for a user from Supabase
+ */
+export async function fetchUserLimits(userId: string): Promise<{
+    tokensUsed: number;
+    tokensLimit: number;
+    imagesUsed: number;
+    imagesLimit: number;
+    videosUsed: number;
+    videosLimit: number;
+    musicUsed: number;
+    musicLimit: number;
+    ttsUsed: number;
+    ttsLimit: number;
+    pptUsed: number;
+    pptLimit: number;
+}> {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('tokens_used, tokens_limit, images_used, images_limit, videos_used, videos_limit, music_used, music_limit, tts_used, tts_limit, ppt_used, ppt_limit')
+            .eq('id', userId)
+            .single();
+
+        if (error || !data) {
+            log('warning', `Failed to fetch user limits: ${error?.message}`);
+            // Return default limits based on free tier
+            return {
+                tokensUsed: 0, tokensLimit: TIER_LIMITS.FREE.tokens,
+                imagesUsed: 0, imagesLimit: TIER_LIMITS.FREE.images,
+                videosUsed: 0, videosLimit: TIER_LIMITS.FREE.videos,
+                musicUsed: 0, musicLimit: TIER_LIMITS.FREE.music,
+                ttsUsed: 0, ttsLimit: TIER_LIMITS.FREE.tts,
+                pptUsed: 0, pptLimit: TIER_LIMITS.FREE.ppt,
+            };
+        }
+
+        return {
+            tokensUsed: data.tokens_used || 0,
+            tokensLimit: data.tokens_limit || TIER_LIMITS.FREE.tokens,
+            imagesUsed: data.images_used || 0,
+            imagesLimit: data.images_limit || TIER_LIMITS.FREE.images,
+            videosUsed: data.videos_used || 0,
+            videosLimit: data.videos_limit || TIER_LIMITS.FREE.videos,
+            musicUsed: data.music_used || 0,
+            musicLimit: data.music_limit || TIER_LIMITS.FREE.music,
+            ttsUsed: data.tts_used || 0,
+            ttsLimit: data.tts_limit || TIER_LIMITS.FREE.tts,
+            pptUsed: data.ppt_used || 0,
+            pptLimit: data.ppt_limit || TIER_LIMITS.FREE.ppt,
+        };
+    } catch (error) {
+        log('error', `Error fetching user limits: ${error}`);
+        return {
+            tokensUsed: 0, tokensLimit: TIER_LIMITS.FREE.tokens,
+            imagesUsed: 0, imagesLimit: TIER_LIMITS.FREE.images,
+            videosUsed: 0, videosLimit: TIER_LIMITS.FREE.videos,
+            musicUsed: 0, musicLimit: TIER_LIMITS.FREE.music,
+            ttsUsed: 0, ttsLimit: TIER_LIMITS.FREE.tts,
+            pptUsed: 0, pptLimit: TIER_LIMITS.FREE.ppt,
+        };
+    }
+}
+
+/**
+ * Check if a specific generation type is allowed based on current limits
+ */
+export function checkGenerationAllowed(
+    intent: TaskType,
+    limits: Awaited<ReturnType<typeof fetchUserLimits>>
+): {
+    allowed: boolean;
+    remaining: number;
+    total: number;
+    warningMessage: string | null;
+    upgradeReason?: string;
+} {
+    let used: number;
+    let limit: number;
+    let type: string;
+
+    switch (intent) {
+        case 'image':
+        case 'image_edit':
+            used = limits.imagesUsed;
+            limit = limits.imagesLimit;
+            type = 'images';
+            break;
+        case 'video':
+            used = limits.videosUsed;
+            limit = limits.videosLimit;
+            type = 'videos';
+            break;
+        case 'music':
+            used = limits.musicUsed;
+            limit = limits.musicLimit;
+            type = 'music generations';
+            break;
+        case 'tts':
+            used = limits.ttsUsed;
+            limit = limits.ttsLimit;
+            type = 'text-to-speech';
+            break;
+        case 'ppt':
+            used = limits.pptUsed;
+            limit = limits.pptLimit;
+            type = 'presentations';
+            break;
+        case 'chat':
+        default:
+            used = limits.tokensUsed;
+            limit = limits.tokensLimit;
+            type = 'tokens';
+            break;
+    }
+
+    const remaining = Math.max(0, limit - used);
+    const percentRemaining = limit > 0 ? remaining / limit : 0;
+
+    // Check if exhausted
+    if (remaining <= 0) {
+        return {
+            allowed: false,
+            remaining: 0,
+            total: limit,
+            warningMessage: null,
+            upgradeReason: `You've used all ${limit} ${type} this month. Upgrade for more!`,
+        };
+    }
+
+    // Check if warning threshold
+    let warningMessage: string | null = null;
+    if (percentRemaining <= WARNING_THRESHOLD) {
+        warningMessage = `⚠️ ${remaining} ${type} remaining this month`;
+    }
+
+    return {
+        allowed: true,
+        remaining,
+        total: limit,
+        warningMessage,
+    };
+}
+
+/**
+ * Unified request interface for all KroniQ AI operations
+ */
+export interface UnifiedKroniqRequest {
+    userMessage: string;
+    conversationHistory: Array<{ role: string; content: string; mediaUrl?: string; mediaType?: string }>;
+    projectId: string;
+    projectSettings?: {
+        name?: string;
+        systemPrompt?: string;
+        stylePreferences?: string;
+    };
+    userId: string;
+    userTier: UserTier;
+    forceTaskType?: TaskType;
+}
+
+/**
+ * Unified response from the KroniQ AI orchestrator
+ */
+export interface UnifiedKroniqResponse {
+    // Core result
+    success: boolean;
+    interpretation: InterpretationResult;
+
+    // Usage information
+    usageSummary: {
+        type: string;
+        used: number;
+        remaining: number;
+        total: number;
+        warningShown: boolean;
+    };
+
+    // Pre-flight checks
+    generationAllowed: boolean;
+    upgradeRequired: boolean;
+    upgradeReason?: string;
+}
+
+/**
+ * UNIFIED PROCESSING FUNCTION
+ * This is the main entry point for all KroniQ AI requests.
+ * It handles: interpretation, limit checking, warning generation, and usage tracking.
+ */
+export async function processKroniqRequest(
+    request: UnifiedKroniqRequest
+): Promise<UnifiedKroniqResponse> {
+    log('info', `[UnifiedProcess] Processing request for user ${request.userId.substring(0, 8)}...`);
+
+    // Step 1: Fetch current user limits
+    const limits = await fetchUserLimits(request.userId);
+    log('info', `[UnifiedProcess] User limits fetched: ${limits.tokensUsed}/${limits.tokensLimit} tokens`);
+
+    // Step 2: Get conversation context (or create empty)
+    let context: ConversationContext;
+    try {
+        context = await getContext(request.projectId, request.userId);
+    } catch {
+        context = {
+            longTerm: {},
+            shortTerm: {},
+            version: 1,
+            lastUpdated: new Date().toISOString(),
+        };
+    }
+
+    // Step 3: Interpret the request through Gemini
+    const interpretation = await interpretRequest(
+        request.userMessage,
+        request.conversationHistory,
+        context,
+        {
+            userTier: request.userTier,
+            forceTaskType: request.forceTaskType,
+        }
+    );
+
+    // Step 4: Check if upgrade is required (from Gemini's response)
+    if (interpretation.upgradeRequired) {
+        return {
+            success: false,
+            interpretation,
+            usageSummary: {
+                type: 'unknown',
+                used: 0,
+                remaining: 0,
+                total: 0,
+                warningShown: false,
+            },
+            generationAllowed: false,
+            upgradeRequired: true,
+            upgradeReason: interpretation.upgradeReason || 'Limit reached',
+        };
+    }
+
+    // Step 5: Check limits for the detected intent
+    const limitCheck = checkGenerationAllowed(interpretation.intent, limits);
+
+    if (!limitCheck.allowed) {
+        log('warning', `[UnifiedProcess] Generation blocked: ${limitCheck.upgradeReason}`);
+        return {
+            success: false,
+            interpretation: {
+                ...interpretation,
+                upgradeRequired: true,
+                upgradeReason: limitCheck.upgradeReason,
+            },
+            usageSummary: {
+                type: interpretation.intent,
+                used: limitCheck.total - limitCheck.remaining,
+                remaining: 0,
+                total: limitCheck.total,
+                warningShown: false,
+            },
+            generationAllowed: false,
+            upgradeRequired: true,
+            upgradeReason: limitCheck.upgradeReason,
+        };
+    }
+
+    // Step 6: Add warning message if near limit
+    if (limitCheck.warningMessage && !interpretation.warningMessage) {
+        interpretation.warningMessage = limitCheck.warningMessage;
+    }
+
+    log('success', `[UnifiedProcess] Request processed: intent=${interpretation.intent}, confidence=${interpretation.confidence}`);
+
+    // Step 7: Return success with full context
+    return {
+        success: true,
+        interpretation,
+        usageSummary: {
+            type: interpretation.intent,
+            used: limitCheck.total - limitCheck.remaining,
+            remaining: limitCheck.remaining,
+            total: limitCheck.total,
+            warningShown: limitCheck.warningMessage !== null,
+        },
+        generationAllowed: true,
+        upgradeRequired: false,
+    };
+}
+
+/**
+ * Update usage after a successful generation
+ */
+export async function recordUsage(
+    userId: string,
+    intent: TaskType,
+    tokensUsed: number = 0
+): Promise<void> {
+    try {
+        const updateField = (() => {
+            switch (intent) {
+                case 'image':
+                case 'image_edit':
+                    return { images_used: tokensUsed > 0 ? tokensUsed : 1 };
+                case 'video':
+                    return { videos_used: tokensUsed > 0 ? tokensUsed : 1 };
+                case 'music':
+                    return { music_used: tokensUsed > 0 ? tokensUsed : 1 };
+                case 'tts':
+                    return { tts_used: tokensUsed > 0 ? tokensUsed : 1 };
+                case 'ppt':
+                    return { ppt_used: tokensUsed > 0 ? tokensUsed : 1 };
+                case 'chat':
+                default:
+                    return { tokens_used: tokensUsed };
+            }
+        })();
+
+        // For increment operations, we need to fetch current value first
+        const { data: currentData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (currentData) {
+            const fieldName = Object.keys(updateField)[0];
+            const incrementValue = Object.values(updateField)[0] as number;
+            const currentValue = (currentData as any)[fieldName] || 0;
+
+            const { error } = await supabase
+                .from('profiles')
+                .update({ [fieldName]: currentValue + incrementValue })
+                .eq('id', userId);
+
+            if (error) {
+                log('error', `Failed to record usage: ${error.message}`);
+            } else {
+                log('info', `[UnifiedProcess] Recorded usage: ${fieldName} += ${incrementValue}`);
+            }
+        }
+    } catch (error) {
+        log('error', `Error recording usage: ${error}`);
     }
 }
 
@@ -1517,5 +1863,10 @@ export default {
     performThinkLonger,
     enhancePrompt,
     generateChatName,
+    // Phase 2: Unified processing
+    processKroniqRequest,
+    fetchUserLimits,
+    checkGenerationAllowed,
+    recordUsage,
     FEATURE_FLAGS,
 };
