@@ -211,10 +211,61 @@ export async function processMessageForMemory(
     }).catch(console.error);
 }
 
+/**
+ * Get cross-project context for the orchestrator (5-10% weight)
+ * Fetches summaries from user's other projects to provide light context
+ */
+export async function getCrossProjectContext(
+    userId: string,
+    currentProjectId: string
+): Promise<string> {
+    try {
+        // Fetch recent chats from OTHER projects (not current)
+        const { data: otherChats, error } = await supabase
+            .from('chats')
+            .select('id, name, messages, updated_at')
+            .eq('user_id', userId)
+            .neq('id', currentProjectId)
+            .order('updated_at', { ascending: false })
+            .limit(3);
+
+        if (error || !otherChats || otherChats.length === 0) {
+            return '';
+        }
+
+        // Extract key context from each project
+        const summaries = otherChats.map(chat => {
+            const messages = chat.messages || [];
+
+            // Find recent media generated
+            const recentMedia = messages
+                .filter((m: any) => m.mediaUrl)
+                .slice(-2)
+                .map((m: any) => `[${m.mediaType?.toUpperCase() || 'MEDIA'}] ${(m.content || '').substring(0, 40)}...`);
+
+            // Get last topic discussed
+            const lastUserMessage = messages
+                .filter((m: any) => m.role === 'user')
+                .slice(-1)[0];
+            const lastTopic = lastUserMessage?.content?.substring(0, 50) || 'Unknown topic';
+
+            return `• "${chat.name || 'Untitled'}": ${recentMedia.length > 0 ? recentMedia.join(', ') : `Discussion about "${lastTopic}..."`}`;
+        });
+
+        if (summaries.length === 0) return '';
+
+        return `## Cross-Project Context (5-10% weight)\n${summaries.join('\n')}`;
+    } catch (error) {
+        console.error('Error fetching cross-project context:', error);
+        return '';
+    }
+}
+
 export default {
     getUserMemory,
     updateUserMemory,
     extractPersonalInfo,
     buildMemoryContext,
     processMessageForMemory,
+    getCrossProjectContext,
 };
