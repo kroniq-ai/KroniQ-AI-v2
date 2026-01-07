@@ -84,9 +84,9 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
 
     // Load saved video projects
     const refreshProjects = async () => {
-        if (!user?.uid) return;
+        if (!user?.id) return;
         try {
-            const projectsResult = await getUserProjects(user.uid, 'video');
+            const projectsResult = await getUserProjects(user.id, 'video');
             if (projectsResult.success && projectsResult.projects) {
                 setHistoryProjects(projectsResult.projects);
             }
@@ -96,7 +96,7 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
     };
 
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.id) {
             loadTokenBalance();
             loadLimitInfo();
             refreshProjects();
@@ -104,21 +104,21 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
     }, [user]);
 
     const loadLimitInfo = async () => {
-        if (!user?.uid) return;
-        const limit = await checkGenerationLimit(user.uid, 'video');
+        if (!user?.id) return;
+        const limit = await checkGenerationLimit(user.id, 'video');
         setLimitInfo(getGenerationLimitMessage('video', limit.isPaid, limit.current, limit.limit));
         setGenerationLimit({ current: limit.current, limit: limit.limit, isPaid: limit.isPaid });
     };
 
     useEffect(() => {
-        if (initialProjectId && user?.uid) {
+        if (initialProjectId && user?.id) {
             loadExistingProject(initialProjectId);
         }
     }, [initialProjectId, user]);
 
     const loadTokenBalance = async () => {
-        if (!user?.uid) return;
-        const profile = await getUserProfile(user.uid);
+        if (!user?.id) return;
+        const profile = await getUserProfile(user.id);
         if (profile) {
             const remaining = profile.tokensLimit - profile.tokensUsed;
             setTokenBalance(remaining > 0 ? remaining : 0);
@@ -145,7 +145,7 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
     };
 
     const saveProjectState = async (overrides: any = {}) => {
-        if (!user?.uid) return null;
+        if (!user?.id) return null;
 
         const sessionState = {
             prompt,
@@ -163,7 +163,7 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
             } else {
                 const projectName = generateStudioProjectName('video', prompt);
                 const result = await createStudioProject({
-                    userId: user.uid,
+                    userId: user.id,
                     studioType: 'video',
                     name: projectName,
                     description: prompt,
@@ -188,13 +188,13 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
             return;
         }
 
-        if (!user?.uid) {
+        if (!user?.id) {
             showToast('error', 'Authentication Required', 'Please log in to generate videos');
             return;
         }
 
         // CHECK LIMIT BEFORE GENERATION
-        const limitCheck = await checkGenerationLimit(user.uid, 'video');
+        const limitCheck = await checkGenerationLimit(user.id, 'video');
         if (!limitCheck.canGenerate) {
             showToast('error', 'Monthly Limit Reached', limitCheck.message);
             return;
@@ -223,8 +223,8 @@ export const VideoStudio: React.FC<VideoStudioProps> = ({ onClose, projectId: in
 
             // Use Firebase for token deduction and usage tracking
             const { deductTokens, incrementUsage } = await import('../../../lib/firestoreService');
-            await deductTokens(user.uid, tokensToDeduct);
-            await incrementUsage(user.uid, 'video', 1);
+            await deductTokens(user.id, tokensToDeduct);
+            await incrementUsage(user.id, 'video', 1);
 
             await loadTokenBalance();
             await loadLimitInfo();

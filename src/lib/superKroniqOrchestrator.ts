@@ -66,6 +66,82 @@ const PREMIUM_TIER_MODELS: Record<string, string> = {
     ppt: 'anthropic/claude-3.5-sonnet-20241022',
 };
 
+// ===== LOCAL PRE-CLASSIFICATION (Robust fallback) =====
+
+/**
+ * Fast local intent detection using regex patterns.
+ * Runs BEFORE Gemini to provide a fallback when AI interpretation is inconsistent.
+ * Returns the detected intent and confidence score.
+ */
+function preClassifyIntent(message: string): { intent: ToolType | null; confidence: number } {
+    const lower = message.toLowerCase().trim();
+
+    // Image generation patterns - comprehensive synonyms
+    const imagePatterns = [
+        /\b(create|make|generate|produce|design|draw|render|craft)\s+(an?\s+)?(image|picture|photo|logo|artwork|illustration|visual|graphic|portrait|poster|banner|thumbnail)/i,
+        /\b(image|picture|photo|illustration)\s+of\b/i,
+        /\bdraw\s+(me\s+)?(a|an)?\s*/i,
+        /\b(i\s+want|give\s+me|show\s+me|can\s+you\s+(create|make))\s+(an?\s+)?(image|picture|photo)/i,
+        /\bdesign\s+(a|an)\s+(logo|poster|banner|flyer)/i,
+    ];
+
+    // Video generation patterns
+    const videoPatterns = [
+        /\b(create|make|generate|produce)\s+(an?\s+)?(video|animation|clip|footage|movie)/i,
+        /\bvideo\s+(of|showing|about)\b/i,
+        /\bturn\s+.*\s+into\s+(a\s+)?video\b/i,
+        /\b(animate|animation\s+of)\b/i,
+        /\b(i\s+want|give\s+me|show\s+me)\s+(a\s+)?video\b/i,
+    ];
+
+    // Music generation patterns
+    const musicPatterns = [
+        /\b(create|make|generate|compose|produce)\s+(an?\s+)?(song|music|track|beat|melody|soundtrack|tune|jingle)/i,
+        /\b(song|music|track|beat)\s+(about|for)\b/i,
+        /\bcompose\s+(a|an)?\s*(song|piece|melody)/i,
+        /\b(i\s+want|give\s+me)\s+(a\s+)?(song|music|beat)/i,
+    ];
+
+    // TTS (text-to-speech) patterns
+    const ttsPatterns = [
+        /\b(read|speak|say|narrate|voice)\s+(this|the|aloud|out\s+loud)/i,
+        /\btext\s+to\s+speech\b/i,
+        /\btts\b/i,
+        /\bvoice\s+(over|this)\b/i,
+        /\bconvert\s+.*\s+to\s+(speech|audio|voice)/i,
+        /\b(read|narrate)\s+.*\s+aloud\b/i,
+    ];
+
+    // PPT (presentation) patterns
+    const pptPatterns = [
+        /\b(create|make|generate|build)\s+(an?\s+)?(presentation|ppt|powerpoint|slides|slideshow|pitch\s+deck|deck)/i,
+        /\b(presentation|slides|ppt)\s+(about|on|for)\b/i,
+        /\bpitch\s+deck\b/i,
+        /\b(i\s+need|give\s+me)\s+(a\s+)?(presentation|slides)/i,
+    ];
+
+    // Check patterns in order of specificity
+    const patterns: Array<{ patterns: RegExp[]; intent: ToolType; weight: number }> = [
+        { patterns: ttsPatterns, intent: 'tts', weight: 0.95 },
+        { patterns: pptPatterns, intent: 'ppt', weight: 0.95 },
+        { patterns: musicPatterns, intent: 'tts', weight: 0.9 }, // Music uses TTS service
+        { patterns: videoPatterns, intent: 'video', weight: 0.95 },
+        { patterns: imagePatterns, intent: 'image', weight: 0.95 },
+    ];
+
+    for (const { patterns: patternList, intent, weight } of patterns) {
+        for (const pattern of patternList) {
+            if (pattern.test(lower)) {
+                console.log(`🎯 [Pre-Classify] Local detection: "${intent}" (confidence: ${weight}) for: "${message.substring(0, 50)}..."`);
+                return { intent, confidence: weight };
+            }
+        }
+    }
+
+    // No strong match found
+    return { intent: null, confidence: 0 };
+}
+
 // ===== USAGE TRACKING =====
 
 /**
@@ -316,21 +392,28 @@ export function selectModel(
 
 /**
  * Map intent classification to tool type
+ * Handles all intents from Gemini orchestrator
  */
 export function mapIntentToTool(intent: string): ToolType {
     switch (intent) {
         case 'code':
             return 'code';
         case 'image':
+        case 'image_edit':
         case 'design':
             return 'image';
         case 'video':
         case 'video-edit':
             return 'video';
         case 'voice':
+        case 'tts':
             return 'tts';
         case 'music':
-            return 'tts'; // Falls back to TTS
+            return 'tts'; // Music uses TTS/Suno service
+        case 'ppt':
+            return 'ppt';
+        case 'website':
+            return 'website';
         default:
             return 'chat';
     }
@@ -354,7 +437,10 @@ export async function processMessage(
         // 1. Get user tier
         const tier = await getUserTier(userId);
 
-        // 2. FIRST: Send to Gemini orchestrator for interpretation and enhancement
+        // 2. PRE-CLASSIFY: Run local intent detection FIRST (fast regex-based)
+        const localClassification = preClassifyIntent(message);
+
+        // 3. Send to Gemini orchestrator for interpretation and enhancement
         // This handles poor English, typos, and auto-enhances prompts
         const geminiOrchestrator = await import('./geminiOrchestrator');
 
@@ -375,7 +461,7 @@ export async function processMessage(
         console.log('🧠 [Gemini Orchestrator] Intent:', interpretation.intent, 'Confidence:', interpretation.confidence);
         console.log('✨ [Gemini Orchestrator] Enhanced prompt:', interpretation.enhancedPrompt?.substring(0, 100) + '...');
 
-        // 3. Check if orchestrator can self-answer (simple greetings, etc.)
+        // 4. Check if orchestrator can self-answer (simple greetings, etc.)
         if (interpretation.selfAnswer && interpretation.selfAnswerContent) {
             return {
                 success: true,
@@ -388,10 +474,18 @@ export async function processMessage(
             };
         }
 
-        // 4. Map Gemini intent to our tool type
-        const tool = mapIntentToTool(interpretation.intent);
+        // 5. Map Gemini intent to our tool type
+        let tool = mapIntentToTool(interpretation.intent);
 
-        // 5. Check usage limits
+        // 6. FALLBACK: If Gemini returned 'chat' but local classification found a specific intent,
+        // override with the local result. This catches cases where Gemini misses obvious phrases
+        // like "create an image" or "make a video".
+        if (tool === 'chat' && localClassification.intent && localClassification.confidence >= 0.9) {
+            console.log(`🔄 [Fallback] Overriding Gemini 'chat' → '${localClassification.intent}' (local confidence: ${localClassification.confidence})`);
+            tool = localClassification.intent;
+        }
+
+        // 7. Check usage limits
         if (userId) {
             const usageStatus = await checkUsage(userId, tool, tier);
             if (!usageStatus.allowed) {

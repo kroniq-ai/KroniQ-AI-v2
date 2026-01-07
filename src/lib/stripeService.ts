@@ -16,7 +16,7 @@ export const STRIPE_PRICE_IDS = {
 const PAYMENT_LINKS = {
     starter: 'https://buy.stripe.com/eVqfZhb9m4sPfCW1SB3VC02',
     pro: 'https://buy.stripe.com/aFa4gz6T6aRd2Qacxf3VC03',
-    premium: 'https://buy.stripe.com/4gMdR991e5wT2Qa1SB3VC04',
+    premium: 'https://buy.stripe.com/fZuaEX2CQ6AX76qcxf3VC05',
 };
 
 export type SubscriptionTier = 'FREE' | 'STARTER' | 'PRO' | 'PREMIUM';

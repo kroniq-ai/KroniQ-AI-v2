@@ -78,9 +78,9 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
 
     // Load saved music projects
     const refreshProjects = async () => {
-        if (!user?.uid) return;
+        if (!user?.id) return;
         try {
-            const projectsResult = await getUserProjects(user.uid, 'music');
+            const projectsResult = await getUserProjects(user.id, 'music');
             if (projectsResult.success && projectsResult.projects) {
                 setHistoryProjects(projectsResult.projects);
             }
@@ -90,14 +90,14 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
     };
 
     const loadLimitInfo = async () => {
-        if (!user?.uid) return;
-        const limit = await checkGenerationLimit(user.uid, 'song');
+        if (!user?.id) return;
+        const limit = await checkGenerationLimit(user.id, 'song');
         setLimitInfo(getGenerationLimitMessage('song', limit.isPaid, limit.current, limit.limit));
         setGenerationLimit({ current: limit.current, limit: limit.limit, isPaid: limit.isPaid });
     };
 
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.id) {
             loadTokenBalance();
             loadLimitInfo();
             refreshProjects();
@@ -105,7 +105,7 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
     }, [user]);
 
     useEffect(() => {
-        if (initialProjectId && user?.uid) {
+        if (initialProjectId && user?.id) {
             loadExistingProject(initialProjectId);
         }
     }, [initialProjectId, user]);
@@ -131,8 +131,8 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
     }, [generatedSong]);
 
     const loadTokenBalance = async () => {
-        if (!user?.uid) return;
-        const profile = await getUserProfile(user.uid);
+        if (!user?.id) return;
+        const profile = await getUserProfile(user.id);
         if (profile) {
             const remaining = profile.tokensLimit - profile.tokensUsed;
             setTokenBalance(remaining > 0 ? remaining : 0);
@@ -158,7 +158,7 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
     };
 
     const saveProjectState = async (overrides: any = {}) => {
-        if (!user?.uid) return null;
+        if (!user?.id) return null;
 
         const sessionState = {
             description,
@@ -175,7 +175,7 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
             } else {
                 const projectName = generateStudioProjectName('music', description);
                 const result = await createStudioProject({
-                    userId: user.uid,
+                    userId: user.id,
                     studioType: 'music',
                     name: projectName,
                     description: description,
@@ -200,13 +200,13 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
             return;
         }
 
-        if (!user?.uid) {
+        if (!user?.id) {
             showToast('error', 'Authentication Required', 'Please log in to generate music');
             return;
         }
 
         // CHECK LIMIT BEFORE GENERATION
-        const limitCheck = await checkGenerationLimit(user.uid, 'song');
+        const limitCheck = await checkGenerationLimit(user.id, 'song');
         if (!limitCheck.canGenerate) {
             showToast('error', 'Monthly Limit Reached', limitCheck.message);
             return;
@@ -245,8 +245,8 @@ export const MusicStudio: React.FC<MusicStudioProps> = ({ onClose, projectId: in
 
             // Use Firebase for token deduction and usage tracking
             const { deductTokens, incrementUsage } = await import('../../../lib/firestoreService');
-            await deductTokens(user.uid, tokensToDeduct);
-            await incrementUsage(user.uid, 'music', 1);
+            await deductTokens(user.id, tokensToDeduct);
+            await incrementUsage(user.id, 'music', 1);
 
             await loadTokenBalance();
             await loadLimitInfo();

@@ -41,27 +41,65 @@ export interface FeatureAccessResult {
 }
 
 const FREE_USER_LIMITS: FeatureLimits = {
-  chat_messages_daily: 100,
+  chat_messages_daily: 15,
+  images_daily: 2,
+  videos_daily: 0,
+  music_daily: 0,
+  tts_daily: 4,
+  code_generations_daily: 10,
+  ppt_daily: 0
+};
+
+// Tiered limits per subscription plan (not -1 unlimited!)
+const STARTER_2_LIMITS: FeatureLimits = {
+  chat_messages_daily: 25,
   images_daily: 10,
-  videos_daily: 2,
-  music_daily: 5,
-  tts_daily: 10,
+  videos_daily: 3,
+  music_daily: 0,
+  tts_daily: 25,
   code_generations_daily: 50,
-  ppt_daily: 5
+  ppt_daily: 0
 };
 
-const PAID_USER_LIMITS: FeatureLimits = {
-  chat_messages_daily: -1,
-  images_daily: -1,
-  videos_daily: -1,
-  music_daily: -1,
-  tts_daily: -1,
-  code_generations_daily: -1,
-  ppt_daily: -1
+const STARTER_LIMITS: FeatureLimits = {
+  chat_messages_daily: 60,
+  images_daily: 25,
+  videos_daily: 6,
+  music_daily: 0,
+  tts_daily: 60,
+  code_generations_daily: 100,
+  ppt_daily: 2
 };
 
-export function getFeatureLimits(isPremium: boolean): FeatureLimits {
-  return isPremium ? PAID_USER_LIMITS : FREE_USER_LIMITS;
+const PRO_LIMITS: FeatureLimits = {
+  chat_messages_daily: 80,
+  images_daily: 32,
+  videos_daily: 10,
+  music_daily: 0,
+  tts_daily: 80,
+  code_generations_daily: 200,
+  ppt_daily: 4
+};
+
+const PREMIUM_LIMITS: FeatureLimits = {
+  chat_messages_daily: 120,
+  images_daily: 40,
+  videos_daily: 12,
+  music_daily: 0,
+  tts_daily: 120,
+  code_generations_daily: 500,
+  ppt_daily: 6
+};
+
+export function getFeatureLimits(tier: string): FeatureLimits {
+  const upperTier = tier?.toUpperCase() || 'FREE';
+  switch (upperTier) {
+    case 'PREMIUM': return PREMIUM_LIMITS;
+    case 'PRO': return PRO_LIMITS;
+    case 'STARTER': return STARTER_LIMITS;
+    case 'STARTER_2': return STARTER_2_LIMITS;
+    default: return FREE_USER_LIMITS;
+  }
 }
 
 export async function getCurrentUsage(userId?: string): Promise<FeatureUsage | null> {
@@ -214,7 +252,8 @@ export async function checkFeatureAccess(
   }
 
   const usage = await getCurrentUsage(uid);
-  const limits = getFeatureLimits(false);
+  const tier = accessInfo.userType || 'free';
+  const limits = getFeatureLimits(tier);
 
   if (!usage) {
     return {
@@ -296,11 +335,17 @@ export async function incrementUsage(
     if (error) {
       console.error('Error incrementing usage:', error);
 
+      // Use simple update with a callback instead of supabase.raw
+      const { data: currentData } = await supabase
+        .from('daily_usage_limits')
+        .select(column)
+        .eq('user_id', uid)
+        .maybeSingle();
+
+      const currentValue = (currentData as any)?.[column] || 0;
       const { error: updateError } = await supabase
         .from('daily_usage_limits')
-        .update({
-          [column]: supabase.raw(`${column} + ${amount}`)
-        })
+        .update({ [column]: currentValue + amount })
         .eq('user_id', uid);
 
       return !updateError;

@@ -1,16 +1,17 @@
 /**
  * Unified Premium Access Service
- * Uses Supabase for premium status checks
+ * CONSOLIDATED: Now delegates to userTierService for tier determination
  */
 
-import { supabase, getCurrentUser, getUserProfile } from './supabaseClient';
+import { supabase, getCurrentUser } from './supabaseClient';
+import { getUserTier, type UserTierType } from './userTierService';
 
 export interface UnifiedPremiumStatus {
   isPremium: boolean;
   userId: string;
   paidTokens: number;
   totalTokens: number;
-  tier: string;
+  tier: UserTierType;
   source: string;
   timestamp: number;
 }
@@ -49,7 +50,8 @@ export async function getUnifiedPremiumStatus(userIdOverride?: string): Promise<
   let userId = userIdOverride;
 
   if (!userId) {
-    userId = await waitForAuth();
+    const authId = await waitForAuth();
+    userId = authId ?? undefined;
   }
 
   if (!userId) {
@@ -62,29 +64,16 @@ export async function getUnifiedPremiumStatus(userIdOverride?: string): Promise<
   }
 
   try {
-    const profile = await getUserProfile(userId);
-
-    if (!profile) {
-      console.warn('⚠️ No profile found for user:', userId);
-      return createFreeStatus('no_profile');
-    }
-
-    const paidTokens = profile.paid_tokens_balance || 0;
-    const tokensLimit = profile.tokens_limit || 0;
-    const tokensUsed = profile.tokens_used || 0;
-    const totalTokens = tokensLimit - tokensUsed;
-    const plan = profile.plan || 'free';
-
-    // Premium status: check plan
-    const isPremium = (plan === 'pro' || plan === 'enterprise');
+    // CONSOLIDATED: Use userTierService as single source of truth
+    const tierInfo = await getUserTier(userId);
 
     const status: UnifiedPremiumStatus = {
-      isPremium,
+      isPremium: tierInfo.isPaid, // isPaid = tier !== 'free'
       userId,
-      paidTokens,
-      totalTokens,
-      tier: plan,
-      source: 'unified_check',
+      paidTokens: 0, // Not tracked in new system
+      totalTokens: tierInfo.tokenBalance,
+      tier: tierInfo.tier,
+      source: 'userTierService',
       timestamp: Date.now()
     };
 
@@ -96,6 +85,7 @@ export async function getUnifiedPremiumStatus(userIdOverride?: string): Promise<
     return createFreeStatus('exception');
   }
 }
+
 
 function createFreeStatus(reason: string): UnifiedPremiumStatus {
   return {
@@ -118,14 +108,17 @@ export function clearUnifiedCache(userId?: string): void {
 }
 
 export async function forceRefreshPremiumStatus(userId?: string): Promise<UnifiedPremiumStatus> {
-  if (!userId) {
-    userId = await waitForAuth();
+  let id = userId;
+  if (!id) {
+    const authId = await waitForAuth();
+    id = authId ?? undefined;
   }
-  if (userId) {
-    clearUnifiedCache(userId);
+  if (id) {
+    clearUnifiedCache(id);
   }
-  return getUnifiedPremiumStatus(userId || undefined);
+  return getUnifiedPremiumStatus(id);
 }
+
 
 /**
  * Subscribe to real-time premium status changes for a user

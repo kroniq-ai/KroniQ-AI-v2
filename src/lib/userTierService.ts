@@ -1,22 +1,23 @@
 /**
  * User Tier Service
- * Uses Supabase for user tier/premium status
+ * Returns actual subscription tier: free, starter_2, starter, pro, premium
  */
 
-import { supabase, getUserProfile } from './supabaseClient';
+import { getUserProfile } from './supabaseClient';
+
+export type UserTierType = 'free' | 'starter_2' | 'starter' | 'pro' | 'premium';
 
 export interface UserTierInfo {
-  tier: 'free' | 'premium';
-  isPremium: boolean;
-  hasPaidTokens: boolean;
+  tier: UserTierType;
+  isPaid: boolean;
+  isHiddenTier: boolean; // starter_2 is hidden referral tier
   tokenBalance: number;
   totalTokens: number;
-  freeTokens: number;
-  paidTokens: number;
 }
 
 /**
  * Get user tier information from Supabase
+ * Returns actual tier: free, starter_2, starter, pro, premium
  */
 export async function getUserTier(userId: string): Promise<UserTierInfo> {
   try {
@@ -26,23 +27,41 @@ export async function getUserTier(userId: string): Promise<UserTierInfo> {
       return getDefaultTierInfo();
     }
 
+    // Get subscription tier from database - this is the source of truth
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = profile as any;
+    const dbTier = (p.subscription_tier || p.plan || 'free').toLowerCase();
+    const subscriptionStatus = p.subscription_status;
+    const isPaidColumn = p.is_paid === true;
+
+    // Normalize tier name
+    let tier: UserTierType = 'free';
+    if (dbTier === 'starter_2' || dbTier === 'starter2') {
+      tier = 'starter_2';
+    } else if (dbTier === 'starter') {
+      tier = 'starter';
+    } else if (dbTier === 'pro') {
+      tier = 'pro';
+    } else if (dbTier === 'premium' || dbTier === 'enterprise') {
+      tier = 'premium';
+    }
+
+    // Override free if subscription is active
+    if (tier === 'free' && (isPaidColumn || subscriptionStatus === 'active')) {
+      tier = 'starter'; // Default to starter if paid but tier unknown
+    }
+
     const tokensLimit = profile.tokens_limit || 0;
     const tokensUsed = profile.tokens_used || 0;
-    const tokenBalance = tokensLimit - tokensUsed;
-    const plan = profile.plan || 'free';
-    const isPremium = plan === 'pro' || plan === 'enterprise' || tokenBalance > 500000;
+    const tokenBalance = Math.max(0, tokensLimit - tokensUsed);
 
-    const tierInfo: UserTierInfo = {
-      tier: isPremium ? 'premium' : 'free',
-      isPremium,
-      hasPaidTokens: tokenBalance > 100000,
+    return {
+      tier,
+      isPaid: tier !== 'free',
+      isHiddenTier: tier === 'starter_2',
       tokenBalance,
-      totalTokens: tokenBalance,
-      freeTokens: isPremium ? 0 : tokenBalance,
-      paidTokens: isPremium ? tokenBalance : 0
+      totalTokens: tokensLimit
     };
-
-    return tierInfo;
   } catch (err) {
     console.error('❌ [TierService] Exception getting user tier:', err);
     return getDefaultTierInfo();
@@ -52,21 +71,27 @@ export async function getUserTier(userId: string): Promise<UserTierInfo> {
 function getDefaultTierInfo(): UserTierInfo {
   return {
     tier: 'free',
-    isPremium: false,
-    hasPaidTokens: false,
+    isPaid: false,
+    isHiddenTier: false,
     tokenBalance: 0,
-    totalTokens: 0,
-    freeTokens: 0,
-    paidTokens: 0
+    totalTokens: 0
   };
 }
 
-export async function isUserPremium(userId: string): Promise<boolean> {
+export async function isUserPaid(userId: string): Promise<boolean> {
   const tierInfo = await getUserTier(userId);
-  return tierInfo.isPremium;
+  return tierInfo.isPaid;
 }
 
 export async function getUserTokenBalance(userId: string): Promise<number> {
   const tierInfo = await getUserTier(userId);
   return tierInfo.tokenBalance;
+}
+
+/**
+ * Check if user has specific tier or higher
+ */
+export function isTierAtLeast(userTier: UserTierType, requiredTier: UserTierType): boolean {
+  const tierOrder: UserTierType[] = ['free', 'starter_2', 'starter', 'pro', 'premium'];
+  return tierOrder.indexOf(userTier) >= tierOrder.indexOf(requiredTier);
 }

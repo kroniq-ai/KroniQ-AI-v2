@@ -25,6 +25,16 @@ export async function generateKieImage(prompt: string, model: string = 'flux-pro
       return await generateGrokImagineImage(prompt, model);
     }
 
+    // Nano Banana Pro
+    if (model === 'nano-banana-pro') {
+      return await generateNanoBananaProImage(prompt);
+    }
+
+    // Bytedance Seedream V4
+    if (model.startsWith('bytedance/seedream')) {
+      return await generateSeedreamV4Image(prompt, model);
+    }
+
     return await generateFluxImage(prompt, model);
   } catch (error) {
     console.error('❌ Kie AI image generation error:', error);
@@ -301,6 +311,58 @@ async function generateSeedreamImage(prompt: string, model: string): Promise<str
   throw new Error('No task ID in response');
 }
 
+// Nano Banana Pro - High quality image generation
+async function generateNanoBananaProImage(prompt: string): Promise<string> {
+  console.log(`🍌 Generating Nano Banana Pro image...`);
+  const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
+    body: JSON.stringify({
+      model: 'nano-banana-pro',
+      input: {
+        prompt: prompt,
+        aspect_ratio: '1:1',
+        resolution: '2K',
+        output_format: 'png'
+      }
+    })
+  });
+
+  if (!response.ok) throw new Error(`Nano Banana Pro generation failed: ${response.status}`);
+  const data = await response.json();
+
+  if (data.code === 200 && data.data?.taskId) {
+    return await pollJobsImageStatus(data.data.taskId);
+  }
+  throw new Error('No task ID in response');
+}
+
+// Bytedance Seedream V4 - Advanced image synthesis
+async function generateSeedreamV4Image(prompt: string, model: string): Promise<string> {
+  console.log(`🎨 Generating Seedream V4 image...`);
+  const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
+    body: JSON.stringify({
+      model: 'bytedance/seedream-v4-text-to-image',
+      input: {
+        prompt: prompt,
+        image_size: 'square_hd',
+        image_resolution: '2K',
+        max_images: 1
+      }
+    })
+  });
+
+  if (!response.ok) throw new Error(`Seedream V4 generation failed: ${response.status}`);
+  const data = await response.json();
+
+  if (data.code === 200 && data.data?.taskId) {
+    return await pollJobsImageStatus(data.data.taskId);
+  }
+  throw new Error('No task ID in response');
+}
+
 async function generateGrokImagineImage(prompt: string, model: string): Promise<string> {
   console.log(`🎨 Generating Grok Imagine image using jobs/createTask...`);
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
@@ -428,6 +490,9 @@ export async function generateKieVideo(prompt: string, model: string = 'veo3_fas
     if (model.includes('wan')) return await generateWanVideo(prompt, model);
     if (model.includes('kling')) return await generateKlingVideo(prompt, model);
     if (model.includes('grok')) return await generateGrokVideo(prompt, model);
+
+    // Seedance models (ByteDance)
+    if (model.includes('seedance')) return await generateSeedanceVideo(prompt, model);
 
     return await generateVeo3Video(prompt);
   } catch (error) {
@@ -653,23 +718,26 @@ async function generateSoraVideo(prompt: string, model: string): Promise<string>
 }
 
 async function generateWanVideo(prompt: string, model: string): Promise<string> {
-  console.log(`🎬 Generating Wan 2.5 video using jobs/createTask...`);
+  // Support both Wan 2.5 and Wan 2.6
+  const isWan26 = model.includes('2-6') || model.includes('2.6');
+  const modelId = isWan26 ? 'wan/2-6-text-to-video' : 'wan/2-5-text-to-video';
+  console.log(`🎬 Generating ${isWan26 ? 'Wan 2.6' : 'Wan 2.5'} video using jobs/createTask...`);
+
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
     body: JSON.stringify({
-      model: 'wan/2-5-text-to-video',
+      model: modelId,
       input: {
         prompt: prompt,
         duration: '5',
-        aspect_ratio: '16:9',
         resolution: '1080p',
-        enable_prompt_expansion: true
+        multi_shots: false
       }
     })
   });
 
-  if (!response.ok) throw new Error(`Wan 2.5 video generation failed: ${response.status}`);
+  if (!response.ok) throw new Error(`Wan video generation failed: ${response.status}`);
   const data = await response.json();
 
   if ((data.code === 200 || data.success) && data.data?.taskId) {
@@ -679,13 +747,23 @@ async function generateWanVideo(prompt: string, model: string): Promise<string> 
 }
 
 async function generateKlingVideo(prompt: string, model: string): Promise<string> {
-  console.log(`🎬 Generating Kling 2.6 video using jobs/createTask...`);
+  // Support Kling 2.6 and Kling 2.5 Turbo
+  const isKling25Turbo = model.includes('2-5-turbo') || model.includes('2.5-turbo') || model.includes('v2-5-turbo');
+  const modelId = isKling25Turbo ? 'kling/v2-5-turbo-text-to-video-pro' : 'kling-2.6/text-to-video';
+  console.log(`🎬 Generating ${isKling25Turbo ? 'Kling 2.5 Turbo' : 'Kling 2.6'} video...`);
+
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
     body: JSON.stringify({
-      model: 'kling-2.6/text-to-video',
-      input: {
+      model: modelId,
+      input: isKling25Turbo ? {
+        prompt: prompt,
+        duration: '5',
+        aspect_ratio: '16:9',
+        negative_prompt: 'blur, distort, low quality',
+        cfg_scale: 0.5
+      } : {
         prompt: prompt,
         sound: false,
         aspect_ratio: '16:9',
@@ -694,7 +772,36 @@ async function generateKlingVideo(prompt: string, model: string): Promise<string
     })
   });
 
-  if (!response.ok) throw new Error(`Kling 2.6 video generation failed: ${response.status}`);
+  if (!response.ok) throw new Error(`Kling video generation failed: ${response.status}`);
+  const data = await response.json();
+
+  if ((data.code === 200 || data.success) && data.data?.taskId) {
+    return await pollJobsVideoStatus(data.data.taskId);
+  }
+  throw new Error('No task ID in response');
+}
+
+// Seedance (ByteDance) - AI video generation
+async function generateSeedanceVideo(prompt: string, model: string): Promise<string> {
+  console.log(`🎬 Generating Seedance video...`);
+
+  const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
+    body: JSON.stringify({
+      model: 'bytedance/seedance-1.5-pro',
+      input: {
+        prompt: prompt,
+        aspect_ratio: '16:9',
+        resolution: '720p',
+        duration: '8',
+        fixed_lens: false,
+        generate_audio: false
+      }
+    })
+  });
+
+  if (!response.ok) throw new Error(`Seedance video generation failed: ${response.status}`);
   const data = await response.json();
 
   if ((data.code === 200 || data.success) && data.data?.taskId) {
@@ -1068,9 +1175,13 @@ export const KIE_MODELS = {
     { id: 'google/imagen4-ultra', name: 'Imagen 4 Ultra', description: 'Ultra-realistic images', tier: 'PREMIUM' },
     { id: 'google/imagen3', name: 'Imagen 3', description: 'Google Imagen 3', tier: 'PRO' },
 
+    // Nano Banana Pro
+    { id: 'nano-banana-pro', name: 'Nano Banana Pro', description: 'High-quality 4K generation with multi-lingual support', tier: 'PREMIUM' },
+
     // Seedream
     { id: 'seedream/4.5-text-to-image', name: 'Seedream 4.5', description: 'Artistic style generation', tier: 'PRO' },
     { id: 'seedream/5-text-to-image', name: 'Seedream 5', description: 'Latest Seedream model', tier: 'PREMIUM' },
+    { id: 'bytedance/seedream-v4-text-to-image', name: 'Seedream V4', description: 'ByteDance advanced image synthesis', tier: 'PREMIUM' },
 
     // Grok
     { id: 'grok-imagine/text-to-image', name: 'Grok Imagine', description: 'xAI Grok image generation', tier: 'PREMIUM' },
@@ -1094,10 +1205,15 @@ export const KIE_MODELS = {
 
     // Wan
     { id: 'wan/2-5-text-to-video', name: 'Wan 2.5', description: 'Creative video generation', tier: 'PRO' },
+    { id: 'wan/2-6-text-to-video', name: 'Wan 2.6', description: 'Latest Wan with multi-shot support', tier: 'PREMIUM' },
 
     // Kling
     { id: 'kling-2.6/text-to-video', name: 'Kling 2.6', description: 'Realistic video generation', tier: 'PRO' },
+    { id: 'kling/v2-5-turbo-text-to-video-pro', name: 'Kling 2.5 Turbo Pro', description: 'Fast pro-quality Kling', tier: 'PREMIUM' },
     { id: 'kling-3.0/text-to-video', name: 'Kling 3.0', description: 'Latest Kling model', tier: 'PREMIUM' },
+
+    // Seedance (ByteDance)
+    { id: 'bytedance/seedance-1.5-pro', name: 'Seedance 1.5 Pro', description: 'ByteDance AI video with audio support', tier: 'PREMIUM' },
 
     // Grok
     { id: 'grok-imagine/text-to-video', name: 'Grok Video', description: 'xAI Grok video generation', tier: 'PREMIUM' },

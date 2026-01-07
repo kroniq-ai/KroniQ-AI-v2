@@ -274,7 +274,7 @@ export async function processTask(task: GenerationTask): Promise<boolean> {
                 const tier = (task.input_params?.tier as 'FREE' | 'PRO' | 'PREMIUM') || 'FREE';
                 const imageResult = await generateImageForTier(task.input_prompt, tier);
                 result.url = imageResult.url;
-                result.tokensDeducted = imageResult.tokensUsed || 5000;
+                result.tokensDeducted = 5000; // Default token cost for images
                 break;
             }
 
@@ -284,14 +284,14 @@ export async function processTask(task: GenerationTask): Promise<boolean> {
                 const videoTier = (task.input_params?.tier as 'FREE' | 'PRO' | 'PREMIUM') || 'PRO';
                 const videoResult = await generateVideoForTier(task.input_prompt, videoTier);
                 result.url = videoResult.url;
-                result.tokensDeducted = videoResult.tokensUsed || 50000;
+                result.tokensDeducted = 50000; // Default token cost for videos
                 break;
             }
 
             case 'music': {
                 // Import music service dynamically
-                const { generateMusicWithKie } = await import('./musicService');
-                const musicResult = await generateMusicWithKie(task.input_prompt);
+                const { generateMusic } = await import('./musicService');
+                const musicResult = await generateMusic({ prompt: task.input_prompt });
                 result.url = musicResult.url;
                 result.tokensDeducted = 10000;
                 break;

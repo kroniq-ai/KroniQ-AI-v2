@@ -107,28 +107,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
 
-      {/* Input Container */}
+      {/* Input Container - Modern Glassmorphism */}
       <div className="w-full">
-        <div className={`relative rounded-xl sm:rounded-2xl shadow-lg border sm:border-2 ${currentTheme === 'pure-white'
-          ? 'bg-white/95 backdrop-blur-xl border-gray-200'
-          : 'bg-white/10 backdrop-blur-xl border-white/20'
+        <div className={`relative rounded-2xl shadow-2xl border transition-all duration-300 group ${currentTheme === 'pure-white'
+            ? 'bg-white/95 backdrop-blur-xl border-gray-200 focus-within:border-blue-300 focus-within:shadow-blue-500/10'
+            : 'bg-gradient-to-r from-white/[0.08] via-white/[0.12] to-white/[0.08] backdrop-blur-2xl border-white/15 focus-within:border-teal-500/40 focus-within:shadow-[0_0_40px_rgba(20,184,166,0.15)]'
           }`}>
-          <div className="flex items-end gap-1 sm:gap-2 p-1.5 sm:p-2">
-            {/* Left Action Buttons */}
-            <div className="flex items-center gap-0.5 sm:gap-1 pb-1 sm:pb-2">
+          {/* Subtle inner glow */}
+          <div className={`absolute inset-0 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 pointer-events-none ${currentTheme === 'pure-white' ? '' : 'bg-gradient-to-r from-teal-500/5 via-transparent to-cyan-500/5'
+            }`} />
+
+          <div className="flex items-end gap-2 p-3 relative">
+            {/* Left Action Buttons - More subtle */}
+            <div className="flex items-center gap-1 pb-2">
               {/* File Attachment Button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled}
-                className={`p-2 rounded-lg transition-all ${disabled
-                    ? 'opacity-50 cursor-not-allowed'
-                    : currentTheme === 'pure-white'
-                      ? 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-                      : 'hover:bg-white/10 text-white/50 hover:text-white'
+                className={`p-2.5 rounded-xl transition-all duration-200 ${disabled
+                  ? 'opacity-30 cursor-not-allowed'
+                  : currentTheme === 'pure-white'
+                    ? 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
+                    : 'hover:bg-white/10 text-white/40 hover:text-white/70'
                   }`}
                 title="Attach files"
               >
-                <Paperclip className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Paperclip className="w-5 h-5" />
               </button>
               <input
                 type="file"
@@ -143,63 +147,64 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <button
                   onClick={handleEnhancePrompt}
                   disabled={disabled || isEnhancing || !value.trim()}
-                  className={`p-2 rounded-lg transition-all ${isEnhancing
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse'
+                  className={`p-2.5 rounded-xl transition-all duration-200 ${isEnhancing
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse shadow-lg shadow-purple-500/30'
                     : disabled || !value.trim()
                       ? currentTheme === 'pure-white'
                         ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-600 cursor-not-allowed'
+                        : 'text-white/20 cursor-not-allowed'
                       : currentTheme === 'pure-white'
-                        ? 'hover:bg-purple-100 text-purple-600'
-                        : 'hover:bg-purple-500/20 text-purple-400'
+                        ? 'hover:bg-purple-50 text-purple-500 hover:text-purple-600'
+                        : 'hover:bg-purple-500/20 text-purple-400 hover:text-purple-300'
                     }`}
                   title={isEnhancing ? 'Enhancing...' : 'Enhance prompt with AI'}
                 >
-                  <Sparkles className={`w-3 h-3 sm:w-4 sm:h-4 ${isEnhancing ? 'animate-spin' : ''}`} />
+                  <Sparkles className={`w-4 h-4 ${isEnhancing ? 'animate-spin' : ''}`} />
                 </button>
               )}
             </div>
 
-            {/* Text Input */}
+            {/* Text Input - Cleaner */}
             <textarea
               ref={inputRef}
               value={value}
               onChange={(e) => {
                 onChange(e.target.value);
                 e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                e.target.style.height = Math.min(e.target.scrollHeight, 180) + 'px';
               }}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               disabled={disabled}
-              className={`flex-1 bg-transparent px-2 sm:px-4 py-2 sm:py-3 resize-none focus:outline-none text-xs sm:text-sm font-medium ${currentTheme === 'pure-white'
+              className={`flex-1 bg-transparent px-3 py-3 resize-none focus:outline-none text-sm font-medium leading-relaxed ${currentTheme === 'pure-white'
                 ? 'text-gray-800 placeholder-gray-400'
-                : 'text-white/90 placeholder-white/40'
+                : 'text-white/95 placeholder-white/35'
                 }`}
               rows={1}
-              style={{ minHeight: '20px', maxHeight: '120px' }}
+              style={{ minHeight: '24px', maxHeight: '150px' }}
             />
 
-            {/* Send Button */}
-            <div className="flex items-center pb-1 sm:pb-2">
+            {/* Send Button - Gradient pill */}
+            <div className="flex items-center pb-2">
               <button
                 onClick={() => onSend(attachments)}
                 disabled={(!value.trim() && attachments.length === 0) || disabled}
-                className={`p-2 rounded-xl transition-all ${(value.trim() || attachments.length > 0) && !disabled
+                className={`p-3 rounded-xl transition-all duration-300 ${(value.trim() || attachments.length > 0) && !disabled
                   ? currentTheme === 'pure-white'
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                    : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105'
+                    : 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 hover:scale-105'
                   : currentTheme === 'pure-white'
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-white/10 text-white/30 cursor-not-allowed'
+                    ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                    : 'bg-white/5 text-white/20 cursor-not-allowed'
                   }`}
               >
-                <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ArrowUp className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* Disclaimer - Hidden on mobile for compactness */}
       <div className="hidden sm:flex items-center justify-center px-2">

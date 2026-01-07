@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare, Image as ImageIcon, Video, Music, Mic, Palette,
-  ArrowRight, Check, Sparkles, Zap, Star, Crown, Play,
+  ArrowRight, Check, Sparkles, Zap, Star, Crown, Play, Gem,
   Bot, Wand2, Layers, FileText,
   LucideIcon, Coins, Brain, ChevronDown,
   Quote, Lock, Globe, Headphones, Award, TrendingUp,
@@ -519,7 +519,7 @@ const AnimatedStatCard: React.FC<AnimatedStatCardProps> = ({ value, suffix, labe
 
 // Feature Card - Premium Style Matching Pricing Cards
 interface FeatureCardProps {
-  icon: LucideIcon;
+  imageSrc: string;
   title: string;
   description: string;
   gradient: string;
@@ -527,7 +527,7 @@ interface FeatureCardProps {
   delay: number;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, gradient, stats, delay }) => {
+const FeatureCard: React.FC<FeatureCardProps> = ({ imageSrc, title, description, gradient, stats, delay }) => {
   const { ref, isVisible } = useScrollReveal(0.2);
 
   return (
@@ -552,11 +552,11 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
           <span className="text-xs text-white/50 bg-white/[0.08] px-3 py-1.5 rounded-full border border-white/10 group-hover:border-white/20 group-hover:bg-white/[0.12] transition-all duration-300">{stats}</span>
         </div>
 
-        {/* Icon with hover animation */}
-        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg group-hover:shadow-xl`}
-          style={{ boxShadow: `0 0 20px ${gradient.includes('purple') ? 'rgba(168, 85, 247, 0.2)' : gradient.includes('pink') ? 'rgba(236, 72, 153, 0.2)' : gradient.includes('orange') ? 'rgba(251, 146, 60, 0.2)' : gradient.includes('green') ? 'rgba(34, 197, 94, 0.2)' : gradient.includes('blue') ? 'rgba(59, 130, 246, 0.2)' : 'rgba(139, 92, 246, 0.2)'}` }}
+        {/* AI Generated Image with hover animation */}
+        <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg group-hover:shadow-xl overflow-hidden`}
+          style={{ boxShadow: `0 0 20px rgba(20, 184, 166, 0.2)` }}
         >
-          <Icon className="w-7 h-7 text-white" />
+          <img src={imageSrc} alt={title} className="w-10 h-10 object-contain" />
         </div>
 
         {/* Title with hover glow */}
@@ -578,8 +578,9 @@ interface PricingCardProps {
 
 const PricingCard: React.FC<PricingCardProps> = ({ pack, index, onGetStarted }) => {
   const { ref, isVisible } = useScrollReveal(0.2);
-  const icons = [Sparkles, Crown, Zap];
-  const Icon = icons[index] || Sparkles;
+  // Use Stripe tier images instead of Lucide icons
+  const tierImages = ['/stripe-starter.png', '/stripe-pro.png', '/stripe-premium.png'];
+  const tierImage = tierImages[index] || '/stripe-starter.png';
   const totalTokens = getTotalTokens(pack.tokens, pack.bonusTokens);
   const isPopular = pack.popular;
 
@@ -622,14 +623,14 @@ const PricingCard: React.FC<PricingCardProps> = ({ pack, index, onGetStarted }) 
           />
         </div>
 
-        {/* Icon with hover animation */}
+        {/* Tier Image with hover animation */}
         <div
-          className={`w-14 h-14 rounded-xl mb-6 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${isPopular
-            ? 'bg-gradient-to-br from-teal-500 to-cyan-500 shadow-lg shadow-teal-500/30 group-hover:shadow-teal-400/50'
+          className={`w-14 h-14 rounded-xl mb-6 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 overflow-hidden ${isPopular
+            ? 'bg-gradient-to-br from-teal-500/20 to-cyan-500/20 shadow-lg shadow-teal-500/30 group-hover:shadow-teal-400/50'
             : 'bg-white/[0.08] border border-white/10 group-hover:bg-white/[0.12] group-hover:border-white/20'
             }`}
         >
-          <Icon className="w-7 h-7 text-white" />
+          <img src={tierImage} alt={pack.name} className="w-10 h-10 object-contain" />
         </div>
 
         {/* Plan Name with glow on popular */}
@@ -646,7 +647,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ pack, index, onGetStarted }) 
             }`}>
             ${pack.priceUsd}
           </span>
-          <span className="text-white/40 text-sm">one-time</span>
+          <span className="text-white/40 text-sm">/month</span>
         </div>
 
         {/* Token Amount - Enhanced Box */}
@@ -763,12 +764,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
   };
 
   const features = [
-    { icon: MessageSquare, title: 'Multi-Model Chat', description: 'Access 70+ AI models through one unified interface.', gradient: 'from-emerald-500 to-teal-600', stats: '70+ Models' },
-    { icon: ImageIcon, title: 'AI Image Generation', description: 'Create stunning visuals with cutting-edge AI.', gradient: 'from-emerald-500 to-teal-600', stats: 'Unlimited' },
-    { icon: Video, title: 'Video Creation', description: 'Generate videos with the latest AI technology.', gradient: 'from-emerald-500 to-teal-600', stats: '4K Quality' },
-    { icon: Music, title: 'Music Studio', description: 'Compose original music and soundtracks with AI.', gradient: 'from-emerald-500 to-teal-600', stats: 'Any Genre' },
-    { icon: Mic, title: 'Text to Speech', description: 'Natural voice synthesis with 50+ voices.', gradient: 'from-emerald-500 to-teal-600', stats: '50+ Voices' },
-    { icon: Palette, title: 'PPT Generator', description: 'Create professional presentations with AI-designed slides.', gradient: 'from-emerald-500 to-teal-600', stats: 'Templates' },
+    { imageSrc: '/studio-chat.png', title: 'Multi-Model Chat', description: 'Access 70+ AI models through one unified interface.', gradient: 'from-emerald-500 to-teal-600', stats: '70+ Models' },
+    { imageSrc: '/studio-image.png', title: 'AI Image Generation', description: 'Create stunning visuals with cutting-edge AI.', gradient: 'from-emerald-500 to-teal-600', stats: 'Unlimited' },
+    { imageSrc: '/studio-video.png', title: 'Video Creation', description: 'Generate videos with the latest AI technology.', gradient: 'from-emerald-500 to-teal-600', stats: '4K Quality' },
+    { imageSrc: '/studio-music.png', title: 'Music Studio', description: 'Compose original music and soundtracks with AI.', gradient: 'from-emerald-500 to-teal-600', stats: 'Any Genre' },
+    { imageSrc: '/studio-voice.png', title: 'Text to Speech', description: 'Natural voice synthesis with 50+ voices.', gradient: 'from-emerald-500 to-teal-600', stats: '50+ Voices' },
+    { imageSrc: '/cap-enhancer.png', title: 'PPT Generator', description: 'Create professional presentations with AI-designed slides.', gradient: 'from-emerald-500 to-teal-600', stats: 'Templates' },
   ];
 
   // AI Provider logos with styled badges - Using feature names instead of model names
@@ -826,41 +827,56 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
             <div className="grid lg:grid-cols-[1fr,1.3fr] gap-12 lg:gap-16 items-center">
               {/* Left Side: Text Content */}
               <div className={`${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}>
-                {/* Badge - Animated gradient border */}
-                <div className="inline-flex items-center px-4 py-2 mb-8 rounded-full bg-gradient-to-r from-white/5 to-white/10 border border-teal-500/20 shadow-lg shadow-teal-500/5">
-                  <span className="animate-pulse w-2 h-2 rounded-full bg-teal-400 mr-2"></span>
-                  <span className="text-white/90 text-sm font-medium">Powered by 70+ AI Models</span>
+                {/* AI Provider Logo Strip - Using SVG logos */}
+                <div className="flex items-center gap-3 mb-6 flex-wrap">
+                  {[
+                    { name: 'GPT-4o', logo: '/logos/openai.svg' },
+                    { name: 'Claude', logo: '/logos/anthropic.svg' },
+                    { name: 'Gemini', logo: '/logos/google.svg' },
+                    { name: 'Llama', logo: '/logos/meta.svg' },
+                    { name: 'DALL-E', logo: '/logos/dalle.svg' },
+                    { name: 'Sora', logo: '/logos/sora.svg' },
+                  ].map((provider) => (
+                    <div
+                      key={provider.name}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:border-teal-500/30 hover:bg-white/10 transition-all cursor-default group"
+                    >
+                      <img src={provider.logo} alt={provider.name} className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" style={{ filter: 'invert(1)' }} />
+                      <span className="text-white/50 text-xs font-medium group-hover:text-white/70 transition-colors">{provider.name}</span>
+                    </div>
+                  ))}
+                  <span className="text-white/30 text-xs">+64 more</span>
                 </div>
 
-                {/* Main Headline - Enhanced with animated gradient */}
+                {/* Main Headline - "70+ AI Models. 6 Creative Studios. One Platform." */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-bold text-white leading-[1.1] mb-2 tracking-tight">
-                  World's Most
+                  70+ AI Models.
                 </h1>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-bold text-white leading-[1.1] mb-2 tracking-tight">
-                  Powerful AIs.
+                  6 <span className="bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-cyan-400">Creative</span> Studios.
                 </h1>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-bold leading-[1.1] mb-8 tracking-tight">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4.2rem] font-bold text-white leading-[1.1] mb-3 tracking-tight">
+                  One Platform.
+                </h1>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium mb-6 tracking-tight">
                   <span
-                    className="bg-clip-text text-transparent animate-gradient-x"
+                    className="bg-clip-text text-transparent animate-gradient-x italic"
                     style={{
                       backgroundImage: 'linear-gradient(90deg, #14b8a6, #06b6d4, #10b981, #14b8a6)',
                       backgroundSize: '300% 100%',
                       animation: 'gradient-shift 4s ease infinite',
                     }}
                   >
-                    One Platform.
+                    For the price of ChatGPT.
                   </span>
-                </h1>
+                </h2>
 
-                {/* Description - Token-based pricing */}
-                <p className="text-base lg:text-lg text-white/60 mb-8 max-w-md leading-relaxed">
-                  Stop juggling multiple AI subscriptions. KroniQ gives you access to{' '}
-                  <span className="text-teal-400 font-medium">GPT-4, Claude, Gemini</span>, and 70+ AI models —
-                  starting <span className="text-white font-semibold">free with 1K tokens</span>, Pro at just{' '}
-                  <span className="text-teal-400 font-semibold">$12/month</span>.
+                {/* Killer Sub-Headline */}
+                <p className="text-base lg:text-lg text-white/60 mb-8 max-w-xl leading-relaxed">
+                  Chat, image, video, music, voice, and business intelligence — <span className="text-white font-medium">without switching tools</span>.
                 </p>
 
-                {/* CTA Buttons - Two buttons for better conversion */}
+                {/* CTA Buttons - Updated copy */}
                 <div className="flex flex-wrap gap-4 mb-6">
                   <button
                     onClick={() => { trackGetStartedClick('home_hero'); onGetStarted(); }}
@@ -881,7 +897,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                     />
                     {/* Shine sweep effect */}
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                    <span className="relative font-semibold drop-shadow-lg">Get Started Free</span>
+                    <span className="relative font-semibold drop-shadow-lg">Start Creating — Free</span>
                     <ArrowRight className="relative w-5 h-5 group-hover:translate-x-1 transition-transform drop-shadow-lg" />
                   </button>
 
@@ -889,9 +905,30 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                     onClick={() => window.location.href = '/pricing'}
                     className="group inline-flex items-center gap-2 px-6 py-4 rounded-full font-medium text-white/70 hover:text-white text-base transition-all duration-300 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20"
                   >
-                    View Pricing
-                    <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    View All Models
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
+                </div>
+
+                {/* Social proof - Enhanced */}
+                <div className="flex items-center gap-6 mb-4">
+                  <div className="flex -space-x-2">
+                    {['👨‍💻', '👩‍🎨', '👨‍🔬', '👩‍💼', '🧑‍🚀'].map((emoji, i) => (
+                      <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-white/20 flex items-center justify-center text-sm">
+                        {emoji}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-white font-semibold">80,000+</span>
+                    <span className="text-white/50 ml-1">creators</span>
+                    <span className="text-white/30 mx-2">•</span>
+                    <span className="text-white font-semibold">2M+</span>
+                    <span className="text-white/50 ml-1">generations</span>
+                    <span className="text-white/30 mx-2">•</span>
+                    <span className="text-white/50">Rated </span>
+                    <span className="text-yellow-400">4.9★</span>
+                  </div>
                 </div>
 
                 {/* Trust indicators */}
@@ -901,11 +938,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                     <span>No credit card required</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-teal-400" />
-                    <span>15,000 free tokens/day</span>
+                    <Shield className="w-4 h-4 text-teal-400" />
+                    <span>Enterprise-grade security</span>
                   </div>
                 </div>
+
+                {/* Logo compatibility disclaimer */}
+                <p className="text-[10px] text-white/20 mt-4 max-w-md">
+                  *Logos shown for compatibility reference. KroniQ is not affiliated with these providers.
+                </p>
               </div>
+
 
               {/* Right Side: Large Product Mockup - Visible on all devices, stacks on mobile */}
               <div className={`relative mt-12 lg:mt-0 ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`} style={{ animationDelay: '200ms' }}>
@@ -941,7 +984,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                     <div className="flex justify-start">
                       <div className="bg-white/5 rounded-xl rounded-bl-sm px-4 py-3 max-w-[85%] border border-white/5">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">KroniQ AI</span>
+                          <img src="/logos/anthropic.svg" alt="Claude" className="w-3 h-3" style={{ filter: 'invert(1)' }} />
+                          <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-300">Claude 3.5</span>
+                          <span className="text-[10px] text-white/30">via Smart Router</span>
                         </div>
                         <div className="text-white/70 text-sm space-y-2">
                           <p>Here are the key steps for great coffee:</p>
@@ -987,6 +1032,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
           </div>
         </section>
 
+        {/* ===== WHY KRONIQ EXISTS (Micro-Section) ===== */}
+        <section className="py-8 px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-xl md:text-2xl text-white/40 font-light italic">
+              "AI tools are fragmented. <span className="text-white/60">We unified them.</span>"
+            </p>
+          </div>
+        </section>
+
         {/* ===== LIVE STATS SECTION ===== */}
         <section className="py-12 px-4 relative overflow-hidden">
           <div className="max-w-4xl mx-auto">
@@ -1019,8 +1073,137 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
           </div>
         </section>
 
+        {/* ===== COMPETITOR COMPARISON SECTION ===== */}
+        <section className="py-20 px-6 lg:px-16 relative overflow-hidden">
+          {/* Grid pattern only on glow areas */}
+          <div className="absolute inset-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] opacity-30">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `linear-gradient(to right, rgba(20,184,166,0.15) 1px, transparent 1px),
+                                   linear-gradient(to bottom, rgba(20,184,166,0.15) 1px, transparent 1px)`,
+                  backgroundSize: '40px 40px',
+                  maskImage: 'radial-gradient(ellipse 50% 50% at 50% 50%, black 30%, transparent 70%)'
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-teal-500/10 blur-3xl" />
+            </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto relative z-10">
+            {/* Badge */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/10 border border-teal-500/20 mb-6">
+                <TrendingUp className="w-4 h-4 text-teal-400" />
+                <span className="text-teal-400 text-sm font-medium">Why Switch to KroniQ?</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
+                More Models. <span className="text-teal-400">Better Price.</span>
+              </h2>
+              <p className="text-white/60 text-lg max-w-2xl mx-auto">
+                See how KroniQ compares to other AI aggregators
+              </p>
+            </div>
+
+            {/* Comparison Table */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl overflow-hidden">
+              {/* Header Row */}
+              <div className="grid grid-cols-6 border-b border-white/10 bg-white/5">
+                <div className="p-4 text-white/50 text-sm font-medium">Platform</div>
+                <div className="p-4 text-white/50 text-sm font-medium text-center">AI Models</div>
+                <div className="p-4 text-white/50 text-sm font-medium text-center">Free Tier</div>
+                <div className="p-4 text-white/50 text-sm font-medium text-center">Pro Price</div>
+                <div className="p-4 text-white/50 text-sm font-medium text-center">Video Gen</div>
+                <div className="p-4 text-white/50 text-sm font-medium text-center">Music Gen</div>
+              </div>
+
+              {/* KroniQ Row - Highlighted */}
+              <div className="grid grid-cols-6 border-b border-teal-500/30 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 relative">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-teal-400 to-cyan-400" />
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">K</div>
+                  <div>
+                    <div className="text-white font-semibold">KroniQ AI</div>
+                    <div className="text-teal-400 text-xs">You are here ⭐</div>
+                  </div>
+                </div>
+                <div className="p-4 text-center text-white font-bold">70+</div>
+                <div className="p-4 text-center"><span className="px-2 py-1 rounded-full bg-teal-500/20 text-teal-400 text-sm">15K/day</span></div>
+                <div className="p-4 text-center text-white font-bold">$12/mo</div>
+                <div className="p-4 text-center"><Check className="w-5 h-5 text-teal-400 mx-auto" /></div>
+                <div className="p-4 text-center"><Check className="w-5 h-5 text-teal-400 mx-auto" /></div>
+              </div>
+
+              {/* Magai Row */}
+              <div className="grid grid-cols-6 border-b border-white/10 hover:bg-white/5 transition-colors">
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-sm">M</div>
+                  <div className="text-white/80">Magai</div>
+                </div>
+                <div className="p-4 text-center text-white/70">50+</div>
+                <div className="p-4 text-center"><span className="px-2 py-1 rounded-full bg-white/10 text-white/50 text-sm">Limited</span></div>
+                <div className="p-4 text-center text-white/70">$19/mo</div>
+                <div className="p-4 text-center text-white/30">—</div>
+                <div className="p-4 text-center text-white/30">—</div>
+              </div>
+
+              {/* Abacus Row */}
+              <div className="grid grid-cols-6 border-b border-white/10 hover:bg-white/5 transition-colors">
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-sm">A</div>
+                  <div className="text-white/80">Abacus AI</div>
+                </div>
+                <div className="p-4 text-center text-white/70">20+</div>
+                <div className="p-4 text-center"><span className="px-2 py-1 rounded-full bg-white/10 text-white/50 text-sm">Trial</span></div>
+                <div className="p-4 text-center text-white/70">$99/mo</div>
+                <div className="p-4 text-center"><Check className="w-5 h-5 text-white/30 mx-auto" /></div>
+                <div className="p-4 text-center text-white/30">—</div>
+              </div>
+
+              {/* AI Fiesta Row */}
+              <div className="grid grid-cols-6 border-b border-white/10 hover:bg-white/5 transition-colors">
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 font-bold text-sm">F</div>
+                  <div className="text-white/80">AI Fiesta</div>
+                </div>
+                <div className="p-4 text-center text-white/70">40+</div>
+                <div className="p-4 text-center"><span className="px-2 py-1 rounded-full bg-white/10 text-white/50 text-sm">5 msg/day</span></div>
+                <div className="p-4 text-center text-white/70">$15/mo</div>
+                <div className="p-4 text-center"><Check className="w-5 h-5 text-white/30 mx-auto" /></div>
+                <div className="p-4 text-center text-white/30">—</div>
+              </div>
+
+              {/* Monica Row */}
+              <div className="grid grid-cols-6 hover:bg-white/5 transition-colors">
+                <div className="p-4 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400 font-bold text-sm">M</div>
+                  <div className="text-white/80">Monica</div>
+                </div>
+                <div className="p-4 text-center text-white/70">10+</div>
+                <div className="p-4 text-center"><span className="px-2 py-1 rounded-full bg-white/10 text-white/50 text-sm">30 msg/day</span></div>
+                <div className="p-4 text-center text-white/70">$9/mo</div>
+                <div className="p-4 text-center text-white/30">—</div>
+                <div className="p-4 text-center text-white/30">—</div>
+              </div>
+            </div>
+
+            {/* Bottom CTA */}
+            <div className="text-center mt-10">
+              <button
+                onClick={() => { trackEvent({ eventType: 'button_click', eventName: 'comparison_cta', eventData: {}, pageName: 'home' }); onGetStarted(); }}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold hover:from-teal-400 hover:to-cyan-400 transition-all hover:scale-105 shadow-lg shadow-teal-500/30"
+              >
+                Start Free — 15K Tokens/Day
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* ===== FEATURE: SMART ROUTER ===== */}
         <section className="py-20 px-4 relative overflow-hidden">
+
           {/* Glowing orbs */}
           <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-emerald-500/8 rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-teal-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -1218,9 +1401,18 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                       <span className="text-emerald-400 text-xs">Generating with AI...</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="aspect-square rounded-lg bg-gradient-to-br from-emerald-500/30 to-teal-500/30 flex items-center justify-center">
-                          <ImageIcon className="w-6 h-6 text-white/40" />
+                      {[
+                        { src: '/ai-sample-1.png', alt: 'Futuristic city with flying cars' },
+                        { src: '/ai-sample-2.png', alt: 'Creative flyer design' },
+                        { src: '/ai-sample-3.png', alt: 'Abstract colorful art' },
+                        { src: '/ai-sample-4.png', alt: 'Fantasy landscape' }
+                      ].map((img, i) => (
+                        <div key={i} className="aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+                          <img
+                            src={img.src}
+                            alt={img.alt}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          />
                         </div>
                       ))}
                     </div>
@@ -1329,7 +1521,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                 { name: 'Music Studio', icon: '🎵', desc: 'Compose original music and soundtracks', models: '3+ Models' },
                 { name: 'Voice Studio', icon: '🎙️', desc: 'Natural text-to-speech, 50+ voices', models: '50+ Voices' },
                 { name: 'PPT Studio', icon: '📊', desc: 'AI-designed slides and templates', models: 'Templates' },
-              ].map((studio, idx) => (
+              ].map((studio) => (
                 <div
                   key={studio.name}
                   className="group relative transition-all duration-500 hover:-translate-y-2"
@@ -1373,31 +1565,28 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { icon: Brain, title: 'Smart Router', description: 'AI automatically routes to the best model for each task.' },
-                { icon: Zap, title: 'Lightning Fast', description: 'Optimized infrastructure with sub-second responses.' },
-                { icon: Shield, title: 'Secure & Private', description: 'Enterprise-grade encryption. You own everything.' },
-                { icon: Wand2, title: 'Prompt Enhancer', description: 'One-click AI prompt enhancement.' },
-                { icon: Layers, title: 'Project Storage', description: 'All creations auto-saved and organized.' },
-                { icon: Globe, title: 'Multi-language', description: 'Create in 100+ languages.' },
-              ].map((cap, idx) => {
-                const Icon = cap.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="glass-panel rounded-xl p-5 border border-white/10 hover:border-emerald-500/30 transition-all duration-300 group cursor-pointer hover:shadow-lg hover:shadow-emerald-500/10"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform border border-emerald-500/20">
-                        <Icon className="w-5 h-5 text-emerald-400" />
-                      </div>
-                      <div>
-                        <h4 className="text-base font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">{cap.title}</h4>
-                        <p className="text-white/60 text-sm leading-relaxed">{cap.description}</p>
-                      </div>
+                { imageSrc: '/cap-smart-router.png', title: 'Smart Router', description: 'AI automatically routes to the best model for each task.' },
+                { imageSrc: '/cap-lightning.png', title: 'Lightning Fast', description: 'Optimized infrastructure with sub-second responses.' },
+                { imageSrc: '/cap-security.png', title: 'Secure & Private', description: 'Enterprise-grade encryption. You own everything.' },
+                { imageSrc: '/cap-enhancer.png', title: 'Prompt Enhancer', description: 'One-click AI prompt enhancement.' },
+                { imageSrc: '/cap-storage.png', title: 'Project Storage', description: 'All creations auto-saved and organized.' },
+                { imageSrc: '/cap-language.png', title: 'Multi-language', description: 'Create in 100+ languages.' },
+              ].map((cap, idx) => (
+                <div
+                  key={idx}
+                  className="glass-panel rounded-xl p-5 border border-white/10 hover:border-emerald-500/30 transition-all duration-300 group cursor-pointer hover:shadow-lg hover:shadow-emerald-500/10"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform border border-emerald-500/20 overflow-hidden">
+                      <img src={cap.imageSrc} alt={cap.title} className="w-8 h-8 object-contain" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">{cap.title}</h4>
+                      <p className="text-white/60 text-sm leading-relaxed">{cap.description}</p>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -1569,7 +1758,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
 
             {/* Comparison Table - Horizontally scrollable on mobile */}
             <div className="overflow-x-auto -mx-6 px-6 lg:mx-0 lg:px-0">
-              <div className="min-w-[600px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
+              <div className="min-w-[700px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-sm">
                 {/* Header Row */}
                 <div className="grid grid-cols-5 gap-0 border-b border-white/10">
                   <div className="p-3 sm:p-4 bg-white/5">
@@ -1588,26 +1777,26 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                     <span className="text-white/60 text-xs sm:text-sm">ChatGPT</span>
                   </div>
                   <div className="p-3 sm:p-4 border-l border-white/10">
-                    <span className="text-white/60 text-xs sm:text-sm">Claude</span>
+                    <span className="text-white/60 text-xs sm:text-sm">Lovable</span>
                   </div>
                   <div className="p-3 sm:p-4 border-l border-white/10">
-                    <span className="text-white/60 text-xs sm:text-sm">Gemini</span>
+                    <span className="text-white/60 text-xs sm:text-sm">AI Studio</span>
                   </div>
                 </div>
 
                 {/* Comparison Rows */}
                 {[
-                  { feature: 'AI Chat Models', kroniq: '70+ Models', chatgpt: '4 Models', claude: '4 Models', gemini: '5 Models' },
-                  { feature: 'Image Generation', kroniq: '✓ 10+ (DALL-E, Flux, Imagen)', chatgpt: '✓ DALL-E 3 only', claude: '✗ None', gemini: '✓ Imagen only' },
-                  { feature: 'Video Generation', kroniq: '✓ Sora, Veo 3, Kling', chatgpt: '✓ Sora (Pro only)', claude: '✗ None', gemini: '✓ Veo (limited)' },
-                  { feature: 'Music & Audio', kroniq: '✓ Suno AI, Lyria', chatgpt: '✗ None', claude: '✗ None', gemini: '✗ None' },
-                  { feature: 'Text to Speech', kroniq: '✓ ElevenLabs 50+ Voices', chatgpt: '✓ 5 Voices', claude: '✗ None', gemini: '✗ None' },
-                  { feature: 'PPT/Slides Creation', kroniq: '✓ AI Slide Generator', chatgpt: '✗ None', claude: '✗ None', gemini: '✗ None' },
-                  { feature: 'File/Image Upload', kroniq: '✓ All formats', chatgpt: '✓ Paid only', claude: '✓ Yes', gemini: '✓ Yes' },
-                  { feature: 'Web Search', kroniq: '✓ Real-time', chatgpt: '✓ Paid only', claude: '✗ None', gemini: '✓ Yes' },
-                  { feature: 'Smart Model Routing', kroniq: '✓ Auto-selects best', chatgpt: '✗ Manual', claude: '✗ Manual', gemini: '✗ Manual' },
-                  { feature: 'Free Tier', kroniq: '✓ 15K tokens/month', chatgpt: '✓ Limited GPT-4o mini', claude: '✓ Limited Haiku', gemini: '✓ Flash only' },
-                  { feature: 'Pro Price', kroniq: '$10/mo', chatgpt: '$20/mo', claude: '$20/mo', gemini: '$20/mo' },
+                  { feature: 'AI Chat Models', kroniq: '70+ Models', chatgpt: '4 Models', lovable: '3 Models', aistudio: '5 Models' },
+                  { feature: 'Image Generation', kroniq: '✓ 10+ (DALL-E, Flux, Imagen)', chatgpt: '✓ DALL-E 3 only', lovable: '✗ None', aistudio: '✓ Imagen only' },
+                  { feature: 'Video Generation', kroniq: '✓ Sora, Veo 3, Kling', chatgpt: '✓ Sora (Pro only)', lovable: '✗ None', aistudio: '✓ Veo (limited)' },
+                  { feature: 'Music & Audio', kroniq: '✓ Suno AI, Lyria', chatgpt: '✗ None', lovable: '✗ None', aistudio: '✗ None' },
+                  { feature: 'Text to Speech', kroniq: '✓ ElevenLabs 50+ Voices', chatgpt: '✓ 5 Voices', lovable: '✗ None', aistudio: '✓ Limited' },
+                  { feature: 'PPT/Slides Creation', kroniq: '✓ AI Slide Generator', chatgpt: '✗ None', lovable: '✗ None', aistudio: '✗ None' },
+                  { feature: 'App Building', kroniq: '✓ Code + Design', chatgpt: '✓ Code only', lovable: '✓ Primary focus', aistudio: '✗ None' },
+                  { feature: 'Web Search', kroniq: '✓ Real-time', chatgpt: '✓ Paid only', lovable: '✗ None', aistudio: '✓ Yes' },
+                  { feature: 'Smart Model Routing', kroniq: '✓ Auto-selects best', chatgpt: '✗ Manual', lovable: '✗ Manual', aistudio: '✗ Manual' },
+                  { feature: 'Free Tier', kroniq: '✓ 15K tokens/month', chatgpt: '✓ Limited GPT-4o', lovable: '✓ Limited builds', aistudio: '✓ Limited' },
+                  { feature: 'Pro Price', kroniq: '$12/mo', chatgpt: '$20/mo', lovable: '$20/mo', aistudio: 'Free (limited)' },
                 ].map((row, idx) => (
                   <div key={row.feature} className={`grid grid-cols-5 gap-0 ${idx % 2 === 0 ? 'bg-white/[0.02]' : ''} hover:bg-white/[0.05] transition-colors`}>
                     <div className="p-3 sm:p-4 text-white/70 text-xs sm:text-sm font-medium">{row.feature}</div>
@@ -1615,8 +1804,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
                       <span className="text-emerald-400 font-semibold text-xs sm:text-sm">{row.kroniq}</span>
                     </div>
                     <div className="p-3 sm:p-4 border-l border-white/10 text-white/50 text-xs sm:text-sm">{row.chatgpt}</div>
-                    <div className="p-3 sm:p-4 border-l border-white/10 text-white/50 text-xs sm:text-sm">{row.claude}</div>
-                    <div className="p-3 sm:p-4 border-l border-white/10 text-white/50 text-xs sm:text-sm">{row.gemini}</div>
+                    <div className="p-3 sm:p-4 border-l border-white/10 text-white/50 text-xs sm:text-sm">{row.lovable}</div>
+                    <div className="p-3 sm:p-4 border-l border-white/10 text-white/50 text-xs sm:text-sm">{row.aistudio}</div>
                   </div>
                 ))}
               </div>
@@ -1782,7 +1971,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((feature, idx) => (
-                <FeatureCard key={feature.title} icon={feature.icon} title={feature.title} description={feature.description} gradient={feature.gradient} stats={feature.stats} delay={idx * 100} />
+                <FeatureCard key={feature.title} imageSrc={feature.imageSrc} title={feature.title} description={feature.description} gradient={feature.gradient} stats={feature.stats} delay={idx * 100} />
               ))}
             </div>
           </div>
@@ -1958,11 +2147,16 @@ export const HomePage: React.FC<HomePageProps> = ({ onGetStarted }) => {
               {/* Email */}
               <a
                 href="mailto:support@kroniqai.com"
-                className="flex items-center gap-2 text-white/60 hover:text-white/80 transition-colors"
+                className="flex items-center gap-2 text-white/60 hover:text-white/80 transition-colors mb-4"
               >
                 <ArrowRight className="w-4 h-4 rotate-[-45deg]" />
                 <span>support@kroniqai.com</span>
               </a>
+
+              {/* Investor Signal - Quiet but Strong */}
+              <p className="text-sm text-white/30 italic">
+                Built by builders. Designed for serious execution.
+              </p>
             </div>
 
             {/* Bottom bar */}

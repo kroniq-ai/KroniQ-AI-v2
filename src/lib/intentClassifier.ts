@@ -110,7 +110,13 @@ const MUSIC_PHRASES = [
 const IMAGE_PHRASES = [
   'generate image', 'create image', 'make image', 'generate picture',
   'create picture', 'make picture', 'image of', 'picture of',
-  'draw me', 'show me', 'visualize', 'create visual', 'generate visual'
+  'draw me', 'show me', 'visualize', 'create visual', 'generate visual',
+  'make a image', 'create a image', 'generate a image',
+  'make an image', 'create an image', 'generate an image',
+  'produce image', 'design image', 'draw image',
+  'make me an image', 'create me an image', 'give me an image',
+  'i want an image', 'i need an image', 'can you create an image',
+  'can you make an image', 'please generate an image'
 ];
 
 /**

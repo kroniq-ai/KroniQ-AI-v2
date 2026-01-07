@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Coins, Zap, Crown, Sparkles, TrendingUp } from 'lucide-react';
+import { Coins, Zap, Crown, Sparkles, TrendingUp, Star, Gem } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { supabase, getUserProfile } from '../../lib/supabaseClient';
@@ -19,18 +19,18 @@ const TIER_CONFIG = {
   },
   starter: {
     label: 'Starter',
-    icon: Sparkles,
-    iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600',
+    icon: Star,
+    iconBg: 'bg-gradient-to-br from-teal-400 to-cyan-500',
   },
   pro: {
     label: 'Pro',
-    icon: TrendingUp,
-    iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
+    icon: Gem,
+    iconBg: 'bg-gradient-to-br from-purple-500 to-pink-500',
   },
   premium: {
     label: 'Premium',
     icon: Crown,
-    iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
+    iconBg: 'bg-gradient-to-br from-amber-400 to-yellow-500',
   },
 };
 

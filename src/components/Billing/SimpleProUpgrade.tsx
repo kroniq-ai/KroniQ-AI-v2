@@ -23,7 +23,7 @@ export const SimpleProUpgrade: React.FC = () => {
       const { data } = await supabase
         .from('profiles')
         .select('is_paid, is_premium, paid_tokens_balance')
-        .eq('id', user.uid)
+        .eq('id', user.id)
         .maybeSingle();
 
       setIsPro(data?.is_paid || data?.is_premium || (data?.paid_tokens_balance ?? 0) > 0);
@@ -38,7 +38,7 @@ export const SimpleProUpgrade: React.FC = () => {
     setIsUpgrading(true);
 
     try {
-      console.log('🚀 Upgrading user to Pro:', user.uid);
+      console.log('🚀 Upgrading user to Pro:', user.id);
 
       const { error } = await supabase
         .from('profiles')
@@ -47,24 +47,24 @@ export const SimpleProUpgrade: React.FC = () => {
           is_premium: true,
           current_tier: 'premium',
           paid_tokens_balance: 1000000,
-          tokens_balance: supabase.rpc('get_current_tokens', { p_user_id: user.uid }).then(r => (r.data || 0) + 1000000),
+          tokens_balance: supabase.rpc('get_current_tokens', { p_user_id: user.id }).then(r => (r.data || 0) + 1000000),
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.uid);
+        .eq('id', user.id);
 
       if (error) throw error;
 
       console.log('✅ User upgraded to Pro successfully');
 
       setIsPro(true);
-      showToast('Successfully upgraded to Pro! You now have 1,000,000 tokens and unlimited generations.', 'success');
+      showToast('success', 'Upgraded to Pro!', 'You now have 1,000,000 tokens and unlimited generations.');
 
       setTimeout(() => {
         window.location.reload();
       }, 1500);
     } catch (error) {
       console.error('❌ Error upgrading to Pro:', error);
-      showToast('Failed to upgrade. Please try again.', 'error');
+      showToast('error', 'Upgrade Failed', 'Please try again.');
     } finally {
       setIsUpgrading(false);
     }

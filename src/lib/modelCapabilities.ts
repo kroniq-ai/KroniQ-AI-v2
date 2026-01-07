@@ -10,7 +10,7 @@
 
 // ===== TIER DEFINITIONS =====
 
-export type UserTier = 'FREE' | 'STARTER' | 'PRO' | 'PREMIUM';
+export type UserTier = 'FREE' | 'STARTER_2' | 'STARTER' | 'PRO' | 'PREMIUM';
 
 // ===== WARNING THRESHOLDS =====
 
@@ -21,40 +21,70 @@ export const CRITICAL_THRESHOLD = 0.02; // Critical warning at 2%
 
 export const TIER_LIMITS = {
     FREE: {
-        tokens: 15000,
+        chatMessages: 50,
         images: 2,
         videos: 0,
         music: 0,
-        tts: 10,
+        tts: 4,
         ppt: 0,
-        tokensPerDay: 15000,
+        budgetChat: 0.15,
+        budgetImages: 0.05,
+        budgetVideos: 0,
+        budgetMusic: 0,
+        budgetPpt: 0,
+    },
+    STARTER_2: {
+        // Hidden referral tier - FREE models only
+        chatMessages: 25,
+        images: 10,
+        videos: 3,
+        music: 0,
+        tts: 25,
+        ppt: 0,
+        budgetChat: 0,
+        budgetImages: 0,
+        budgetVideos: 0,
+        budgetMusic: 0,
+        budgetPpt: 0,
     },
     STARTER: {
-        tokens: 100000,
-        images: 30,
-        videos: 4,
-        music: 10,
-        tts: 50,
-        ppt: 10,
-        tokensPerDay: 100000,
+        chatMessages: 45,
+        images: 14,
+        videos: 9,
+        music: 9,
+        tts: 5,
+        ppt: 5,
+        budgetChat: 0.70,
+        budgetImages: 0.55,
+        budgetVideos: 0.70,
+        budgetMusic: 0.43,
+        budgetPpt: 0.25,
     },
     PRO: {
-        tokens: 220000,
-        images: 50,
-        videos: 10,
-        music: 25,
-        tts: 120,
-        ppt: 25,
-        tokensPerDay: 220000,
+        chatMessages: 110,
+        images: 33,
+        videos: 21,
+        music: 20,
+        tts: 12,
+        ppt: 12,
+        budgetChat: 1.68,
+        budgetImages: 1.32,
+        budgetVideos: 1.68,
+        budgetMusic: 1.02,
+        budgetPpt: 0.60,
     },
     PREMIUM: {
-        tokens: 560000,
-        images: 80,
-        videos: 15,
-        music: 35,
-        tts: 200,
-        ppt: 35,
-        tokensPerDay: 560000,
+        chatMessages: 220,
+        images: 66,
+        videos: 42,
+        music: 41,
+        tts: 25,
+        ppt: 20,
+        budgetChat: 3.36,
+        budgetImages: 2.64,
+        budgetVideos: 3.36,
+        budgetMusic: 2.04,
+        budgetPpt: 1.20,
     },
 } as const;
 
@@ -387,6 +417,11 @@ export function getBestChatModel(
             medium: 'google/gemini-2.0-flash-exp:free',
             complex: 'google/gemini-2.0-flash-exp:free',
         },
+        STARTER_2: {
+            simple: 'deepseek/deepseek-chat:free',
+            medium: 'deepseek/deepseek-chat:free',
+            complex: 'deepseek/deepseek-chat:free',
+        },
         STARTER: {
             simple: 'google/gemini-2.0-flash-exp:free',
             medium: 'deepseek/deepseek-chat:free',
@@ -408,39 +443,109 @@ export function getBestChatModel(
 }
 
 /**
- * Get the best video model for a tier
+ * Get the best video model for a tier with smart routing
+ * Simple prompts use faster/cheaper models, complex prompts use premium models
  */
-export function getBestVideoModel(tier: UserTier): VideoCapability | null {
+export function getBestVideoModel(
+    tier: UserTier,
+    complexity: TaskComplexity = 'medium'
+): VideoCapability | null {
     if (tier === 'FREE') return null; // No video for free
 
-    switch (tier) {
-        case 'STARTER':
-            return VIDEO_MODELS['veo3_fast'];
-        case 'PRO':
-            return VIDEO_MODELS['veo3'];
-        case 'PREMIUM':
-            return VIDEO_MODELS['sora-2'];
-        default:
-            return null;
-    }
+    // Smart routing: use cheaper models for simple requests
+    const videoMatrix: Record<UserTier, Record<TaskComplexity, string | null>> = {
+        FREE: { simple: null, medium: null, complex: null },
+        STARTER_2: { simple: null, medium: null, complex: null }, // No video for referral tier
+        STARTER: {
+            simple: 'veo3_fast',
+            medium: 'veo3_fast',
+            complex: 'veo3_fast',
+        },
+        PRO: {
+            simple: 'veo3_fast',
+            medium: 'veo3',
+            complex: 'kling-2.6',
+        },
+        PREMIUM: {
+            simple: 'veo3',
+            medium: 'kling-2.6',
+            complex: 'sora-2',
+        },
+    };
+
+    const modelId = videoMatrix[tier]?.[complexity];
+    return modelId ? VIDEO_MODELS[modelId] : null;
 }
 
 /**
- * Get the best image model for a tier
+ * Get the best image model for a tier with smart routing
  */
-export function getBestImageModel(tier: UserTier): ImageCapability {
-    switch (tier) {
-        case 'FREE':
-            return IMAGE_MODELS['gpt-image-1'];
-        case 'STARTER':
-            return IMAGE_MODELS['flux-kontext-pro'];
-        case 'PRO':
-            return IMAGE_MODELS['flux-kontext-max'];
-        case 'PREMIUM':
-            return IMAGE_MODELS['imagen-4-ultra'];
-        default:
-            return IMAGE_MODELS['gpt-image-1'];
-    }
+export function getBestImageModel(
+    tier: UserTier,
+    complexity: TaskComplexity = 'medium'
+): ImageCapability {
+    // Smart routing for images
+    const imageMatrix: Record<UserTier, Record<TaskComplexity, string>> = {
+        FREE: {
+            simple: 'gpt-image-1',
+            medium: 'gpt-image-1',
+            complex: 'gpt-image-1',
+        },
+        STARTER_2: {
+            simple: 'gpt-image-1',
+            medium: 'gpt-image-1',
+            complex: 'gpt-image-1',
+        },
+        STARTER: {
+            simple: 'gpt-image-1',
+            medium: 'flux-kontext-pro',
+            complex: 'flux-kontext-pro',
+        },
+        PRO: {
+            simple: 'gpt-image-1',
+            medium: 'flux-kontext-pro',
+            complex: 'flux-kontext-max',
+        },
+        PREMIUM: {
+            simple: 'flux-kontext-pro',
+            medium: 'flux-kontext-max',
+            complex: 'imagen-4-ultra',
+        },
+    };
+
+    const modelId = imageMatrix[tier]?.[complexity] || 'gpt-image-1';
+    return IMAGE_MODELS[modelId] || IMAGE_MODELS['gpt-image-1'];
+}
+
+/**
+ * Determine task complexity from prompt
+ */
+export function analyzePromptComplexity(prompt: string): TaskComplexity {
+    const lowercasePrompt = prompt.toLowerCase();
+
+    // Complex indicators
+    const complexKeywords = [
+        'detailed', 'realistic', 'professional', 'high quality', 'cinematic',
+        'photorealistic', '4k', 'hdr', 'intricate', 'complex', 'elaborate',
+        'specific style', 'exact', 'precise', 'advanced', 'creative'
+    ];
+
+    // Simple indicators
+    const simpleKeywords = [
+        'simple', 'basic', 'quick', 'fast', 'rough', 'sketch', 'draft',
+        'just', 'only', 'small', 'tiny', 'brief', 'short'
+    ];
+
+    const hasComplex = complexKeywords.some(kw => lowercasePrompt.includes(kw));
+    const hasSimple = simpleKeywords.some(kw => lowercasePrompt.includes(kw));
+
+    // Length also indicates complexity
+    const isLongPrompt = prompt.length > 200;
+    const isShortPrompt = prompt.length < 50;
+
+    if (hasComplex || isLongPrompt) return 'complex';
+    if (hasSimple || isShortPrompt) return 'simple';
+    return 'medium';
 }
 
 // ===== LIMIT CHECKING =====
@@ -513,11 +618,25 @@ export function getModelCapabilitiesPrompt(tier: UserTier): string {
     const imageModel = getBestImageModel(tier);
     const limits = TIER_LIMITS[tier];
 
-    return `
-## USER'S TIER: ${tier}
+    const tierPricing: Record<UserTier, string> = {
+        FREE: '$0/month',
+        STARTER_2: '$0/month (referral)',
+        STARTER: '$5/month',
+        PRO: '$12/month',
+        PREMIUM: '$24/month',
+    };
 
-### Available Limits (Monthly):
-- Tokens: ${limits.tokens.toLocaleString()}
+    return `
+## USER'S TIER: ${tier} (${tierPricing[tier]})
+
+### Available Subscription Plans:
+- FREE ($0): 50 chat, 2 images, 0 videos, 0 music, 4 TTS, 0 PPT
+- STARTER ($5): 45 chat, 14 images, 9 videos, 9 music, 5 TTS, 5 PPT
+- PRO ($12, MOST POPULAR): 110 chat, 33 images, 21 videos, 20 music, 12 TTS, 12 PPT
+- PREMIUM ($24): 220 chat, 66 images, 42 videos, 41 music, 25 TTS, 20 PPT
+
+### User's Current Monthly Limits:
+- Chat Messages: ${limits.chatMessages}
 - Images: ${limits.images}
 - Videos: ${limits.videos}
 - Music: ${limits.music}
@@ -530,12 +649,17 @@ ${videoModel ? `
 - Resolution: ${videoModel.resolution}
 - If user requests longer video, inform them of the limit
 - Image-to-video: ${videoModel.supportsImageToVideo ? 'supported' : 'not supported'}
-` : '- Not available for this tier'}
+` : '- Not available for this tier. Suggest upgrading to STARTER or higher.'}
 
 ### Image Generation Rules:
 - Maximum size: ${imageModel.maxSize}
 - Aspect ratios: ${imageModel.aspectRatios.join(', ')}
 - Editing/inpainting: ${imageModel.supportsEdit ? 'supported' : 'not supported'}
+
+### Smart Model Routing:
+- KroniQ uses smart routing to optimize model selection based on task complexity
+- Simple tasks use faster/cheaper models, complex tasks use premium models
+- This maximizes user value within their budget allocation
 
 ### Warning Thresholds:
 - Show warning when user has <5% of any limit remaining

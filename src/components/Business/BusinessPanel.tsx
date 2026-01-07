@@ -112,12 +112,12 @@ const UpgradePromptBusiness: React.FC<{ isDark: boolean }> = ({ isDark }) => (
                 We're building a powerful AI workspace for strategic planning, market analysis, and business growth.
             </p>
 
-            {/* Feature preview cards with hover glow */}
+            {/* Feature preview cards with hover glow and teasers */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
                 {[
-                    { icon: Target, label: 'Strategic Planning', glow: 'emerald' },
-                    { icon: BarChart3, label: 'Market Analysis', glow: 'teal' },
-                    { icon: TrendingUp, label: 'Growth Strategy', glow: 'cyan' },
+                    { icon: Target, label: 'Strategic Planning', glow: 'emerald', teaser: 'AI breaks down your vision into OKRs' },
+                    { icon: BarChart3, label: 'Market Analysis', glow: 'teal', teaser: 'Auto-track 10 competitors in real-time' },
+                    { icon: TrendingUp, label: 'Growth Strategy', glow: 'cyan', teaser: 'Get weekly AI growth recommendations' },
                 ].map((item, idx) => (
                     <div
                         key={idx}
@@ -146,21 +146,48 @@ const UpgradePromptBusiness: React.FC<{ isDark: boolean }> = ({ isDark }) => (
                         <div className={`font-semibold text-xs ${isDark ? 'text-white/90' : 'text-gray-800'}`}>
                             {item.label}
                         </div>
+                        {/* Teaser on hover */}
+                        <div className={`
+                            mt-2 text-[10px] leading-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                            ${isDark ? 'text-emerald-400/80' : 'text-emerald-600'}
+                        `}>
+                            {item.teaser}
+                        </div>
                     </div>
                 ))}
             </div>
 
-            {/* Newsletter signup teaser */}
+            {/* Outcome metric - Founders buy time, not features */}
             <div className={`
-                p-3 sm:p-4 rounded-2xl border text-xs sm:text-sm
+                p-4 rounded-2xl mb-4 border
                 ${isDark
-                    ? 'bg-white/5 border-white/10 text-white/60'
-                    : 'bg-gray-50/80 border-gray-200 text-gray-500'}
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                    : 'bg-emerald-50 border-emerald-200'}
             `}>
-                <span className="font-medium">🚀 Launching Q1 2026</span>
-                <span className="hidden sm:inline mx-2">•</span>
-                <br className="sm:hidden" />
-                <span className="text-xs sm:text-sm">Stay tuned for early access!</span>
+                <div className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    ⏱️ Save 10+ hours/week with AI execution
+                </div>
+            </div>
+
+            {/* Timeline + Waitlist CTA */}
+            <div className={`
+                p-4 rounded-2xl border text-xs sm:text-sm
+                ${isDark
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-gray-50/80 border-gray-200'}
+            `}>
+                <div className={`font-medium mb-3 ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
+                    🗓️ Early access rolling out Q1 2026
+                </div>
+                <button className={`
+                    w-full py-3 px-4 rounded-xl font-semibold text-sm
+                    bg-gradient-to-r from-emerald-500 to-teal-500 text-white
+                    hover:from-emerald-400 hover:to-teal-400 transition-all
+                    hover:scale-[1.02] active:scale-[0.98]
+                    shadow-lg shadow-emerald-500/30
+                `}>
+                    Founders Get Early Access — 3 Months Free
+                </button>
             </div>
         </div>
     </div>

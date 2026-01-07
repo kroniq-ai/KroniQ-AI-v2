@@ -79,13 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Password should be at least 6 characters');
     }
 
-    const { user, error } = await signUpWithEmail(email, password, displayName);
-    if (error) throw error;
+    await signUpWithEmail(email, password, displayName);
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabaseGoogleSignIn();
-    if (error) throw error;
+    await supabaseGoogleSignIn();
   };
 
   const signIn = async (email: string, password: string) => {
@@ -93,8 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Email and password are required');
     }
 
-    const { user, error } = await signInWithEmail(email, password);
-    if (error) throw error;
+    await signInWithEmail(email, password);
   };
 
   const signOut = async () => {

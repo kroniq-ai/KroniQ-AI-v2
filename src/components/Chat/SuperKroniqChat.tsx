@@ -88,7 +88,7 @@ interface SuperKroniqChatProps {
     onBack?: () => void;
 }
 
-type StatusPhase = 'idle' | 'thinking' | 'researching' | 'planning' | 'generating' | 'refining' | 'complete';
+type StatusPhase = 'idle' | 'thinking' | 'researching' | 'planning' | 'generating' | 'refining' | 'complete' | 'enhancing';
 
 // Free tier models - fast and efficient models for free users
 const FREE_TIER_MODELS = [
@@ -112,7 +112,8 @@ const STATUS_MESSAGES: Record<StatusPhase, string> = {
     planning: 'Finding the best model to answer...',
     generating: 'Generating response...',
     refining: 'Refining response...',
-    complete: 'Complete'
+    complete: 'Complete',
+    enhancing: 'Enhancing prompt...'
 };
 
 const TASK_STATUS_MESSAGES: Record<TaskType, Record<string, string>> = {
@@ -168,6 +169,80 @@ const getTaskTypeIcon = (type: TaskType) => {
         default: return <MessageSquare className="w-4 h-4" />;
     }
 };
+
+/**
+ * Local pre-classification for intent detection
+ * Uses regex patterns to detect image/video/ppt/tts/music intent
+ * Returns the detected TaskType or null if no strong match found
+ */
+function preClassifyIntentLocal(message: string): TaskType | null {
+    const lower = message.toLowerCase().trim();
+
+    // Image generation patterns - comprehensive synonyms
+    const imagePatterns = [
+        /\b(create|make|generate|produce|design|draw|render|craft)\s+(an?\s+)?(image|picture|photo|logo|artwork|illustration|visual|graphic|portrait|poster|banner|thumbnail)/i,
+        /\b(image|picture|photo|illustration)\s+of\b/i,
+        /\bdraw\s+(me\s+)?(a|an)?\s*/i,
+        /\b(i\s+want|give\s+me|show\s+me|can\s+you\s+(create|make))\s+(an?\s+)?(image|picture|photo)/i,
+        /\bdesign\s+(a|an)\s+(logo|poster|banner|flyer)/i,
+    ];
+
+    // Video generation patterns
+    const videoPatterns = [
+        /\b(create|make|generate|produce)\s+(an?\s+)?(video|animation|clip|footage|movie)/i,
+        /\bvideo\s+(of|showing|about)\b/i,
+        /\bturn\s+.*\s+into\s+(a\s+)?video\b/i,
+        /\b(animate|animation\s+of)\b/i,
+        /\b(i\s+want|give\s+me|show\s+me)\s+(a\s+)?video\b/i,
+    ];
+
+    // Music generation patterns
+    const musicPatterns = [
+        /\b(create|make|generate|compose|produce)\s+(an?\s+)?(song|music|track|beat|melody|soundtrack|tune|jingle)/i,
+        /\b(song|music|track|beat)\s+(about|for)\b/i,
+        /\bcompose\s+(a|an)?\s*(song|piece|melody)/i,
+        /\b(i\s+want|give\s+me)\s+(a\s+)?(song|music|beat)/i,
+    ];
+
+    // TTS (text-to-speech) patterns
+    const ttsPatterns = [
+        /\b(read|speak|say|narrate|voice)\s+(this|the|aloud|out\s+loud)/i,
+        /\btext\s+to\s+speech\b/i,
+        /\btts\b/i,
+        /\bvoice\s+(over|this)\b/i,
+        /\bconvert\s+.*\s+to\s+(speech|audio|voice)/i,
+        /\b(read|narrate)\s+.*\s+aloud\b/i,
+    ];
+
+    // PPT (presentation) patterns
+    const pptPatterns = [
+        /\b(create|make|generate|build)\s+(an?\s+)?(presentation|ppt|powerpoint|slides|slideshow|pitch\s+deck|deck)/i,
+        /\b(presentation|slides|ppt)\s+(about|on|for)\b/i,
+        /\bpitch\s+deck\b/i,
+        /\b(i\s+need|give\s+me)\s+(a\s+)?(presentation|slides)/i,
+    ];
+
+    // Check patterns in order of specificity
+    const allPatterns: Array<{ patterns: RegExp[]; intent: TaskType }> = [
+        { patterns: ttsPatterns, intent: 'tts' },
+        { patterns: pptPatterns, intent: 'ppt' },
+        { patterns: musicPatterns, intent: 'music' },
+        { patterns: videoPatterns, intent: 'video' },
+        { patterns: imagePatterns, intent: 'image' },
+    ];
+
+    for (const { patterns, intent } of allPatterns) {
+        for (const pattern of patterns) {
+            if (pattern.test(lower)) {
+                console.log(`🎯 [Pre-Classify] Local detection: "${intent}" for: "${message.substring(0, 50)}..."`);
+                return intent;
+            }
+        }
+    }
+
+    // No strong match found
+    return null;
+}
 
 // ===== COMPONENT =====
 
@@ -557,7 +632,7 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
 
     // ===== MAIN SEND HANDLER =====
 
-    type InputMode = 'normal' | 'fast' | 'search' | 'research' | 'image';
+    type InputMode = 'normal' | 'fast' | 'search' | 'research' | 'image' | 'think';
 
     const handleSendMessage = async (messageText?: string, overrideInputMode?: InputMode) => {
         const text = messageText || inputValue.trim();
@@ -844,6 +919,17 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                     statusMessage: 'Generating response...'
                 };
             }
+
+            // ===== LOCAL PRE-CLASSIFICATION FALLBACK =====
+            // If Gemini returned 'chat' intent, double-check with local regex detection
+            // This catches cases where Gemini misses obvious phrases like "create an image"
+            if (interpretation.intent === 'chat') {
+                const localIntent = preClassifyIntentLocal(text);
+                if (localIntent) {
+                    console.log(`🔄 [Fallback] Overriding Gemini 'chat' → '${localIntent}' based on local detection`);
+                    interpretation = { ...interpretation, intent: localIntent };
+                }
+            }
         }
 
         // Check if clarification needed - show as AI message in chat flow
@@ -957,6 +1043,24 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                 } catch (error) {
                     console.error('Fast mode error:', error);
                     response = `⚡ **Fast Response**\n\nI tried to process: "${text}"\n\n*The service encountered an issue. Please try again.*`;
+                }
+            } else if (inputMode === 'think') {
+                // Think Longer mode - deeper reasoning with more context
+                updateStatus('researching', 'chat');
+                const conversationHistory = messages.map(msg => ({
+                    role: msg.role as 'user' | 'assistant',
+                    content: msg.content
+                }));
+                try {
+                    response = await performThinkLonger(text, conversationHistory);
+                    if (!response) {
+                        response = `🧠 **Think Longer**\n\nI analyzed your request in depth.\n\n*Couldn't complete at this time. Please try again.*`;
+                    } else {
+                        response = `🧠 **Deep Analysis**\n\n${response}`;
+                    }
+                } catch (error) {
+                    console.error('Think longer error:', error);
+                    response = `🧠 **Think Longer**\n\nI tried to analyze: "${text}"\n\n*The service encountered an issue. Please try again.*`;
                 }
             } else {
                 // Normal routing based on intent

@@ -25,7 +25,7 @@ const ScrollToTop: React.FC = () => {
 };
 
 export const LandingContent: React.FC<LandingRouterProps> = ({ onGetStarted }) => {
-  const { theme } = useTheme();
+  const { currentTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const scrollContainerRef = useRef<HTMLDivElement>(null);

@@ -8,7 +8,7 @@ import { supabase, getCurrentUser } from './supabaseClient';
 import { getUserTier } from './userTierService';
 
 export type GenerationType = 'image' | 'video' | 'song' | 'tts' | 'ppt';
-export type TierType = 'FREE' | 'STARTER' | 'PRO' | 'PREMIUM';
+export type TierType = 'FREE' | 'STARTER_2' | 'STARTER' | 'PRO' | 'PREMIUM';
 
 export interface GenerationLimitInfo {
   canGenerate: boolean;
@@ -19,42 +19,52 @@ export interface GenerationLimitInfo {
   message: string;
 }
 
-// MONTHLY limits for each tier - matching Terms of Service (January 2026)
-// All limits reset at the start of each billing month
+// MONTHLY limits for PREMIUM generation (images/videos)
+// Chat and TTS are UNLIMITED (use free models) - tracked elsewhere
+// These are the PREMIUM model quotas before switching to free fallback
+// HIDDEN TIER: STARTER_2 = Free models only (referral tier)
 export const TIER_MONTHLY_LIMITS: Record<TierType, Record<GenerationType, number>> = {
   FREE: {
-    image: 2,      // 2 images/month (loss leader)
-    video: 0,      // No video for free
-    song: 0,       // No music for free
-    tts: 10,       // 10 TTS/month
-    ppt: 0         // No PPT for free
+    image: 20,
+    video: 0,
+    song: 0,
+    tts: 40,
+    ppt: 0
+  },
+  STARTER_2: {
+    image: 150,  // Lower limits - free referral tier
+    video: 40,
+    song: 0,
+    tts: 400,
+    ppt: 0   // No PPT for free tier
   },
   STARTER: {
-    image: 30,     // 30/month
-    video: 4,      // 4/month
-    song: 10,      // 10/month
-    tts: 50,       // 50/month
-    ppt: 10        // 10/month
+    image: 400,
+    video: 96,
+    song: 0,
+    tts: 1200,
+    ppt: 32
   },
   PRO: {
-    image: 50,     // 50/month
-    video: 10,     // 10/month
-    song: 25,      // 25/month
-    tts: 120,      // 120/month
-    ppt: 25        // 25/month
+    image: 560,
+    video: 144,
+    song: 0,
+    tts: 2000,
+    ppt: 64
   },
   PREMIUM: {
-    image: 80,     // 80/month
-    video: 15,     // 15/month
-    song: 35,      // 35/month
-    tts: 200,      // 200/month
-    ppt: 35        // 35/month
+    image: 800,
+    video: 200,
+    song: 0,
+    tts: 3200,
+    ppt: 96
   }
 };
 
 // Token limits per month
 export const TIER_TOKEN_LIMITS: Record<TierType, number> = {
   FREE: 15000,      // 15K/month
+  STARTER_2: 50000, // 50K/month (referral tier)
   STARTER: 100000,  // 100K/month
   PRO: 220000,      // 220K/month
   PREMIUM: 560000   // 560K/month
@@ -63,32 +73,39 @@ export const TIER_TOKEN_LIMITS: Record<TierType, number> = {
 // Keep daily limits for backwards compatibility (divide monthly by 30)
 export const TIER_DAILY_LIMITS: Record<TierType, Record<GenerationType, number>> = {
   FREE: {
-    image: 1,     // ~2/month
+    image: 1,
     video: 0,
     song: 0,
     tts: 1,
     ppt: 0
   },
-  STARTER: {
-    image: 1,
+  STARTER_2: {
+    image: 5,  // Free referral tier
     video: 1,
-    song: 1,
-    tts: 2,
+    song: 0,
+    tts: 13,
+    ppt: 0
+  },
+  STARTER: {
+    image: 13,
+    video: 3,
+    song: 0,
+    tts: 40,
     ppt: 1
   },
   PRO: {
-    image: 2,
-    video: 1,
-    song: 1,
-    tts: 4,
-    ppt: 1
+    image: 18,
+    video: 5,
+    song: 0,
+    tts: 66,
+    ppt: 2
   },
   PREMIUM: {
-    image: 3,
-    video: 1,
-    song: 2,
-    tts: 7,
-    ppt: 2
+    image: 26,
+    video: 6,
+    song: 0,
+    tts: 106,
+    ppt: 3
   }
 };
 
@@ -98,6 +115,7 @@ export const TIER_DAILY_LIMITS: Record<TierType, Record<GenerationType, number>>
 function normalizeTier(tierString: string | undefined): TierType {
   if (!tierString) return 'FREE';
   const upper = tierString.toUpperCase();
+  if (upper === 'STARTER_2') return 'STARTER_2';
   if (upper === 'STARTER') return 'STARTER';
   if (upper === 'PRO') return 'PRO';
   if (upper === 'PREMIUM') return 'PREMIUM';

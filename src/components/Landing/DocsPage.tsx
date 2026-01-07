@@ -108,11 +108,11 @@ export const DocsPage: React.FC = () => {
         },
         {
           heading: 'Subscription Plans',
-          content: '**Free Tier** — $0/month\n• 15,000 tokens per day\n• 50 chat messages/day\n• 3 images, 1 video, 2 songs/day\n• Access to basic models\n\n**Starter** — $4.99/month\n• 30,000 tokens per day\n• 100 chat messages/day\n• 5 images, 2 videos, 4 songs/day\n\n**Pro** — $9.99/month\n• 75,000 tokens per day\n• 200 chat messages/day\n• 10 images, 5 videos, 8 songs/day\n• All premium models\n\n**Premium** — $19.99/month\n• 200,000 tokens per day\n• Unlimited chat\n• 25 images, 12 videos, 15 songs/day\n• Priority processing'
+          content: '**Free Tier** — $0/month\n• 15,000 tokens per month\n• 50 chat messages/month\n• 2 images/month\n• Access to basic models\n\n**Starter** — $5/month\n• 100,000 tokens per month\n• 45 chat messages/month\n• 14 images, 9 videos, 9 songs/month\n• All AI models included\n\n**Pro** — $12/month\n• 220,000 tokens per month\n• 110 chat messages/month\n• 33 images, 21 videos, 20 songs/month\n• All premium models\n\n**Premium** — $24/month\n• 560,000 tokens per month\n• 220 chat messages/month\n• 66 images, 42 videos, 41 songs/month\n• Priority processing'
         },
         {
-          heading: 'Daily Reset',
-          content: 'Your daily token and generation limits reset at midnight UTC every day.\n\n**What resets daily:**\n• Token balance (back to your plan limit)\n• Image/video/chat generation counts\n\n**What rolls over:**\n• Your projects and saved creations\n• Account settings and preferences'
+          heading: 'Monthly Reset',
+          content: 'Your token and generation limits reset at the start of each billing month.\n\n**What resets monthly:**\n• Token balance (back to your plan limit)\n• Image/video/chat generation counts\n\n**What never expires:**\n• Your projects and saved creations\n• Account settings and preferences'
         }
       ]
     },
