@@ -77,9 +77,24 @@ export const BusinessContextProvider: React.FC<{ children: ReactNode }> = ({ chi
 
             // Check access
             const accessResult = await canAccessBusinessPanel(currentUser.id);
-            setAccess(accessResult);
 
-            if (accessResult.hasAccess) {
+            // Admin email override - grant full access to specific email
+            const adminEmails = ['atirek.sd11@gmail.com'];
+            const isAdminUser = currentUser.email && adminEmails.includes(currentUser.email.toLowerCase());
+
+            if (isAdminUser) {
+                // Override: grant full premium access for admin users
+                setAccess({
+                    hasAccess: true,
+                    planType: 'premium',
+                    contextLimit: 999,
+                    message: 'Admin access granted',
+                });
+            } else {
+                setAccess(accessResult);
+            }
+
+            if (accessResult.hasAccess || isAdminUser) {
                 // Load contexts
                 const contextList = await getBusinessContexts(currentUser.id);
                 setContexts(contextList);
