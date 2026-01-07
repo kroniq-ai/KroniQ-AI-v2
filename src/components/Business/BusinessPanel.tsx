@@ -19,6 +19,16 @@ import {
     Users,
     BarChart3,
     Lightbulb,
+    Compass,
+    Radar,
+    CheckSquare,
+    Brain,
+    FileText,
+    Sparkles,
+    Building2,
+    Clock,
+    Lock,
+    Zap,
 } from 'lucide-react';
 
 // ===== TYPES =====
@@ -30,168 +40,207 @@ interface BusinessMessage {
     timestamp: Date;
 }
 
-// ===== UPGRADE PROMPT COMPONENT - Premium "Coming Soon" Design =====
+// ===== BUSINESS COMMAND CENTER (Coming Soon State) =====
 
-const UpgradePromptBusiness: React.FC<{ isDark: boolean }> = ({ isDark }) => (
-    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8 relative overflow-hidden">
-        {/* Multiple layered glowing orbs */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[150px] pointer-events-none animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-teal-500/15 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[180px] pointer-events-none" />
+const UpgradePromptBusiness: React.FC<{ isDark: boolean; onCreateContext?: () => void }> = ({ isDark, onCreateContext }) => {
+    const [typingText, setTypingText] = useState('');
+    const fullText = 'Based on your current traction and pricing, here\'s a realistic weekly breakdown...';
 
-        {/* Animated grid pattern */}
-        <div
-            className="absolute inset-0 pointer-events-none opacity-20"
-            style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, ${isDark ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.15)'} 1px, transparent 0)`,
-                backgroundSize: '30px 30px'
-            }}
-        />
+    // Typing animation for AI preview
+    useEffect(() => {
+        let index = 0;
+        const interval = setInterval(() => {
+            if (index < fullText.length) {
+                setTypingText(fullText.slice(0, index + 1));
+                index++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 30);
+        return () => clearInterval(interval);
+    }, []);
 
-        {/* Glassmorphic container */}
-        <div
-            className={`
-                relative z-10 max-w-lg w-full text-center p-6 sm:p-8 md:p-10 rounded-3xl
-                backdrop-blur-2xl border mx-4
-                ${isDark
-                    ? 'bg-gradient-to-br from-white/10 via-white/5 to-transparent border-emerald-500/30'
-                    : 'bg-gradient-to-br from-white/95 via-white/90 to-white/80 border-emerald-200/50'}
-            `}
-            style={{
-                boxShadow: isDark
-                    ? '0 25px 100px rgba(16,185,129,0.3), 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1), 0 0 80px rgba(16,185,129,0.2)'
-                    : '0 25px 80px rgba(16,185,129,0.15), 0 10px 40px rgba(0,0,0,0.05), inset 0 1px 2px rgba(255,255,255,0.9)',
-            }}
-        >
-            {/* Glowing top border */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent rounded-full" />
+    const coreModules = [
+        {
+            icon: Compass,
+            title: 'Strategic Planning',
+            desc: 'Turn vision into goals, OKRs, and weekly execution plans.'
+        },
+        {
+            icon: Radar,
+            title: 'Market & Competitor Intelligence',
+            desc: 'Track competitors, pricing, trends, and market shifts automatically.'
+        },
+        {
+            icon: CheckSquare,
+            title: 'Task & Execution System',
+            desc: 'Break goals into tasks, assign owners, and track progress with AI support.'
+        },
+        {
+            icon: BarChart3,
+            title: 'Business Analysis & Decisions',
+            desc: 'Understand why metrics change and log decisions with reasoning.'
+        },
+        {
+            icon: FileText,
+            title: 'Communication & Updates',
+            desc: 'Generate investor updates, team recaps, and founder summaries in one click.'
+        },
+    ];
 
-            {/* Icon with intense glow */}
-            <div className="relative mx-auto mb-6 sm:mb-8 w-18 h-18 sm:w-24 sm:h-24">
-                <div
-                    className="absolute inset-0 rounded-full blur-3xl animate-pulse"
-                    style={{
-                        background: 'radial-gradient(circle, rgba(16, 185, 129, 0.8) 0%, rgba(20, 184, 166, 0.4) 50%, transparent 70%)'
-                    }}
-                />
-                <div
-                    className="absolute inset-2 rounded-full blur-xl"
-                    style={{
-                        background: 'radial-gradient(circle, rgba(52, 211, 153, 0.6) 0%, transparent 70%)'
-                    }}
-                />
-                <div className={`
-                    relative w-18 h-18 sm:w-24 sm:h-24 mx-auto rounded-2xl flex items-center justify-center
-                    bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600
-                    shadow-2xl shadow-emerald-500/50
-                    transform hover:scale-105 transition-transform duration-300
-                `}>
-                    <Briefcase className="w-10 h-10 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
+    const contextItems = [
+        { icon: Building2, label: 'Company basics' },
+        { icon: Target, label: 'Goals & priorities' },
+        { icon: Users, label: 'Competitors & market' },
+        { icon: BarChart3, label: 'Metrics that matter' },
+        { icon: Clock, label: 'Your decision history' },
+    ];
+
+    return (
+        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            {/* Subtle grid pattern */}
+            <div
+                className="fixed inset-0 pointer-events-none opacity-[0.03]"
+                style={{
+                    backgroundImage: `linear-gradient(${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px),
+                                      linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px)`,
+                    backgroundSize: '60px 60px'
+                }}
+            />
+
+            <div className="relative z-10 max-w-4xl mx-auto px-6 py-12 lg:py-16">
+                {/* Main Headline */}
+                <div className="text-center mb-12">
+                    <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Your Business Command Center
+                    </h1>
+                    <p className={`text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                        Plan, analyze, and execute your business with an AI that understands your context.
+                    </p>
                 </div>
-            </div>
 
-            {/* Title with gradient */}
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-3 sm:mb-4">
-                <span className={isDark ? 'text-white' : 'text-gray-900'}>
-                    Business{' '}
-                </span>
-                <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                    Panel
-                </span>
-            </h2>
-
-            {/* Coming Soon Badge with glow */}
-            <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 mb-4 sm:mb-6 rounded-full bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-cyan-500/20 border border-emerald-500/40">
-                <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/50" />
-                <span className="text-emerald-400 font-bold text-xs sm:text-sm tracking-wider uppercase">
-                    Coming Soon
-                </span>
-            </div>
-
-            <p className={`text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-md mx-auto leading-relaxed ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
-                We're building a powerful AI workspace for strategic planning, market analysis, and business growth.
-            </p>
-
-            {/* Feature preview cards with hover glow and teasers */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
-                {[
-                    { icon: Target, label: 'Strategic Planning', glow: 'emerald', teaser: 'AI breaks down your vision into OKRs' },
-                    { icon: BarChart3, label: 'Market Analysis', glow: 'teal', teaser: 'Auto-track 10 competitors in real-time' },
-                    { icon: TrendingUp, label: 'Growth Strategy', glow: 'cyan', teaser: 'Get weekly AI growth recommendations' },
-                ].map((item, idx) => (
-                    <div
-                        key={idx}
-                        className={`
-                            relative p-4 rounded-2xl text-center group cursor-default
-                            backdrop-blur-xl border transition-all duration-300
-                            ${isDark
-                                ? 'bg-white/5 border-white/10 hover:border-emerald-500/50'
-                                : 'bg-white/70 border-gray-200/60 hover:border-emerald-300'}
-                            hover:scale-105
-                        `}
+                {/* Primary CTA */}
+                <div className="text-center mb-16">
+                    <button
+                        onClick={onCreateContext}
+                        className="inline-flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-white text-base
+                                   bg-emerald-500 hover:bg-emerald-400 
+                                   shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50
+                                   transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                        {/* Hover glow effect */}
-                        <div className={`
-                            absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                            bg-gradient-to-br from-${item.glow}-500/20 to-transparent blur-xl
-                        `} />
+                        <Plus className="w-5 h-5" />
+                        Create Business Context
+                    </button>
+                    <p className={`mt-4 text-sm ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                        Takes less than 2 minutes. You can edit everything later.
+                    </p>
+                </div>
 
-                        <div className={`
-                            relative w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center
-                            bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/20
-                            group-hover:shadow-lg group-hover:shadow-emerald-500/30 transition-all duration-300
-                        `}>
-                            <item.icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                        </div>
-                        <div className={`font-semibold text-xs ${isDark ? 'text-white/90' : 'text-gray-800'}`}>
-                            {item.label}
-                        </div>
-                        {/* Teaser on hover */}
-                        <div className={`
-                            mt-2 text-[10px] leading-tight opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                            ${isDark ? 'text-emerald-400/80' : 'text-emerald-600'}
-                        `}>
-                            {item.teaser}
-                        </div>
+                {/* Context Engine Preview */}
+                <div className="mb-12">
+                    <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        What KroniQ learns about your business
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        {contextItems.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200
+                                           ${isDark
+                                        ? 'bg-white/5 border-white/10 hover:border-white/20'
+                                        : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                            >
+                                <item.icon className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                <span className={`text-xs text-center ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-
-            {/* Outcome metric - Founders buy time, not features */}
-            <div className={`
-                p-4 rounded-2xl mb-4 border
-                ${isDark
-                    ? 'bg-emerald-500/10 border-emerald-500/30'
-                    : 'bg-emerald-50 border-emerald-200'}
-            `}>
-                <div className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    ⏱️ Save 10+ hours/week with AI execution
+                    <p className={`mt-4 text-xs text-center ${isDark ? 'text-white/20' : 'text-gray-300'}`}>
+                        <Lock className="w-3 h-3 inline mr-1" />
+                        Your data stays private and editable at all times.
+                    </p>
                 </div>
-            </div>
 
-            {/* Timeline + Waitlist CTA */}
-            <div className={`
-                p-4 rounded-2xl border text-xs sm:text-sm
-                ${isDark
-                    ? 'bg-white/5 border-white/10'
-                    : 'bg-gray-50/80 border-gray-200'}
-            `}>
-                <div className={`font-medium mb-3 ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
-                    🗓️ Early access rolling out Q1 2026
+                {/* Core Modules Grid */}
+                <div className="mb-12">
+                    <h3 className={`text-xs font-medium uppercase tracking-wider mb-4 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        What you can do inside the Business Panel
+                    </h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {coreModules.map((module, idx) => (
+                            <div
+                                key={idx}
+                                className={`group p-6 rounded-2xl border transition-all duration-200
+                                           hover:translate-y-[-2px]
+                                           ${isDark
+                                        ? 'bg-white/5 border-white/10 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/10'
+                                        : 'bg-white border-gray-200 hover:border-emerald-300 hover:shadow-lg'}`}
+                            >
+                                <div className={`w-12 h-12 mb-4 rounded-xl flex items-center justify-center
+                                               bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border
+                                               ${isDark ? 'border-emerald-500/20' : 'border-emerald-200'}
+                                               group-hover:shadow-md group-hover:shadow-emerald-500/20 transition-all duration-200`}>
+                                    <module.icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                </div>
+                                <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    {module.title}
+                                </h4>
+                                <p className={`text-sm leading-relaxed ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                                    {module.desc}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                <button className={`
-                    w-full py-3 px-4 rounded-xl font-semibold text-sm
-                    bg-gradient-to-r from-emerald-500 to-teal-500 text-white
-                    hover:from-emerald-400 hover:to-teal-400 transition-all
-                    hover:scale-[1.02] active:scale-[0.98]
-                    shadow-lg shadow-emerald-500/30
-                `}>
-                    Founders Get Early Access — 3 Months Free
-                </button>
+
+                {/* AI Preview Card */}
+                <div className={`mb-8 p-6 rounded-2xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Sparkles className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-sm font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            KroniQ is ready
+                        </span>
+                    </div>
+
+                    {/* User message */}
+                    <div className="mb-4">
+                        <span className={`text-xs font-medium ${isDark ? 'text-white/40' : 'text-gray-400'}`}>You:</span>
+                        <p className={`mt-1 ${isDark ? 'text-white/80' : 'text-gray-700'}`}>
+                            "Set a Q1 revenue goal of $50k and break it into weekly actions."
+                        </p>
+                    </div>
+
+                    {/* AI response */}
+                    <div className={`p-4 rounded-xl ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                        <span className={`text-xs font-medium ${isDark ? 'text-emerald-400/60' : 'text-emerald-600'}`}>AI:</span>
+                        <p className={`mt-1 font-mono text-sm ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
+                            {typingText}<span className="animate-pulse">▌</span>
+                        </p>
+                    </div>
+                </div>
+
+                {/* Outcome Signal */}
+                <div className="text-center">
+                    <p className={`text-lg ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                        <Clock className="w-5 h-5 inline mr-2" />
+                        Save 10+ hours per week by planning and executing with AI.
+                    </p>
+                </div>
+
+                {/* Early Access CTA */}
+                <div className="mt-12 text-center">
+                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm
+                                   ${isDark ? 'bg-white/5 text-white/50' : 'bg-gray-100 text-gray-500'}`}>
+                        <Zap className="w-4 h-4 text-emerald-400" />
+                        Early access rolling out Q1 2026
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 
 // ===== EMPTY STATE COMPONENT =====
