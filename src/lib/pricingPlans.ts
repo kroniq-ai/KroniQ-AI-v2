@@ -66,8 +66,8 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
             videoGenerationsLifetime: 1,    // 1 video EVER
             pptGenerations: 0,              // NO PPT for free
             ttsGenerationsPerWeek: 7,       // 7 TTS/week
-            businessPanel: 'none',
-            businessContexts: 0,
+            businessPanel: 'limited',       // Access with limits
+            businessContexts: 1,            // 1 context for free users
             longTermMemory: false,          // Session-only memory
         },
         features: [
@@ -75,6 +75,7 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
             'Free AI models',
             '1 image per week',
             '7 voice generations per week',
+            'Business Panel (1 context)',
         ],
     },
     pro: {
@@ -92,7 +93,7 @@ export const PRICING_PLANS: Record<PlanType, PricingPlan> = {
             pptGenerations: 25,
             ttsGenerationsPerMonth: 'unlimited',
             businessPanel: 'limited',
-            businessContexts: 1,
+            businessContexts: 3,            // 3 contexts for Pro
             longTermMemory: true,
         },
         features: [

@@ -41,6 +41,10 @@ export interface UpdateBusinessContextInput extends Partial<CreateBusinessContex
 
 /**
  * Check if user can access Business Panel based on their plan
+ * NOTE: Business Panel is now available to ALL users with different limits:
+ * - Free: 1 context
+ * - Pro: 3 contexts
+ * - Premium: Unlimited contexts (-1)
  */
 export async function canAccessBusinessPanel(userId: string): Promise<{
     hasAccess: boolean;
@@ -55,32 +59,34 @@ export async function canAccessBusinessPanel(userId: string): Promise<{
             .eq('user_id', userId)
             .single();
 
+        // Default to free plan with 1 context if no subscription found
         if (error || !data) {
             return {
-                hasAccess: false,
+                hasAccess: true, // All users can access
                 planType: 'free',
-                contextLimit: 0,
-                message: 'Upgrade to Pro to access the Business Panel',
+                contextLimit: 1, // Free users get 1 context
+                message: undefined,
             };
         }
 
         const planType = data.plan_type as PlanType;
-        const hasAccess = hasBusinessPanelAccess(planType);
         const contextLimit = getBusinessContextLimit(planType);
 
+        // All users have access now - just with different limits
         return {
-            hasAccess,
+            hasAccess: true,
             planType,
             contextLimit,
-            message: hasAccess ? undefined : 'Upgrade to Pro to access the Business Panel',
+            message: undefined,
         };
     } catch (error) {
         console.error('Error checking Business Panel access:', error);
+        // Even on error, grant access with limited context
         return {
-            hasAccess: false,
+            hasAccess: true,
             planType: 'free',
-            contextLimit: 0,
-            message: 'Unable to verify access',
+            contextLimit: 1,
+            message: undefined,
         };
     }
 }
