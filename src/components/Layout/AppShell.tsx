@@ -3777,16 +3777,14 @@ const MainContent: React.FC<{
     // Render Business Panel if in business mode
     if (isBusinessMode) {
         return (
-            <main className={`flex-1 flex flex-col relative overflow-hidden h-full ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
-                {/* Mode Toggle at top */}
-                <div className="flex justify-center py-6 relative z-10">
+            <main className={`flex-1 flex relative overflow-hidden h-full ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+                {/* Mode Toggle - Floating at top center */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
                     <ModeToggle isDark={isDark} mode={mode} onModeChange={onModeChange} />
                 </div>
 
-                {/* Business Panel takes remaining height */}
-                <div className="flex-1 overflow-hidden relative z-10">
-                    <BusinessPanel />
-                </div>
+                {/* Business Panel takes full height */}
+                <BusinessPanel />
             </main>
         );
     }
