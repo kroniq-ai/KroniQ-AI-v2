@@ -243,40 +243,184 @@ const UpgradePromptBusiness: React.FC<{ isDark: boolean; onCreateContext?: () =>
 };
 
 
-// ===== EMPTY STATE COMPONENT =====
+// ===== ENHANCED EMPTY STATE - FULL COMMAND CENTER =====
 
 const EmptyBusinessState: React.FC<{
     isDark: boolean;
     onCreateNew: () => void;
-}> = ({ isDark, onCreateNew }) => (
-    <div className="flex-1 flex items-center justify-center p-8">
-        <div className="max-w-lg w-full text-center">
-            <div className={`
-        w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center
-        ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}
-      `}>
-                <Briefcase className={`w-10 h-10 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+    onSkipToChat?: () => void;
+}> = ({ isDark, onCreateNew, onSkipToChat }) => {
+    const [typingText, setTypingText] = useState('');
+    const fullText = 'Based on your current traction and pricing, here\'s a realistic weekly breakdown...';
+
+    // Typing animation for AI preview
+    useEffect(() => {
+        let index = 0;
+        const interval = setInterval(() => {
+            if (index < fullText.length) {
+                setTypingText(fullText.slice(0, index + 1));
+                index++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 30);
+        return () => clearInterval(interval);
+    }, []);
+
+    const coreModules = [
+        { icon: Compass, title: 'Strategic Planning', desc: 'Turn vision into OKRs and weekly execution plans.' },
+        { icon: Radar, title: 'Market Intelligence', desc: 'Track competitors, pricing, and market shifts.' },
+        { icon: CheckSquare, title: 'Task Execution', desc: 'Break goals into tasks with AI support.' },
+        { icon: BarChart3, title: 'Business Analysis', desc: 'Understand why metrics change.' },
+        { icon: FileText, title: 'Communications', desc: 'Generate investor updates and recaps.' },
+    ];
+
+    const contextItems = [
+        { icon: Building2, label: 'Company basics' },
+        { icon: Target, label: 'Goals' },
+        { icon: Users, label: 'Competitors' },
+        { icon: BarChart3, label: 'Metrics' },
+        { icon: Clock, label: 'Decisions' },
+    ];
+
+    return (
+        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            {/* Subtle grid */}
+            <div
+                className="fixed inset-0 pointer-events-none opacity-[0.02]"
+                style={{
+                    backgroundImage: `linear-gradient(${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px),
+                                      linear-gradient(90deg, ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'} 1px, transparent 1px)`,
+                    backgroundSize: '60px 60px'
+                }}
+            />
+
+            <div className="relative z-10 max-w-4xl mx-auto px-6 py-10">
+                {/* Main Headline */}
+                <div className="text-center mb-8">
+                    <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        Your Business Command Center
+                    </h1>
+                    <p className={`text-base lg:text-lg max-w-xl mx-auto ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                        Plan, analyze, and execute with an AI that understands your business.
+                    </p>
+                </div>
+
+                {/* Two CTA Options */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+                    <button
+                        onClick={onCreateNew}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white
+                                   bg-emerald-500 hover:bg-emerald-400 
+                                   shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40
+                                   transition-all duration-200 hover:scale-[1.02]"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Create Business Context
+                    </button>
+                    {onSkipToChat && (
+                        <button
+                            onClick={onSkipToChat}
+                            className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium
+                                       border transition-all duration-200 hover:scale-[1.02]
+                                       ${isDark
+                                    ? 'border-white/20 text-white/70 hover:bg-white/5 hover:text-white'
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
+                        >
+                            <Sparkles className="w-5 h-5" />
+                            Skip & Start Chatting
+                        </button>
+                    )}
+                </div>
+
+                {/* Context Engine Preview */}
+                <div className="mb-8">
+                    <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                        What KroniQ learns about your business
+                    </h3>
+                    <div className="grid grid-cols-5 gap-2">
+                        {contextItems.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all
+                                           ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}
+                            >
+                                <item.icon className={`w-4 h-4 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`} />
+                                <span className={`text-[10px] text-center ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                                    {item.label}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    <p className={`mt-3 text-[10px] text-center ${isDark ? 'text-white/20' : 'text-gray-300'}`}>
+                        <Lock className="w-3 h-3 inline mr-1" />
+                        Private and editable
+                    </p>
+                </div>
+
+                {/* Core Modules Grid */}
+                <div className="mb-8">
+                    <h3 className={`text-xs font-medium uppercase tracking-wider mb-3 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                        What you can do
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                        {coreModules.map((module, idx) => (
+                            <div
+                                key={idx}
+                                className={`group p-4 rounded-xl border transition-all duration-200
+                                           hover:translate-y-[-1px]
+                                           ${isDark
+                                        ? 'bg-white/5 border-white/10 hover:border-emerald-500/30'
+                                        : 'bg-white border-gray-200 hover:border-emerald-300'}`}
+                            >
+                                <div className={`w-8 h-8 mb-2 rounded-lg flex items-center justify-center
+                                               ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+                                    <module.icon className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                </div>
+                                <h4 className={`font-medium text-xs mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    {module.title}
+                                </h4>
+                                <p className={`text-[10px] leading-tight ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                                    {module.desc}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* AI Preview */}
+                <div className={`p-5 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                            KroniQ is ready
+                        </span>
+                    </div>
+                    <div className="mb-3">
+                        <span className={`text-[10px] ${isDark ? 'text-white/30' : 'text-gray-400'}`}>You:</span>
+                        <p className={`text-sm ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
+                            "Set a Q1 revenue goal of $50k and break it into weekly actions."
+                        </p>
+                    </div>
+                    <div className={`p-3 rounded-lg ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                        <span className={`text-[10px] ${isDark ? 'text-emerald-400/50' : 'text-emerald-600'}`}>AI:</span>
+                        <p className={`font-mono text-xs ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
+                            {typingText}<span className="animate-pulse">▌</span>
+                        </p>
+                    </div>
+                </div>
+
+                {/* Outcome */}
+                <div className="mt-6 text-center">
+                    <p className={`text-sm ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                        <Clock className="w-4 h-4 inline mr-1" />
+                        Save 10+ hours per week
+                    </p>
+                </div>
             </div>
-
-            <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Your Business Command Center
-            </h2>
-
-            <p className={`text-base mb-8 ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                Set up your business context to get personalized AI-powered insights,
-                strategic planning, and actionable recommendations.
-            </p>
-
-            <button
-                onClick={onCreateNew}
-                className="inline-flex items-center gap-2 py-3 px-6 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 transition-all"
-            >
-                <Plus className="w-5 h-5" />
-                Create Business Context
-            </button>
         </div>
-    </div>
-);
+    );
+};
 
 // ===== QUICK ACTION CHIPS =====
 
@@ -321,6 +465,7 @@ export const BusinessPanel: React.FC = () => {
     const [messages, setMessages] = useState<BusinessMessage[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [showContextForm, setShowContextForm] = useState(false);
+    const [skipMode, setSkipMode] = useState(false); // Allow chatting without context
     const [isSidebarOpen] = useState(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -352,7 +497,9 @@ export const BusinessPanel: React.FC = () => {
 
     // Handle sending a message
     const handleSendMessage = async () => {
-        if (!inputValue.trim() || !activeContext) return;
+        if (!inputValue.trim()) return;
+        // Allow messages in skipMode even without activeContext
+        if (!activeContext && !skipMode) return;
 
         const userMessage: BusinessMessage = {
             id: Date.now().toString(),
@@ -366,10 +513,14 @@ export const BusinessPanel: React.FC = () => {
 
         // Simulate AI response (replace with actual API call)
         setTimeout(() => {
+            const contextInfo = activeContext
+                ? `I understand you're working on **${activeContext.name}** in the ${activeContext.industry} industry. Based on your ${activeContext.stage} stage and target audience of "${activeContext.target_audience}", here's my recommendation:`
+                : `I'm here to help with your business strategy. Let me analyze your request and provide actionable insights:`;
+
             const assistantMessage: BusinessMessage = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `I understand you're working on **${activeContext.name}** in the ${activeContext.industry} industry. Let me analyze your request and provide actionable insights...\n\nBased on your ${activeContext.stage} stage and target audience of "${activeContext.target_audience}", here's my recommendation:\n\n1. **First Priority**: Focus on validating your core value proposition\n2. **Quick Win**: Identify 3-5 early adopters in your target market\n3. **Next Step**: Create a focused landing page to test messaging\n\nWould you like me to dive deeper into any of these areas?`,
+                content: `${contextInfo}\n\n1. **First Priority**: Focus on validating your core value proposition\n2. **Quick Win**: Identify 3-5 early adopters in your target market\n3. **Next Step**: Create a focused landing page to test messaging\n\nWould you like me to dive deeper into any of these areas?`,
                 timestamp: new Date(),
             };
             setMessages(prev => [...prev, assistantMessage]);
@@ -465,8 +616,12 @@ export const BusinessPanel: React.FC = () => {
                 )}
 
                 {/* Messages or Empty State */}
-                {!activeContext ? (
-                    <EmptyBusinessState isDark={isDark} onCreateNew={() => setShowContextForm(true)} />
+                {!activeContext && !skipMode ? (
+                    <EmptyBusinessState
+                        isDark={isDark}
+                        onCreateNew={() => setShowContextForm(true)}
+                        onSkipToChat={() => setSkipMode(true)}
+                    />
                 ) : (
                     <>
                         {/* Messages Area */}
@@ -480,8 +635,10 @@ export const BusinessPanel: React.FC = () => {
                                         <Lightbulb className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                                     </div>
                                     <p className={`text-center max-w-md ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
-                                        Ready to help with {activeContext.name}. Ask about planning, strategy,
-                                        or use a quick action below.
+                                        {activeContext
+                                            ? `Ready to help with ${activeContext.name}. Ask about planning, strategy, or use a quick action below.`
+                                            : `Ready to help with your business. Ask about planning, strategy, or use a quick action below.`
+                                        }
                                     </p>
                                     <div className="mt-6">
                                         <QuickActions isDark={isDark} onAction={handleQuickAction} />
