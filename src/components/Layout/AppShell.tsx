@@ -3931,6 +3931,10 @@ export const AppShell: React.FC = () => {
     const handleModeChange = (newMode: 'super' | 'business') => {
         setMode(newMode);
         setIsSuperMode(newMode === 'super');
+        // Collapse sidebar when entering Business mode
+        if (newMode === 'business') {
+            setIsSidebarCollapsed(true);
+        }
     };
 
     // Start new chat - called from Sidebar or input bar
