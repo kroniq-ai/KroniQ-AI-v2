@@ -107,9 +107,9 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
             border-r transition-colors duration-200
             ${isDark ? 'bg-[#0c0c0c] border-white/5' : 'bg-white border-gray-100'}
         `}>
-            {/* Context Header */}
+            {/* Context Header - pt-12 leaves room for main sidebar expand button */}
             <div className={`
-                px-4 py-4 border-b
+                px-4 pt-12 pb-4 border-b
                 ${isDark ? 'border-white/5' : 'border-gray-100'}
             `}>
                 <div className="flex items-center gap-3">
