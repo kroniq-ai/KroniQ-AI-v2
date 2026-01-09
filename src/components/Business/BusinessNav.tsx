@@ -18,7 +18,8 @@ import {
     Building2,
     Users,
     ChevronRight,
-    Sparkles
+    Sparkles,
+    ArrowLeft
 } from 'lucide-react';
 
 // ===== TYPES =====
@@ -54,6 +55,7 @@ interface BusinessNavProps {
     activePage: BusinessPage;
     onPageChange: (page: BusinessPage) => void;
     contextName?: string;
+    onBack?: () => void;
 }
 
 // ===== NAVIGATION STRUCTURE =====
@@ -100,6 +102,7 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
     activePage,
     onPageChange,
     contextName,
+    onBack,
 }) => {
     return (
         <div className={`
@@ -112,6 +115,19 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                 px-4 pt-12 pb-4 border-b
                 ${isDark ? 'border-white/5' : 'border-gray-100'}
             `}>
+                {/* Back Button */}
+                {onBack && (
+                    <button
+                        onClick={onBack}
+                        className={`
+                            flex items-center gap-1.5 text-xs mb-3
+                            ${isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}
+                        `}
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Super KroniQ
+                    </button>
+                )}
                 <div className="flex items-center gap-3">
                     <div className={`
                         w-9 h-9 rounded-xl flex items-center justify-center

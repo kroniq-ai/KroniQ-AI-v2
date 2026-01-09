@@ -3,9 +3,11 @@
  * The main container for the full Business Operating System
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useBusinessContext } from '../../contexts/BusinessContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { ArrowLeft, Sparkles, Construction } from 'lucide-react';
 
 // Navigation & Command Bar
 import { BusinessNav, type BusinessPage } from './BusinessNav';
@@ -27,8 +29,8 @@ import {
     TeamPage
 } from './pages/PlaceholderPages';
 
-// Legacy components for context form
-import { BusinessContextForm } from './BusinessContextForm';
+// Admin email for full access
+const ADMIN_EMAIL = 'atirek.sd11@gmail.com';
 
 // ===== LOADING STATE =====
 
@@ -46,17 +48,65 @@ const LoadingState: React.FC<{ isDark: boolean }> = ({ isDark }) => (
     </div>
 );
 
+// ===== COMING SOON STATE =====
+
+const ComingSoonState: React.FC<{ isDark: boolean; onBack?: () => void }> = ({ isDark, onBack }) => (
+    <div className={`flex-1 flex items-center justify-center ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+        <div className="max-w-md text-center px-6">
+            <div className={`
+                w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center
+                ${isDark ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/10' : 'bg-emerald-50'}
+            `}>
+                <Construction className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+            </div>
+            <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Business OS Coming Soon
+            </h1>
+            <p className={`text-sm mb-6 ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                We're building something powerful. The AI COO that understands your business
+                better than you do. Early access coming to founders soon.
+            </p>
+            <div className={`
+                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm
+                ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}
+            `}>
+                <Sparkles className="w-4 h-4" />
+                Join the waitlist for early access
+            </div>
+            {onBack && (
+                <button
+                    onClick={onBack}
+                    className={`
+                        flex items-center gap-2 mx-auto mt-6 text-sm
+                        ${isDark ? 'text-white/50 hover:text-white' : 'text-gray-500 hover:text-gray-700'}
+                    `}
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Super KroniQ
+                </button>
+            )}
+        </div>
+    </div>
+);
+
 // ===== MAIN BUSINESS PANEL =====
 
-export const BusinessPanel: React.FC = () => {
+interface BusinessPanelProps {
+    onModeChange?: (mode: 'super' | 'business') => void;
+}
+
+export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) => {
     const { currentTheme } = useTheme();
+    const { user } = useAuth();
     const { activeContext, isLoading } = useBusinessContext();
     const isDark = currentTheme === 'cosmic-dark';
+
+    // Check if user is admin
+    const isAdmin = user?.email === ADMIN_EMAIL;
 
     // Page navigation state
     const [activePage, setActivePage] = useState<BusinessPage>('overview');
     const [isProcessingCommand, setIsProcessingCommand] = useState(false);
-    const [showContextForm, setShowContextForm] = useState(false);
 
     // Handle AI command from command bar
     const handleCommand = async (command: string) => {
@@ -68,6 +118,13 @@ export const BusinessPanel: React.FC = () => {
 
         setIsProcessingCommand(false);
         // TODO: Integrate with actual AI service
+    };
+
+    // Handle back to Super KroniQ
+    const handleBack = () => {
+        if (onModeChange) {
+            onModeChange('super');
+        }
     };
 
     // Render active page
@@ -109,6 +166,11 @@ export const BusinessPanel: React.FC = () => {
         return <LoadingState isDark={isDark} />;
     }
 
+    // Show Coming Soon for non-admin users
+    if (!isAdmin) {
+        return <ComingSoonState isDark={isDark} onBack={handleBack} />;
+    }
+
     return (
         <div className={`flex-1 flex h-full ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
             {/* Left Navigation Sidebar */}
@@ -117,6 +179,7 @@ export const BusinessPanel: React.FC = () => {
                 activePage={activePage}
                 onPageChange={setActivePage}
                 contextName={activeContext?.name}
+                onBack={handleBack}
             />
 
             {/* Main Content Area */}
@@ -133,22 +196,6 @@ export const BusinessPanel: React.FC = () => {
                     isProcessing={isProcessingCommand}
                 />
             </div>
-
-            {/* Context Form Modal */}
-            {showContextForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-                    <div className={`
-                        max-w-xl w-full max-h-[90vh] overflow-y-auto rounded-2xl
-                        ${isDark ? 'bg-[#0d0d0d]' : 'bg-white'}
-                    `}>
-                        <BusinessContextForm
-                            isDark={isDark}
-                            onClose={() => setShowContextForm(false)}
-                            onSuccess={() => setShowContextForm(false)}
-                        />
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
