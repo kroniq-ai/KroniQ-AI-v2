@@ -72,22 +72,33 @@ export const BusinessOnboarding: React.FC<BusinessOnboardingProps> = ({
     const handleSubmit = async () => {
         setIsSubmitting(true);
         try {
+            // Map stage values to match BusinessStage type
+            const stageMap: Record<string, 'idea' | 'mvp' | 'growth' | 'scaling'> = {
+                'idea': 'idea',
+                'mvp': 'mvp',
+                'early': 'growth',  // Map early traction to growth
+                'growth': 'scaling' // Map growth to scaling
+            };
+
             const result = await createContext({
                 name: formData.name || 'My Business',
-                description: formData.description,
-                stage: formData.stage as 'idea' | 'mvp' | 'early' | 'growth' || 'idea',
-                industry: formData.industry,
-                target_customer: formData.targetCustomer,
-                main_challenge: formData.mainChallenge,
+                industry: formData.industry || 'Other',
+                target_audience: formData.targetCustomer || '',
+                stage: stageMap[formData.stage] || 'idea',
+                primary_goals: formData.mainChallenge
+                    ? [formData.mainChallenge]
+                    : ['Build and launch product'],
             });
 
             if (result.success) {
                 onComplete();
             } else {
                 console.error('Failed to create context:', result.error);
+                alert(result.error || 'Failed to create business context');
             }
         } catch (error) {
             console.error('Onboarding error:', error);
+            alert('Something went wrong. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
