@@ -17,38 +17,26 @@ interface BusinessCommandBarProps {
     isProcessing?: boolean;
 }
 
-// ===== PLACEHOLDER PROMPTS BY PAGE =====
+// ===== PLACEHOLDER PROMPTS BY PAGE (6 Core Pages) =====
 
 const PAGE_PLACEHOLDERS: Record<BusinessPage, string> = {
     overview: 'Ask KroniQ what to focus on today...',
-    goals: 'Ask about goal progress or create new objectives...',
-    tasks: 'Create tasks, get daily plan, or check priorities...',
-    assets: 'Search knowledge, summarize documents...',
-    decisions: 'Review past decisions or log a new one...',
-    analytics: 'Ask why metrics changed or what matters most...',
-    competitors: 'Get competitive insights or positioning advice...',
-    market: 'Research market trends or opportunities...',
-    reports: 'Generate investor update or weekly recap...',
-    updates: 'Draft stakeholder communications...',
-    context: 'Update business context or settings...',
-    team: 'Manage team permissions...',
+    goals: 'Ask about goals or create new objectives...',
+    tasks: 'Create tasks, get daily plan, or prioritize...',
+    decisions: 'Log a decision or review past choices...',
+    runway: 'Ask about burn rate, runway, or finances...',
+    settings: 'Update business context or settings...',
 };
 
 // ===== QUICK ACTIONS BY PAGE =====
 
 const PAGE_QUICK_ACTIONS: Record<BusinessPage, string[]> = {
-    overview: ['What should I focus on?', 'Summarize this week', 'Top priorities'],
-    goals: ['Break into tasks', 'Is this realistic?', 'What blocks this?'],
-    tasks: ['Generate daily plan', 'What\'s overdue?', 'Prioritize for me'],
-    assets: ['Summarize latest', 'Find relevant docs', 'Turn into pitch'],
-    decisions: ['Review Q4 decisions', 'Pattern analysis', 'What did we learn?'],
-    analytics: ['Why did this change?', 'What matters most?', 'Forecast next month'],
-    competitors: ['Where do we win?', 'What to copy?', 'Pricing analysis'],
-    market: ['Industry trends', 'New opportunities', 'Threat analysis'],
-    reports: ['Investor update', 'Weekly recap', 'Board summary'],
-    updates: ['Draft team update', 'Client newsletter', 'Launch announcement'],
-    context: ['Update goals', 'Change stage', 'Edit audience'],
-    team: ['Add member', 'Review permissions', 'Activity log'],
+    overview: ['What should I focus on?', 'Summarize this week', 'Top 3 priorities'],
+    goals: ['Break goal into tasks', 'Is this realistic?', 'What blocks this?'],
+    tasks: ['Generate daily plan', "What's overdue?", 'Prioritize for me'],
+    decisions: ['Log a new decision', 'Review recent decisions', 'What did we learn?'],
+    runway: ['How long can I survive?', 'What if I cut X?', 'When should I fundraise?'],
+    settings: ['Update business info', 'Change stage', 'Edit target customer'],
 };
 
 // ===== COMPONENT =====
