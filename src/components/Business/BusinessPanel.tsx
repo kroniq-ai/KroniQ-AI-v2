@@ -7,11 +7,12 @@ import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useBusinessContext } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Sparkles, Construction } from 'lucide-react';
+import { ArrowLeft, Sparkles, Construction, Plus } from 'lucide-react';
 
 // Navigation & Command Bar
 import { BusinessNav, type BusinessPage } from './BusinessNav';
 import { BusinessCommandBar } from './BusinessCommandBar';
+import { BusinessOnboarding } from './BusinessOnboarding';
 
 // Pages
 import { OverviewPage } from './pages/OverviewPage';
@@ -107,6 +108,7 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
     // Page navigation state
     const [activePage, setActivePage] = useState<BusinessPage>('overview');
     const [isProcessingCommand, setIsProcessingCommand] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     // Handle AI command from command bar
     const handleCommand = async (command: string) => {
@@ -171,8 +173,80 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
         return <ComingSoonState isDark={isDark} onBack={handleBack} />;
     }
 
+    // Show onboarding if no context exists
+    const needsOnboarding = !activeContext;
+
+    // Empty state when no context
+    const NoContextState = () => (
+        <div className={`flex-1 flex items-center justify-center ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            <div className="max-w-md text-center px-6">
+                <div
+                    className={`
+                        w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center
+                        ${isDark ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10' : 'bg-emerald-50'}
+                    `}
+                    style={{ boxShadow: isDark ? '0 0 30px rgba(16, 185, 129, 0.2)' : 'none' }}
+                >
+                    <Sparkles className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                </div>
+                <h1
+                    className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                >
+                    Welcome to Business OS
+                </h1>
+                <p className={`text-sm mb-6 ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                    Set up your business context to get started with your AI COO.
+                </p>
+                <button
+                    onClick={() => setShowOnboarding(true)}
+                    className={`
+                        inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold
+                        bg-emerald-500 text-white hover:bg-emerald-400
+                        transition-all duration-200
+                    `}
+                    style={{
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                        boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(16, 185, 129, 0.3)'
+                    }}
+                >
+                    <Plus className="w-4 h-4" />
+                    Setup My Business
+                </button>
+                <button
+                    onClick={handleBack}
+                    className={`
+                        flex items-center gap-2 mx-auto mt-4 text-sm
+                        ${isDark ? 'text-white/40 hover:text-white/60' : 'text-gray-400 hover:text-gray-600'}
+                    `}
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Super KroniQ
+                </button>
+            </div>
+        </div>
+    );
+
+    // Show no-context state if user hasn't set up a business yet
+    if (needsOnboarding && !showOnboarding) {
+        return (
+            <>
+                <NoContextState />
+            </>
+        );
+    }
+
     return (
         <div className={`flex-1 flex h-full ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            {/* Onboarding Modal */}
+            {showOnboarding && (
+                <BusinessOnboarding
+                    isDark={isDark}
+                    onComplete={() => setShowOnboarding(false)}
+                    onClose={() => setShowOnboarding(false)}
+                />
+            )}
+
             {/* Left Navigation Sidebar */}
             <BusinessNav
                 isDark={isDark}
@@ -201,3 +275,4 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
 };
 
 export default BusinessPanel;
+
