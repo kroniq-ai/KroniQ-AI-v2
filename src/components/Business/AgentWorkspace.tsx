@@ -46,6 +46,11 @@ import { AGENT_NAMES } from '../../lib/agents/AgentRouter';
 import { getAgentResponse } from '../../lib/agents/AgentService';
 import { detectIntent } from '../../lib/agents/AgentRouter';
 
+// Finance Pages
+import { RunwayPage } from './pages/RunwayPage';
+import { IncomePage } from './pages/IncomePage';
+import { ExpensesPage } from './pages/ExpensesPage';
+
 // ===== ICON MAP =====
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -405,6 +410,7 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
     // For now, only "today" section shows chat
     // Other sections can be built out later
     const renderContent = () => {
+        // Today = Chat for all agents
         if (state.currentSection === 'today') {
             return (
                 <ChatArea
@@ -415,6 +421,18 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
                     isProcessing={isProcessing}
                 />
             );
+        }
+
+        // Finance Agent sections
+        if (agentType === 'finance' || agentType === 'ceo') {
+            switch (state.currentSection) {
+                case 'runway':
+                    return <RunwayPage isDark={isDark} />;
+                case 'income':
+                    return <IncomePage isDark={isDark} />;
+                case 'expenses':
+                    return <ExpensesPage isDark={isDark} />;
+            }
         }
 
         // Placeholder for other sections
