@@ -30,8 +30,8 @@ const PlaceholderPage: React.FC<PlaceholderPageProps> = ({ isDark, icon: Icon, t
                 {description}
             </p>
             <div className={`
-                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm
-                ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}
+                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
+                ${isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}
             `}>
                 <Construction className="w-4 h-4" />
                 Coming Soon
