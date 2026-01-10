@@ -135,8 +135,22 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
         );
     }
 
-    // Show onboarding if no context exists
-    if (!activeContext && contexts.length === 0 && !showOnboarding) {
+    // Check localStorage directly for saved context (fallback when Supabase fails)
+    const hasLocalContext = () => {
+        try {
+            const saved = localStorage.getItem('kroniq_business_context');
+            if (saved) {
+                const data = JSON.parse(saved);
+                return data.contexts && data.contexts.length > 0;
+            }
+        } catch (e) {
+            // Ignore
+        }
+        return false;
+    };
+
+    // Show onboarding if no context exists (check both Supabase and localStorage)
+    if (!activeContext && contexts.length === 0 && !hasLocalContext() && !showOnboarding) {
         // Auto-show onboarding for new users
         return (
             <div className={`flex-1 flex flex-col ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
