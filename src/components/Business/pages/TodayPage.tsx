@@ -21,6 +21,7 @@ import {
     MessageSquare
 } from 'lucide-react';
 import { detectIntent, AGENT_NAMES } from '../../../lib/agents/AgentRouter';
+import { getAgentResponse } from '../../../lib/agents/AgentService';
 import type { AgentType, AgentMessage } from '../../../lib/agents/types';
 import { useBusinessContext } from '../../../contexts/BusinessContext';
 
@@ -172,6 +173,7 @@ export const TodayPage: React.FC<TodayPageProps> = ({ isDark }) => {
     const [inputValue, setInputValue] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [currentAgent, setCurrentAgent] = useState<AgentType>('ceo');
+    const [streamingContent, setStreamingContent] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Scroll to bottom on new messages
@@ -196,35 +198,56 @@ export const TodayPage: React.FC<TodayPageProps> = ({ isDark }) => {
         setMessages(prev => [...prev, userMessage]);
         setInputValue('');
         setIsProcessing(true);
+        setStreamingContent('');
 
-        // Simulate AI response (will connect to Gemini)
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+            // Get real AI response with streaming
+            const response = await getAgentResponse(
+                {
+                    message: inputValue.trim(),
+                    agentType: intent.primaryAgent,
+                    context: activeContext ? {
+                        name: activeContext.name,
+                        stage: activeContext.stage,
+                        industry: activeContext.industry || '',
+                        targetCustomer: activeContext.target_customer || '',
+                        mainChallenge: activeContext.main_challenge || ''
+                    } : undefined,
+                    conversationHistory: messages.map(m => ({
+                        role: m.role,
+                        content: m.content
+                    }))
+                },
+                'pro',
+                (chunk) => {
+                    setStreamingContent(prev => prev + chunk);
+                }
+            );
 
-        const agentResponse: AgentMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'agent',
-            content: getAgentResponse(intent.primaryAgent, inputValue),
-            agentType: intent.primaryAgent,
-            timestamp: new Date()
-        };
+            const agentResponse: AgentMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'agent',
+                content: response.message,
+                agentType: response.agentType,
+                timestamp: new Date()
+            };
 
-        setMessages(prev => [...prev, agentResponse]);
-        setIsProcessing(false);
-    };
-
-    // Temporary response generator (will be replaced with real AI)
-    const getAgentResponse = (agent: AgentType, _query: string): string => {
-        const responses: Record<AgentType, string> = {
-            ceo: "Based on your stage, here are your top 3 priorities today:\n\n1. **Ship the MVP feature** — you've been stuck for 3 days\n2. **Talk to 2 customers** — always the most important\n3. **Review yesterday's feedback** — fresh insights matter",
-            execution: "I'll help you turn this into action. What's the one thing that would make the biggest impact if you finished it today?",
-            customer: "Let's track this customer insight. Who did you talk to and what was the key takeaway?",
-            decision: "I'll log this decision. What options did you consider and why did you choose this path?",
-            finance: "Your runway looks healthy. With current burn, you have roughly 8.8 months. Want me to calculate different scenarios?",
-            marketing: "For your stage, I'd focus on one channel and go deep. What's worked best so far — content, outbound, or product-led?",
-            branding: "Let's define your voice. Who's your ideal customer and what do they care about most?",
-            product: "Before we scope this, let's validate: have you talked to customers who want this feature?"
-        };
-        return responses[agent];
+            setMessages(prev => [...prev, agentResponse]);
+        } catch (error) {
+            console.error('[TodayPage] Agent error:', error);
+            // Add fallback response
+            const fallbackResponse: AgentMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'agent',
+                content: "I'm here to help. Could you tell me more about what you're working on?",
+                agentType: intent.primaryAgent,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, fallbackResponse]);
+        } finally {
+            setIsProcessing(false);
+            setStreamingContent('');
+        }
     };
 
     const handleQuickPrompt = (prompt: string) => {

@@ -16,8 +16,9 @@ import { BusinessOnboarding } from './BusinessOnboarding';
 // Pages (7 Agent-First)
 import { TodayPage } from './pages/TodayPage';
 import { TasksPage } from './pages/TasksPage';
+import { CustomersPage } from './pages/CustomersPage';
+import { DecisionsPage } from './pages/DecisionsPage';
 import { GoalsPage } from './pages/GoalsPage';
-import { DecisionsPage } from './pages/PlaceholderPages';
 import { RunwayPage } from './pages/RunwayPage';
 
 // Admin email for full access
@@ -114,7 +115,7 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
             case 'tasks':
                 return <TasksPage isDark={isDark} />;
             case 'customers':
-                return <CustomersPlaceholder isDark={isDark} />;
+                return <CustomersPage isDark={isDark} />;
             case 'decisions':
                 return <DecisionsPage isDark={isDark} />;
             case 'goals':
