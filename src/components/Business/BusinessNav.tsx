@@ -1,14 +1,14 @@
 /**
- * Business Navigation Sidebar (Simplified)
- * Based on research: Only 6 core pages founders actually need
- * Premium green design
+ * Business Navigation Sidebar
+ * 7 Agent-First Pages with premium green design
  */
 
 import React from 'react';
 import {
-    LayoutDashboard,
+    Sun,
     Target,
     CheckSquare,
+    Users,
     Scale,
     DollarSign,
     Settings,
@@ -20,10 +20,11 @@ import {
 // ===== TYPES =====
 
 export type BusinessPage =
-    | 'overview'
-    | 'goals'
+    | 'today'
     | 'tasks'
+    | 'customers'
     | 'decisions'
+    | 'goals'
     | 'runway'
     | 'settings';
 
@@ -32,6 +33,7 @@ interface NavItem {
     label: string;
     icon: React.ElementType;
     description?: string;
+    agentBadge?: string;
 }
 
 interface BusinessNavProps {
@@ -42,15 +44,15 @@ interface BusinessNavProps {
     onBack?: () => void;
 }
 
-// ===== SIMPLIFIED NAVIGATION (6 Core Pages) =====
-// Removed: Assets, Analytics, Competitors, Market, Reports, Updates, Team
+// ===== 7 AGENT-FIRST PAGES =====
 
 const NAV_ITEMS: NavItem[] = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: 'Morning focus' },
-    { id: 'goals', label: 'Goals', icon: Target, description: 'OKRs (max 3)' },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare, description: 'Execution' },
-    { id: 'decisions', label: 'Decisions', icon: Scale, description: 'Decision log' },
-    { id: 'runway', label: 'Runway', icon: DollarSign, description: 'Cash + Burn' },
+    { id: 'today', label: 'Today', icon: Sun, description: 'Morning focus + AI chat', agentBadge: 'CEO' },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare, description: 'Execute & ship', agentBadge: 'Execution' },
+    { id: 'customers', label: 'Customers', icon: Users, description: 'User research', agentBadge: 'Customer' },
+    { id: 'decisions', label: 'Decisions', icon: Scale, description: 'Memory of choices', agentBadge: 'Decision' },
+    { id: 'goals', label: 'Goals', icon: Target, description: 'OKRs & priorities' },
+    { id: 'runway', label: 'Runway', icon: DollarSign, description: 'Cash & burn', agentBadge: 'Finance' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'Business context' },
 ];
 
@@ -112,23 +114,23 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                     <div className="flex-1 min-w-0">
                         <p className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}
                             style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                            {contextName || 'No Context'}
+                            {contextName || 'KroniQ'}
                         </p>
                         <p className="text-[10px] text-emerald-500 font-medium">
-                            AI COO Active
+                            Multi-Agent OS
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Navigation - Simplified Single List */}
+            {/* Navigation */}
             <nav className="flex-1 overflow-y-auto py-4 px-3">
                 <p className={`
                     px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest
                     ${isDark ? 'text-emerald-500/30' : 'text-gray-400'}
                 `}
                     style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                    Core
+                    Agents
                 </p>
 
                 <div className="space-y-1">
@@ -170,6 +172,20 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                                     {item.label}
                                 </span>
 
+                                {/* Agent badge */}
+                                {item.agentBadge && (
+                                    <span className={`
+                                        text-[9px] font-semibold px-1.5 py-0.5 rounded
+                                        ${isActive
+                                            ? 'bg-emerald-400/20 text-emerald-300'
+                                            : (isDark ? 'bg-emerald-500/10 text-emerald-500/50' : 'bg-emerald-50 text-emerald-500')}
+                                        opacity-0 group-hover:opacity-100 ${isActive ? 'opacity-100' : ''}
+                                        transition-opacity duration-200
+                                    `}>
+                                        {item.agentBadge}
+                                    </span>
+                                )}
+
                                 {/* Arrow for active */}
                                 {isActive && (
                                     <ChevronRight className="w-3.5 h-3.5 text-emerald-500/50" />
@@ -188,7 +204,7 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                 <div className="flex items-center justify-between">
                     <span className={`text-[10px] font-medium ${isDark ? 'text-white/20' : 'text-gray-400'}`}
                         style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                        Business OS
+                        Business Agent
                     </span>
                     <span
                         className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400"
@@ -196,7 +212,7 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                             boxShadow: isDark ? '0 0 10px rgba(16, 185, 129, 0.2)' : 'none'
                         }}
                     >
-                        v1.0
+                        v2.0
                     </span>
                 </div>
             </div>

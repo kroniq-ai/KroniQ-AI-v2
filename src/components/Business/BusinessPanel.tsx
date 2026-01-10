@@ -1,23 +1,22 @@
 /**
- * Business Panel - AI COO Operating System
- * The main container for the full Business Operating System (Simplified)
+ * Business Panel - Multi-Agent Business Operating System
+ * 7 Agent-First Pages with Premium Green Design
  */
 
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useBusinessContext } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Sparkles, Construction, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, Sparkles, Construction, Plus, Settings, Users } from 'lucide-react';
 
-// Navigation & Command Bar
+// Navigation
 import { BusinessNav, type BusinessPage } from './BusinessNav';
-import { BusinessCommandBar } from './BusinessCommandBar';
 import { BusinessOnboarding } from './BusinessOnboarding';
 
-// Pages (Simplified - 6 Core Pages Only)
-import { OverviewPage } from './pages/OverviewPage';
-import { GoalsPage } from './pages/GoalsPage';
+// Pages (7 Agent-First)
+import { TodayPage } from './pages/TodayPage';
 import { TasksPage } from './pages/TasksPage';
+import { GoalsPage } from './pages/GoalsPage';
 import { DecisionsPage } from './pages/PlaceholderPages';
 import { RunwayPage } from './pages/RunwayPage';
 
@@ -97,21 +96,8 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
     const isAdmin = user?.email === ADMIN_EMAIL;
 
     // Page navigation state
-    const [activePage, setActivePage] = useState<BusinessPage>('overview');
-    const [isProcessingCommand, setIsProcessingCommand] = useState(false);
+    const [activePage, setActivePage] = useState<BusinessPage>('today');
     const [showOnboarding, setShowOnboarding] = useState(false);
-
-    // Handle AI command from command bar
-    const handleCommand = async (command: string) => {
-        console.log('🤖 [BusinessPanel] AI Command:', command, 'on page:', activePage);
-        setIsProcessingCommand(true);
-
-        // Simulate AI processing
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        setIsProcessingCommand(false);
-        // TODO: Integrate with actual AI service
-    };
 
     // Handle back to Super KroniQ
     const handleBack = () => {
@@ -120,27 +106,53 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
         }
     };
 
-    // Render active page (6 Core Pages Only)
+    // Render active page (7 Agent-First Pages)
     const renderPage = () => {
-        const pageProps = { isDark, contextName: activeContext?.name };
-
         switch (activePage) {
-            case 'overview':
-                return <OverviewPage {...pageProps} />;
-            case 'goals':
-                return <GoalsPage isDark={isDark} />;
+            case 'today':
+                return <TodayPage isDark={isDark} />;
             case 'tasks':
                 return <TasksPage isDark={isDark} />;
+            case 'customers':
+                return <CustomersPlaceholder isDark={isDark} />;
             case 'decisions':
                 return <DecisionsPage isDark={isDark} />;
+            case 'goals':
+                return <GoalsPage isDark={isDark} />;
             case 'runway':
                 return <RunwayPage isDark={isDark} />;
             case 'settings':
                 return <SettingsPlaceholder isDark={isDark} />;
             default:
-                return <OverviewPage {...pageProps} />;
+                return <TodayPage isDark={isDark} />;
         }
     };
+
+    // Customers placeholder
+    const CustomersPlaceholder: React.FC<{ isDark: boolean }> = ({ isDark }) => (
+        <div className={`flex-1 flex items-center justify-center ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            <div className="max-w-md text-center px-6">
+                <div className={`
+                    w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center
+                    ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}
+                `}
+                    style={{ boxShadow: isDark ? '0 0 30px rgba(16, 185, 129, 0.2)' : 'none' }}
+                >
+                    <Users className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                </div>
+                <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                    Customer Agent
+                </h1>
+                <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                    Track customer conversations, insights, and promises.
+                </p>
+                <p className={`text-xs mt-4 ${isDark ? 'text-emerald-500/40' : 'text-emerald-600/60'}`}>
+                    Coming soon — use Today page to talk to agents
+                </p>
+            </div>
+        </div>
+    );
 
     // Simple settings placeholder
     const SettingsPlaceholder: React.FC<{ isDark: boolean }> = ({ isDark }) => (
@@ -260,15 +272,6 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Page Content */}
                 {renderPage()}
-
-                {/* Global AI Command Bar */}
-                <BusinessCommandBar
-                    isDark={isDark}
-                    currentPage={activePage}
-                    contextName={activeContext?.name}
-                    onCommand={handleCommand}
-                    isProcessing={isProcessingCommand}
-                />
             </div>
         </div>
     );
