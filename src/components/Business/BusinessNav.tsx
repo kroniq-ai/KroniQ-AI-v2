@@ -1,6 +1,6 @@
 /**
  * Business Navigation Sidebar
- * Premium navigation for the AI COO Business Operating System
+ * Premium design with green glow, animations, and improved typography
  */
 
 import React from 'react';
@@ -106,40 +106,56 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
 }) => {
     return (
         <div className={`
-            w-56 flex-shrink-0 flex flex-col h-full
-            border-r transition-colors duration-200
-            ${isDark ? 'bg-[#0c0c0c] border-white/5' : 'bg-white border-gray-100'}
+            w-56 flex-shrink-0 flex flex-col h-full relative overflow-hidden
+            border-r transition-colors duration-300
+            ${isDark ? 'bg-[#080808] border-emerald-500/10' : 'bg-white border-gray-100'}
         `}>
+            {/* Subtle side glow */}
+            <div className={`
+                absolute top-0 right-0 w-px h-full pointer-events-none
+                ${isDark ? 'bg-gradient-to-b from-emerald-500/20 via-emerald-500/5 to-transparent' : ''}
+            `} />
+
             {/* Context Header */}
             <div className={`
                 px-4 pt-4 pb-4 border-b
-                ${isDark ? 'border-white/5' : 'border-gray-100'}
+                ${isDark ? 'border-emerald-500/10' : 'border-gray-100'}
             `}>
                 {/* Back Button */}
                 {onBack && (
                     <button
                         onClick={onBack}
                         className={`
-                            flex items-center gap-1.5 text-xs mb-3
-                            ${isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-700'}
+                            flex items-center gap-1.5 text-xs mb-3 font-medium
+                            transition-all duration-200
+                            ${isDark ? 'text-emerald-500/60 hover:text-emerald-400' : 'text-gray-400 hover:text-gray-700'}
                         `}
+                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                     >
                         <ArrowLeft className="w-3 h-3" />
                         Super KroniQ
                     </button>
                 )}
+
                 <div className="flex items-center gap-3">
-                    <div className={`
-                        w-9 h-9 rounded-xl flex items-center justify-center
-                        bg-gradient-to-br from-emerald-500/20 to-teal-500/10
-                    `}>
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <div
+                        className={`
+                            w-10 h-10 rounded-xl flex items-center justify-center
+                            bg-gradient-to-br from-emerald-500/20 to-emerald-600/10
+                            transition-all duration-300
+                        `}
+                        style={{
+                            boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.2)' : 'none'
+                        }}
+                    >
+                        <Sparkles className="w-5 h-5 text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <p className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                             {contextName || 'No Context'}
                         </p>
-                        <p className={`text-[10px] ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>
+                        <p className="text-[10px] text-emerald-500 font-medium">
                             AI COO Active
                         </p>
                     </div>
@@ -147,19 +163,20 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-3 px-2">
+            <nav className="flex-1 overflow-y-auto py-4 px-3">
                 {NAV_SECTIONS.map((section, sectionIdx) => (
-                    <div key={section.title} className={sectionIdx > 0 ? 'mt-5' : ''}>
+                    <div key={section.title} className={sectionIdx > 0 ? 'mt-6' : ''}>
                         {/* Section Title */}
                         <p className={`
-                            px-3 mb-1.5 text-[10px] font-medium uppercase tracking-wider
-                            ${isDark ? 'text-white/25' : 'text-gray-400'}
-                        `}>
+                            px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest
+                            ${isDark ? 'text-emerald-500/30' : 'text-gray-400'}
+                        `}
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                             {section.title}
                         </p>
 
                         {/* Section Items */}
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                             {section.items.map((item) => {
                                 const isActive = activePage === item.id;
                                 const Icon = item.icon;
@@ -170,39 +187,35 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                                         onClick={() => onPageChange(item.id)}
                                         title={item.description}
                                         className={`
-                                            w-full flex items-center gap-2.5 px-3 py-2 rounded-lg
-                                            text-left transition-all duration-150 group relative
+                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                            text-left transition-all duration-200 group relative
                                             ${isActive
-                                                ? (isDark
-                                                    ? 'bg-emerald-500/15 text-emerald-400'
-                                                    : 'bg-emerald-50 text-emerald-700')
+                                                ? 'bg-emerald-500/15 text-emerald-400'
                                                 : (isDark
-                                                    ? 'text-white/60 hover:text-white hover:bg-white/5'
-                                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50')}
+                                                    ? 'text-white/50 hover:text-emerald-400 hover:bg-emerald-500/5'
+                                                    : 'text-gray-600 hover:text-emerald-600 hover:bg-emerald-50')}
                                         `}
+                                        style={{
+                                            boxShadow: isActive && isDark
+                                                ? 'inset 0 0 20px rgba(16, 185, 129, 0.1), 0 0 10px rgba(16, 185, 129, 0.05)'
+                                                : 'none'
+                                        }}
                                     >
-                                        {/* Active glow */}
-                                        {isActive && (
-                                            <div className={`
-                                                absolute inset-0 rounded-lg opacity-50
-                                                ${isDark ? 'shadow-[inset_0_0_20px_rgba(16,185,129,0.15)]' : ''}
-                                            `} />
-                                        )}
-
                                         {/* Icon */}
                                         <Icon className={`
-                                            w-4 h-4 flex-shrink-0 relative z-10
-                                            ${isActive ? '' : 'opacity-70 group-hover:opacity-100'}
+                                            w-4 h-4 flex-shrink-0 transition-colors duration-200
+                                            ${isActive ? 'text-emerald-400' : 'group-hover:text-emerald-400'}
                                         `} />
 
                                         {/* Label */}
-                                        <span className="text-sm font-medium relative z-10 flex-1">
+                                        <span className="text-sm font-medium flex-1"
+                                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                                             {item.label}
                                         </span>
 
                                         {/* Arrow for active */}
                                         {isActive && (
-                                            <ChevronRight className="w-3.5 h-3.5 opacity-50" />
+                                            <ChevronRight className="w-3.5 h-3.5 text-emerald-500/50" />
                                         )}
                                     </button>
                                 );
@@ -214,17 +227,20 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
 
             {/* Bottom Badge */}
             <div className={`
-                px-3 py-3 border-t
-                ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-gray-100 bg-gray-50/50'}
+                px-4 py-3 border-t
+                ${isDark ? 'border-emerald-500/10 bg-emerald-500/[0.02]' : 'border-gray-100 bg-gray-50/50'}
             `}>
                 <div className="flex items-center justify-between">
-                    <span className={`text-[10px] ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                    <span className={`text-[10px] font-medium ${isDark ? 'text-white/20' : 'text-gray-400'}`}
+                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                         Business OS
                     </span>
-                    <span className={`
-                        text-[10px] font-medium px-2 py-0.5 rounded-full
-                        ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}
-                    `}>
+                    <span
+                        className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400"
+                        style={{
+                            boxShadow: isDark ? '0 0 10px rgba(16, 185, 129, 0.2)' : 'none'
+                        }}
+                    >
                         Beta
                     </span>
                 </div>
