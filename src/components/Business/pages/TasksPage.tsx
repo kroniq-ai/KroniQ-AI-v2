@@ -1,324 +1,203 @@
 /**
- * Tasks Page - Execution System
- * Premium green-only design with glow effects and Inter typography
+ * Tasks Page — Shared across all agents
+ * Task management with priorities
  */
 
 import React, { useState } from 'react';
-import { CheckSquare, Circle, Clock, Plus, Sparkles, Calendar, ChevronDown, Zap } from 'lucide-react';
+import {
+    CheckSquare,
+    Plus,
+    X,
+    Square,
+    CheckCircle,
+    Clock,
+    Star,
+    Trash2
+} from 'lucide-react';
 
 interface TasksPageProps {
     isDark: boolean;
+    agentType?: string;
 }
-
-type TaskStatus = 'todo' | 'in-progress' | 'done' | 'urgent';
-type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 interface Task {
     id: string;
     title: string;
-    status: TaskStatus;
-    priority: TaskPriority;
-    assignee?: string;
+    completed: boolean;
+    priority: 'high' | 'medium' | 'low';
     dueDate?: string;
-    linkedGoal?: string;
+    agent?: string;
 }
 
-const StatusIcon: React.FC<{ status: TaskStatus; isDark: boolean }> = ({ status, isDark }) => {
-    const icons = {
-        'todo': <Circle className={`w-4 h-4 ${isDark ? 'text-emerald-500/30' : 'text-emerald-300'}`} />,
-        'in-progress': <Clock className="w-4 h-4 text-emerald-400" />,
-        'done': <CheckSquare className="w-4 h-4 text-emerald-500" />,
-        'urgent': <Zap className="w-4 h-4 text-emerald-300 animate-pulse" />,
-    };
-    return icons[status];
+const PRIORITY_CONFIG = {
+    high: { label: 'High', color: { dark: 'text-red-400 bg-red-500/20', light: 'text-red-600 bg-red-100' } },
+    medium: { label: 'Medium', color: { dark: 'text-yellow-400 bg-yellow-500/20', light: 'text-yellow-600 bg-yellow-100' } },
+    low: { label: 'Low', color: { dark: 'text-gray-400 bg-gray-500/20', light: 'text-gray-600 bg-gray-100' } }
 };
 
-const PriorityBadge: React.FC<{ priority: TaskPriority; isDark: boolean }> = ({ priority, isDark }) => {
-    // All green shades - brightness indicates urgency
-    const colors = {
-        'low': isDark ? 'bg-emerald-500/10 text-emerald-500/40' : 'bg-emerald-50 text-emerald-400',
-        'medium': isDark ? 'bg-emerald-500/15 text-emerald-400/60' : 'bg-emerald-100 text-emerald-500',
-        'high': isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-200 text-emerald-600',
-        'urgent': isDark ? 'bg-emerald-400/25 text-emerald-300' : 'bg-emerald-300 text-emerald-700',
-    };
-    return (
-        <span
-            className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${colors[priority]}`}
-            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-        >
-            {priority}
-        </span>
-    );
-};
-
-const TaskRow: React.FC<{ task: Task; isDark: boolean; onStatusChange: (status: TaskStatus) => void }> = ({
-    task, isDark, onStatusChange
-}) => (
-    <div className={`
-        flex items-center gap-3 px-4 py-3.5 border-b transition-all duration-200 group
-        ${isDark
-            ? 'border-emerald-500/5 hover:bg-emerald-500/[0.03]'
-            : 'border-gray-100 hover:bg-emerald-50/50'}
-        ${task.status === 'done' ? 'opacity-40' : ''}
-    `}>
-        {/* Status Toggle */}
-        <button
-            onClick={() => onStatusChange(task.status === 'done' ? 'todo' : 'done')}
-            className="flex-shrink-0 transition-transform duration-150 hover:scale-110"
-        >
-            <StatusIcon status={task.status} isDark={isDark} />
-        </button>
-
-        {/* Title */}
-        <span
-            className={`
-                flex-1 text-sm font-medium
-                ${task.status === 'done' ? 'line-through' : ''}
-                ${isDark ? 'text-white' : 'text-gray-900'}
-            `}
-            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-        >
-            {task.title}
-        </span>
-
-        {/* Priority */}
-        <PriorityBadge priority={task.priority} isDark={isDark} />
-
-        {/* Due Date */}
-        {task.dueDate && (
-            <span className={`flex items-center gap-1 text-xs font-medium ${isDark ? 'text-emerald-500/40' : 'text-emerald-400'}`}>
-                <Calendar className="w-3 h-3" />
-                {task.dueDate}
-            </span>
-        )}
-
-        {/* Assignee */}
-        {task.assignee && (
-            <div className={`
-                w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}
-            `}>
-                {task.assignee.charAt(0)}
-            </div>
-        )}
-    </div>
-);
-
-// Section Header Component
-const SectionHeader: React.FC<{
-    isDark: boolean;
-    icon: React.ReactNode;
-    title: string;
-    count: number;
-    intensity: 'high' | 'medium' | 'low';
-}> = ({ isDark, icon, title, count, intensity }) => {
-    const intensityStyles = {
-        high: isDark ? 'bg-emerald-400/15 text-emerald-300 border-emerald-400/30' : 'bg-emerald-100 text-emerald-700 border-emerald-200',
-        medium: isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-100',
-        low: isDark ? 'bg-emerald-500/5 text-emerald-500/60 border-emerald-500/10' : 'bg-gray-50 text-emerald-500 border-gray-100',
-    };
-
-    return (
-        <div className={`
-            px-4 py-2.5 rounded-t-xl flex items-center gap-2 border
-            ${intensityStyles[intensity]}
-        `}>
-            {icon}
-            <span className="text-sm font-semibold" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                {title}
-            </span>
-            <span className={`text-xs font-medium ${isDark ? 'opacity-50' : 'opacity-70'}`}>
-                ({count})
-            </span>
-        </div>
-    );
-};
-
-export const TasksPage: React.FC<TasksPageProps> = ({ isDark }) => {
+export const TasksPage: React.FC<TasksPageProps> = ({ isDark, agentType }) => {
     const [tasks, setTasks] = useState<Task[]>([
-        { id: '1', title: 'Finalize Q1 roadmap presentation', status: 'in-progress', priority: 'high', assignee: 'A', dueDate: 'Jan 10' },
-        { id: '2', title: 'Review competitor pricing page', status: 'todo', priority: 'medium', assignee: 'B', dueDate: 'Jan 12' },
-        { id: '3', title: 'Set up analytics tracking', status: 'todo', priority: 'high', dueDate: 'Jan 15' },
-        { id: '4', title: 'Write investor update email', status: 'urgent', priority: 'urgent', assignee: 'A', dueDate: 'Jan 8' },
-        { id: '5', title: 'Launch landing page A/B test', status: 'done', priority: 'medium', assignee: 'C', dueDate: 'Jan 5' },
-        { id: '6', title: 'Customer interview calls (3)', status: 'in-progress', priority: 'high', dueDate: 'Jan 11' },
+        { id: '1', title: 'Review Q1 financial projections', completed: false, priority: 'high', dueDate: 'Today', agent: 'finance' },
+        { id: '2', title: 'Launch Product Hunt campaign', completed: false, priority: 'high', dueDate: 'Tomorrow', agent: 'marketing' },
+        { id: '3', title: 'Follow up with enterprise leads', completed: true, priority: 'medium', agent: 'customer' },
+        { id: '4', title: 'Update brand guidelines doc', completed: false, priority: 'medium', dueDate: 'This week', agent: 'branding' },
+        { id: '5', title: 'Fix Safari login bug', completed: false, priority: 'high', dueDate: 'Today', agent: 'product' },
+        { id: '6', title: 'Plan next sprint', completed: false, priority: 'medium', agent: 'product' },
     ]);
 
-    const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newTask, setNewTask] = useState({ title: '', priority: 'medium' as const, dueDate: '' });
+
+    // Filter by agent if specified
+    const filteredTasks = agentType && agentType !== 'ceo'
+        ? tasks.filter(t => t.agent === agentType)
+        : tasks;
+
+    const pendingTasks = filteredTasks.filter(t => !t.completed);
+    const completedTasks = filteredTasks.filter(t => t.completed);
+
+    const toggleTask = (id: string) => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
     };
 
-    const tasksByStatus = {
-        urgent: tasks.filter(t => t.priority === 'urgent' && t.status !== 'done'),
-        active: tasks.filter(t => t.status === 'in-progress'),
-        todo: tasks.filter(t => t.status === 'todo' && t.priority !== 'urgent'),
-        done: tasks.filter(t => t.status === 'done'),
+    const deleteTask = (id: string) => {
+        setTasks(prev => prev.filter(t => t.id !== id));
+    };
+
+    const handleAddTask = () => {
+        if (newTask.title) {
+            setTasks(prev => [{
+                id: Date.now().toString(),
+                title: newTask.title,
+                completed: false,
+                priority: newTask.priority,
+                dueDate: newTask.dueDate || undefined,
+                agent: agentType
+            }, ...prev]);
+            setNewTask({ title: '', priority: 'medium', dueDate: '' });
+            setShowAddModal(false);
+        }
     };
 
     return (
-        <div className="flex-1 overflow-y-auto relative">
-            {/* Background grid pattern */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    backgroundImage: isDark
-                        ? `linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px)`
-                        : 'none',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse 100% 50% at 50% 0%, black 0%, transparent 60%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse 100% 50% at 50% 0%, black 0%, transparent 60%)'
-                }}
-            />
-
-            <div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1
-                            className={`text-2xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                        >
-                            Tasks
-                        </h1>
-                        <p className={`text-sm ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>
-                            {tasks.filter(t => t.status !== 'done').length} tasks remaining
-                        </p>
+        <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <CheckSquare className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-emerald-500/60' : 'text-emerald-600/80'}`}>
+                            {agentType ? agentType.charAt(0).toUpperCase() + agentType.slice(1) : 'All'} Tasks
+                        </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <button className={`
-                            flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
-                            transition-all duration-200
-                            ${isDark
-                                ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20'
-                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}
-                        `}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                            <Sparkles className="w-4 h-4" />
-                            AI Daily Plan
-                        </button>
-                        <button
-                            className={`
-                                flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-                                bg-emerald-500 text-white hover:bg-emerald-400
-                                transition-all duration-200
-                            `}
-                            style={{
-                                fontFamily: 'Inter, system-ui, sans-serif',
-                                boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(16, 185, 129, 0.3)'
-                            }}
+                    <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Tasks</h1>
+                </div>
+                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400">
+                    <Plus className="w-4 h-4" /> Add Task
+                </button>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className={`p-4 rounded-2xl ${isDark ? 'bg-[#0c0c0c] border border-yellow-500/20' : 'bg-white border border-gray-200'}`}>
+                    <div className="flex items-center gap-2">
+                        <Clock className={`w-4 h-4 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                        <span className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Pending</span>
+                    </div>
+                    <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{pendingTasks.length}</p>
+                </div>
+                <div className={`p-4 rounded-2xl ${isDark ? 'bg-[#0c0c0c] border border-emerald-500/20' : 'bg-white border border-gray-200'}`}>
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Completed</span>
+                    </div>
+                    <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{completedTasks.length}</p>
+                </div>
+            </div>
+
+            {/* Task List */}
+            <div className="flex-1 space-y-2">
+                {pendingTasks.map(task => {
+                    const prioConfig = PRIORITY_CONFIG[task.priority];
+                    return (
+                        <div
+                            key={task.id}
+                            className={`group p-4 rounded-2xl flex items-center gap-3 ${isDark ? 'bg-[#0c0c0c] border border-white/5 hover:border-emerald-500/30' : 'bg-white border border-gray-200 hover:border-emerald-300'} transition-colors`}
                         >
-                            <Plus className="w-4 h-4" />
+                            <button onClick={() => toggleTask(task.id)} className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-white/30 hover:text-emerald-400' : 'text-gray-300 hover:text-emerald-600'}`}>
+                                <Square className="w-5 h-5" />
+                            </button>
+                            <div className="flex-1 min-w-0">
+                                <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{task.title}</p>
+                                {task.dueDate && (
+                                    <span className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>{task.dueDate}</span>
+                                )}
+                            </div>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${isDark ? prioConfig.color.dark : prioConfig.color.light}`}>
+                                {prioConfig.label}
+                            </span>
+                            <button onClick={() => deleteTask(task.id)} className={`opacity-0 group-hover:opacity-100 p-1.5 rounded-lg ${isDark ? 'hover:bg-white/5 text-white/30' : 'hover:bg-gray-100 text-gray-400'}`}>
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    );
+                })}
+
+                {completedTasks.length > 0 && (
+                    <>
+                        <p className={`text-xs font-bold uppercase tracking-wider pt-4 pb-2 ${isDark ? 'text-white/20' : 'text-gray-400'}`}>Completed</p>
+                        {completedTasks.map(task => (
+                            <div
+                                key={task.id}
+                                className={`group p-4 rounded-2xl flex items-center gap-3 opacity-50 ${isDark ? 'bg-[#0c0c0c] border border-white/5' : 'bg-white border border-gray-200'}`}
+                            >
+                                <button onClick={() => toggleTask(task.id)} className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                    <CheckCircle className="w-5 h-5" />
+                                </button>
+                                <p className={`flex-1 line-through ${isDark ? 'text-white/50' : 'text-gray-500'}`}>{task.title}</p>
+                            </div>
+                        ))}
+                    </>
+                )}
+            </div>
+
+            {/* Add Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+                    <div className={`relative w-full max-w-md p-6 rounded-3xl ${isDark ? 'bg-[#0c0c0c]' : 'bg-white'}`}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>New Task</h2>
+                            <button onClick={() => setShowAddModal(false)} className={`p-2 rounded-xl ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100'}`}>
+                                <X className={`w-5 h-5 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
+                            </button>
+                        </div>
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>Task</label>
+                                <input type="text" value={newTask.title} onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))} placeholder="What needs to be done?" className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+                            </div>
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>Priority</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {(['high', 'medium', 'low'] as const).map(p => (
+                                        <button key={p} onClick={() => setNewTask(prev => ({ ...prev, priority: p }))} className={`py-2 px-3 rounded-xl text-xs font-medium capitalize ${newTask.priority === p ? 'bg-emerald-500 text-white' : (isDark ? 'bg-white/5 text-white/50' : 'bg-gray-100 text-gray-500')}`}>
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>Due Date</label>
+                                <input type="text" value={newTask.dueDate} onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))} placeholder="e.g., Today, Tomorrow..." className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+                            </div>
+                        </div>
+                        <button onClick={handleAddTask} disabled={!newTask.title} className={`w-full py-3 rounded-xl text-sm font-semibold ${newTask.title ? 'bg-emerald-500 text-white hover:bg-emerald-400' : (isDark ? 'bg-white/5 text-white/20' : 'bg-gray-100 text-gray-300')}`}>
                             Add Task
                         </button>
                     </div>
                 </div>
-
-                {/* Urgent Section */}
-                {tasksByStatus.urgent.length > 0 && (
-                    <div className="mb-6">
-                        <SectionHeader
-                            isDark={isDark}
-                            icon={<Zap className="w-4 h-4" />}
-                            title="Urgent"
-                            count={tasksByStatus.urgent.length}
-                            intensity="high"
-                        />
-                        <div className={`
-                            rounded-b-xl border-x border-b overflow-hidden
-                            ${isDark ? 'border-emerald-400/20 bg-emerald-500/[0.02]' : 'border-emerald-200 bg-white'}
-                        `}>
-                            {tasksByStatus.urgent.map(task => (
-                                <TaskRow
-                                    key={task.id}
-                                    task={task}
-                                    isDark={isDark}
-                                    onStatusChange={(status) => handleStatusChange(task.id, status)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* In Progress Section */}
-                <div className="mb-6">
-                    <SectionHeader
-                        isDark={isDark}
-                        icon={<Clock className="w-4 h-4" />}
-                        title="In Progress"
-                        count={tasksByStatus.active.length}
-                        intensity="medium"
-                    />
-                    <div className={`
-                        rounded-b-xl border-x border-b overflow-hidden
-                        ${isDark ? 'border-emerald-500/10 bg-emerald-500/[0.01]' : 'border-gray-100 bg-white'}
-                    `}>
-                        {tasksByStatus.active.map(task => (
-                            <TaskRow
-                                key={task.id}
-                                task={task}
-                                isDark={isDark}
-                                onStatusChange={(status) => handleStatusChange(task.id, status)}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* To Do Section */}
-                <div className="mb-6">
-                    <SectionHeader
-                        isDark={isDark}
-                        icon={<Circle className="w-4 h-4" />}
-                        title="To Do"
-                        count={tasksByStatus.todo.length}
-                        intensity="low"
-                    />
-                    <div className={`
-                        rounded-b-xl border-x border-b overflow-hidden
-                        ${isDark ? 'border-emerald-500/5 bg-emerald-500/[0.01]' : 'border-gray-100 bg-white'}
-                    `}>
-                        {tasksByStatus.todo.map(task => (
-                            <TaskRow
-                                key={task.id}
-                                task={task}
-                                isDark={isDark}
-                                onStatusChange={(status) => handleStatusChange(task.id, status)}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Done Section - Collapsible */}
-                <details className="group">
-                    <summary className={`
-                        px-4 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer list-none
-                        transition-all duration-200
-                        ${isDark
-                            ? 'bg-emerald-500/5 text-emerald-500/40 hover:text-emerald-400 border border-emerald-500/10'
-                            : 'bg-gray-50 text-emerald-400 hover:text-emerald-600'}
-                    `}>
-                        <CheckSquare className="w-4 h-4" />
-                        <span className="text-sm font-medium" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                            Completed
-                        </span>
-                        <span className="text-xs">({tasksByStatus.done.length})</span>
-                        <ChevronDown className="w-4 h-4 ml-auto transition-transform group-open:rotate-180" />
-                    </summary>
-                    <div className={`
-                        mt-2 rounded-xl border overflow-hidden
-                        ${isDark ? 'border-emerald-500/5 bg-emerald-500/[0.01]' : 'border-gray-100 bg-white'}
-                    `}>
-                        {tasksByStatus.done.map(task => (
-                            <TaskRow
-                                key={task.id}
-                                task={task}
-                                isDark={isDark}
-                                onStatusChange={(status) => handleStatusChange(task.id, status)}
-                            />
-                        ))}
-                    </div>
-                </details>
-            </div>
+            )}
         </div>
     );
 };

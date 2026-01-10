@@ -56,6 +56,22 @@ import { CampaignsPage } from './pages/CampaignsPage';
 import { MetricsPage } from './pages/MetricsPage';
 import { ContentPage } from './pages/ContentPage';
 
+// Customer Pages
+import { InsightsPage } from './pages/InsightsPage';
+import { FeedbackPage } from './pages/FeedbackPage';
+
+// Branding Pages
+import { BrandKitPage } from './pages/BrandKitPage';
+import { VoicePage } from './pages/VoicePage';
+
+// Product Pages
+import { RoadmapPage } from './pages/RoadmapPage';
+import { BugsPage } from './pages/BugsPage';
+
+// Shared Pages
+import { TasksPage } from './pages/TasksPage';
+import { GoalsPage } from './pages/GoalsPage';
+
 // ===== ICON MAP =====
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -450,6 +466,44 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
                 case 'content':
                     return <ContentPage isDark={isDark} />;
             }
+        }
+
+        // Customer Agent sections
+        if (agentType === 'customer' || agentType === 'ceo') {
+            switch (state.currentSection) {
+                case 'insights':
+                    return <InsightsPage isDark={isDark} />;
+                case 'feedback':
+                    return <FeedbackPage isDark={isDark} />;
+            }
+        }
+
+        // Branding Agent sections
+        if (agentType === 'branding' || agentType === 'ceo') {
+            switch (state.currentSection) {
+                case 'brandkit':
+                    return <BrandKitPage isDark={isDark} />;
+                case 'voice':
+                    return <VoicePage isDark={isDark} />;
+            }
+        }
+
+        // Product Agent sections
+        if (agentType === 'product' || agentType === 'ceo') {
+            switch (state.currentSection) {
+                case 'roadmap':
+                    return <RoadmapPage isDark={isDark} />;
+                case 'bugs':
+                    return <BugsPage isDark={isDark} />;
+            }
+        }
+
+        // Shared sections (all agents)
+        switch (state.currentSection) {
+            case 'tasks':
+                return <TasksPage isDark={isDark} agentType={agentType} />;
+            case 'goals':
+                return <GoalsPage isDark={isDark} agentType={agentType} />;
         }
 
         // Placeholder for other sections

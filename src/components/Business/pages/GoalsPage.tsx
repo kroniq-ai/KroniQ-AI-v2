@@ -1,275 +1,187 @@
 /**
- * Goals Page - OKRs & Strategic Direction
- * Premium green-only design with glow effects and Inter typography
+ * Goals Page — Shared across all agents
+ * OKRs and goal tracking
  */
 
-import React from 'react';
-import { Target, Sparkles, CheckCircle, Clock, TrendingUp, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+    Target,
+    Plus,
+    X,
+    TrendingUp,
+    CheckCircle,
+    Clock
+} from 'lucide-react';
 
 interface GoalsPageProps {
     isDark: boolean;
+    agentType?: string;
 }
 
-// Goal status badge - ALL GREEN SHADES
-const StatusBadge: React.FC<{ status: 'on-track' | 'needs-attention' | 'behind'; isDark: boolean }> = ({ status, isDark }) => {
-    // Green intensity indicates status: bright = good, dim = needs attention
-    const config = {
-        'on-track': { icon: CheckCircle, label: 'On Track', intensity: 'high' },
-        'needs-attention': { icon: Clock, label: 'Needs Focus', intensity: 'medium' },
-        'behind': { icon: TrendingUp, label: 'Push Harder', intensity: 'low' },
-    };
-    const { icon: Icon, label, intensity } = config[status];
-
-    const intensityStyles = {
-        high: isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700',
-        medium: isDark ? 'bg-emerald-500/15 text-emerald-400/70' : 'bg-emerald-50 text-emerald-600',
-        low: isDark ? 'bg-emerald-500/10 text-emerald-500/50' : 'bg-emerald-50/50 text-emerald-500',
-    };
-
-    return (
-        <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${intensityStyles[intensity]}`}
-            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-        >
-            <Icon className="w-3 h-3" />
-            {label}
-        </span>
-    );
-};
-
-// Goal Card
-const GoalCard: React.FC<{
-    isDark: boolean;
+interface Goal {
+    id: string;
     title: string;
     description: string;
     progress: number;
-    status: 'on-track' | 'needs-attention' | 'behind';
-    keyResults: { label: string; progress: number }[];
-}> = ({ isDark, title, description, progress, status, keyResults }) => {
-    // Progress bar color based on intensity
-    const getProgressColor = (p: number) => {
-        if (p >= 70) return 'bg-emerald-500';
-        if (p >= 40) return 'bg-emerald-400';
-        return 'bg-emerald-300';
+    target: string;
+    current: string;
+    status: 'on-track' | 'at-risk' | 'behind';
+    agent?: string;
+}
+
+const STATUS_CONFIG = {
+    'on-track': { label: 'On Track', color: { dark: 'bg-emerald-500/20 text-emerald-400', light: 'bg-emerald-100 text-emerald-700' } },
+    'at-risk': { label: 'At Risk', color: { dark: 'bg-yellow-500/20 text-yellow-400', light: 'bg-yellow-100 text-yellow-700' } },
+    'behind': { label: 'Behind', color: { dark: 'bg-red-500/20 text-red-400', light: 'bg-red-100 text-red-700' } }
+};
+
+export const GoalsPage: React.FC<GoalsPageProps> = ({ isDark, agentType }) => {
+    const [goals, setGoals] = useState<Goal[]>([
+        { id: '1', title: 'Increase MRR', description: 'Grow monthly recurring revenue', progress: 75, target: '$10,000', current: '$7,500', status: 'on-track', agent: 'finance' },
+        { id: '2', title: 'Reduce CAC', description: 'Lower customer acquisition cost', progress: 60, target: '$30', current: '$42', status: 'at-risk', agent: 'marketing' },
+        { id: '3', title: 'Improve NPS', description: 'Net promoter score target', progress: 85, target: '50', current: '42', status: 'on-track', agent: 'customer' },
+        { id: '4', title: 'Brand Awareness', description: 'Social media followers', progress: 40, target: '10,000', current: '4,000', status: 'behind', agent: 'branding' },
+        { id: '5', title: 'Ship v2.0', description: 'Major product release', progress: 90, target: 'Q1 2026', current: 'On schedule', status: 'on-track', agent: 'product' },
+    ]);
+
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newGoal, setNewGoal] = useState({ title: '', description: '', target: '' });
+
+    // Filter by agent if specified
+    const filteredGoals = agentType && agentType !== 'ceo'
+        ? goals.filter(g => g.agent === agentType)
+        : goals;
+
+    const onTrackCount = filteredGoals.filter(g => g.status === 'on-track').length;
+    const totalProgress = Math.round(filteredGoals.reduce((sum, g) => sum + g.progress, 0) / filteredGoals.length);
+
+    const handleAddGoal = () => {
+        if (newGoal.title) {
+            setGoals(prev => [{
+                id: Date.now().toString(),
+                title: newGoal.title,
+                description: newGoal.description,
+                progress: 0,
+                target: newGoal.target,
+                current: '0',
+                status: 'on-track',
+                agent: agentType
+            }, ...prev]);
+            setNewGoal({ title: '', description: '', target: '' });
+            setShowAddModal(false);
+        }
     };
 
     return (
-        <div
-            className={`
-                relative p-6 rounded-2xl border overflow-hidden
-                transition-all duration-300 group cursor-pointer
-                hover:translate-y-[-2px]
-                ${isDark
-                    ? 'bg-[#0d0d0d] border-emerald-500/10 hover:border-emerald-500/30'
-                    : 'bg-white border-gray-100 hover:border-emerald-300 shadow-sm hover:shadow-lg'}
-            `}
-            style={{
-                boxShadow: isDark ? 'inset 0 0 30px rgba(16, 185, 129, 0.02)' : undefined
-            }}
-        >
-            {/* Grid pattern on hover */}
-            <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                style={{
-                    backgroundImage: isDark
-                        ? `linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px)`
-                        : 'none',
-                    backgroundSize: '20px 20px'
-                }}
-            />
-
-            <div className="relative z-10">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <Target className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                            <h3
-                                className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}
-                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                            >
-                                {title}
-                            </h3>
-                        </div>
-                        <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                            {description}
-                        </p>
+        <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <Target className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-emerald-500/60' : 'text-emerald-600/80'}`}>
+                            {agentType ? agentType.charAt(0).toUpperCase() + agentType.slice(1) : 'All'} Goals
+                        </span>
                     </div>
-                    <StatusBadge status={status} isDark={isDark} />
+                    <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Goals</h1>
                 </div>
+                <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400">
+                    <Plus className="w-4 h-4" /> Add Goal
+                </button>
+            </div>
 
-                {/* Progress bar with glow */}
-                <div className="mb-5">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className={`text-xs font-medium ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                            Overall Progress
-                        </span>
-                        <span
-                            className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                        >
-                            {progress}%
-                        </span>
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className={`p-4 rounded-2xl ${isDark ? 'bg-[#0c0c0c] border border-emerald-500/20' : 'bg-white border border-gray-200'}`}>
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>On Track</span>
                     </div>
-                    <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-100'}`}>
+                    <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{onTrackCount}/{filteredGoals.length}</p>
+                </div>
+                <div className={`p-4 rounded-2xl ${isDark ? 'bg-[#0c0c0c] border border-white/5' : 'bg-white border border-gray-200'}`}>
+                    <div className="flex items-center gap-2">
+                        <TrendingUp className={`w-4 h-4 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
+                        <span className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Avg Progress</span>
+                    </div>
+                    <p className={`text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{totalProgress}%</p>
+                </div>
+            </div>
+
+            {/* Goals List */}
+            <div className="flex-1 space-y-4">
+                {filteredGoals.map(goal => {
+                    const statusConfig = STATUS_CONFIG[goal.status];
+                    return (
                         <div
-                            className={`h-full rounded-full transition-all duration-700 ${getProgressColor(progress)}`}
-                            style={{
-                                width: `${progress}%`,
-                                boxShadow: isDark ? '0 0 10px rgba(16, 185, 129, 0.5)' : 'none'
-                            }}
-                        />
-                    </div>
-                </div>
-
-                {/* Key Results */}
-                <div className="space-y-3">
-                    <p
-                        className={`text-[10px] uppercase tracking-widest font-semibold ${isDark ? 'text-emerald-500/30' : 'text-emerald-400'}`}
-                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                    >
-                        Key Results
-                    </p>
-                    {keyResults.map((kr, idx) => (
-                        <div key={idx} className="flex items-center gap-3">
-                            <div className={`flex-1 h-1 rounded-full overflow-hidden ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-100'}`}>
-                                <div
-                                    className="h-full rounded-full bg-emerald-500/60"
-                                    style={{ width: `${kr.progress}%` }}
-                                />
-                            </div>
-                            <span className={`text-xs font-medium min-w-[120px] ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                                {kr.label}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-
-                {/* AI Actions */}
-                <div className={`mt-5 pt-4 border-t flex items-center gap-2 ${isDark ? 'border-emerald-500/10' : 'border-gray-100'}`}>
-                    <button className={`
-                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                        transition-all duration-200
-                        ${isDark
-                            ? 'bg-emerald-500/10 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/15'
-                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}
-                    `}
-                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                        <Sparkles className="w-3 h-3" />
-                        Break into tasks
-                    </button>
-                    <button className={`
-                        flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                        transition-all duration-200
-                        ${isDark
-                            ? 'bg-emerald-500/10 text-emerald-400/70 hover:text-emerald-400 hover:bg-emerald-500/15'
-                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}
-                    `}
-                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                        Is this realistic?
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export const GoalsPage: React.FC<GoalsPageProps> = ({ isDark }) => {
-    const goals = [
-        {
-            title: 'Reach $50k MRR',
-            description: 'Q1 2026 Revenue Target',
-            progress: 65,
-            status: 'on-track' as const,
-            keyResults: [
-                { label: 'New customers: 50', progress: 72 },
-                { label: 'Reduce churn to 3%', progress: 45 },
-                { label: 'Increase ARPU by 20%', progress: 80 },
-            ],
-        },
-        {
-            title: 'Launch V2 Platform',
-            description: 'Complete platform redesign',
-            progress: 42,
-            status: 'needs-attention' as const,
-            keyResults: [
-                { label: 'Core features complete', progress: 60 },
-                { label: 'Beta testing done', progress: 30 },
-                { label: 'Documentation ready', progress: 15 },
-            ],
-        },
-        {
-            title: 'Build Content Machine',
-            description: 'Marketing & SEO infrastructure',
-            progress: 28,
-            status: 'behind' as const,
-            keyResults: [
-                { label: '20 blog posts published', progress: 35 },
-                { label: 'YouTube channel active', progress: 20 },
-                { label: 'Newsletter 5k subs', progress: 50 },
-            ],
-        },
-    ];
-
-    return (
-        <div className="flex-1 overflow-y-auto relative">
-            {/* Background grid pattern */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    backgroundImage: isDark
-                        ? `linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px)`
-                        : 'none',
-                    backgroundSize: '50px 50px',
-                    maskImage: 'radial-gradient(ellipse 100% 60% at 50% 0%, black 0%, transparent 70%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse 100% 60% at 50% 0%, black 0%, transparent 70%)'
-                }}
-            />
-
-            {/* Subtle top glow */}
-            <div className={`
-                absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[200px] rounded-full blur-3xl pointer-events-none
-                ${isDark ? 'bg-emerald-500/5' : 'bg-emerald-100/30'}
-            `} />
-
-            <div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1
-                            className={`text-2xl font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                            key={goal.id}
+                            className={`p-5 rounded-2xl ${isDark ? 'bg-[#0c0c0c] border border-white/5' : 'bg-white border border-gray-200'}`}
                         >
-                            Goals & OKRs
-                        </h1>
-                        <p className={`text-sm ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>
-                            Q1 2026 objectives and key results
-                        </p>
-                    </div>
-                    <button
-                        className={`
-                            flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-                            bg-emerald-500 text-white hover:bg-emerald-400
-                            transition-all duration-200
-                        `}
-                        style={{
-                            fontFamily: 'Inter, system-ui, sans-serif',
-                            boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(16, 185, 129, 0.3)'
-                        }}
-                    >
-                        <Plus className="w-4 h-4" />
-                        New Goal
-                    </button>
-                </div>
+                            <div className="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 className={`font-medium mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{goal.title}</h3>
+                                    <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-600'}`}>{goal.description}</p>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${isDark ? statusConfig.color.dark : statusConfig.color.light}`}>
+                                    {statusConfig.label}
+                                </span>
+                            </div>
 
-                {/* Goals List */}
-                <div className="space-y-5">
-                    {goals.map((goal, idx) => (
-                        <GoalCard key={idx} isDark={isDark} {...goal} />
-                    ))}
-                </div>
+                            {/* Progress bar */}
+                            <div className="mb-3">
+                                <div className="flex justify-between text-xs mb-1">
+                                    <span className={isDark ? 'text-white/40' : 'text-gray-500'}>{goal.current}</span>
+                                    <span className={isDark ? 'text-white/40' : 'text-gray-500'}>{goal.target}</span>
+                                </div>
+                                <div className={`h-2 rounded-full ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
+                                    <div
+                                        className={`h-2 rounded-full transition-all ${goal.status === 'on-track' ? 'bg-emerald-500' :
+                                                goal.status === 'at-risk' ? 'bg-yellow-500' : 'bg-red-500'
+                                            }`}
+                                        style={{ width: `${goal.progress}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <p className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                {goal.progress}% complete
+                            </p>
+                        </div>
+                    );
+                })}
             </div>
+
+            {/* Add Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+                    <div className={`relative w-full max-w-md p-6 rounded-3xl ${isDark ? 'bg-[#0c0c0c]' : 'bg-white'}`}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>New Goal</h2>
+                            <button onClick={() => setShowAddModal(false)} className={`p-2 rounded-xl ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100'}`}>
+                                <X className={`w-5 h-5 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
+                            </button>
+                        </div>
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>Goal</label>
+                                <input type="text" value={newGoal.title} onChange={(e) => setNewGoal(prev => ({ ...prev, title: e.target.value }))} placeholder="What do you want to achieve?" className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+                            </div>
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>Description</label>
+                                <input type="text" value={newGoal.description} onChange={(e) => setNewGoal(prev => ({ ...prev, description: e.target.value }))} placeholder="How will you measure success?" className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+                            </div>
+                            <div>
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>Target</label>
+                                <input type="text" value={newGoal.target} onChange={(e) => setNewGoal(prev => ({ ...prev, target: e.target.value }))} placeholder="e.g., $10,000, 50%, Q1 2026" className={`w-full px-4 py-3 rounded-xl text-sm border outline-none ${isDark ? 'bg-white/5 border-white/10 text-white placeholder-white/30' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+                            </div>
+                        </div>
+                        <button onClick={handleAddGoal} disabled={!newGoal.title} className={`w-full py-3 rounded-xl text-sm font-semibold ${newGoal.title ? 'bg-emerald-500 text-white hover:bg-emerald-400' : (isDark ? 'bg-white/5 text-white/20' : 'bg-gray-100 text-gray-300')}`}>
+                            Add Goal
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
