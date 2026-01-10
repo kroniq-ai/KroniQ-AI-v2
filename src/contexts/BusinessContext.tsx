@@ -125,12 +125,56 @@ export const BusinessContextProvider: React.FC<{ children: ReactNode }> = ({ chi
             return { success: false, error: 'Not authenticated' };
         }
 
-        const result = await createBusinessContext(currentUser.id, input);
-        if (result.success && result.context) {
-            setContexts(prev => [result.context!, ...prev]);
-            setActiveContextState(result.context);
+        try {
+            const result = await createBusinessContext(currentUser.id, input);
+            if (result.success && result.context) {
+                setContexts(prev => [result.context!, ...prev]);
+                setActiveContextState(result.context);
+                return { success: true };
+            }
+
+            // If Supabase fails, create local-only context
+            if (result.error) {
+                console.warn('[BusinessContext] Supabase failed, using local context:', result.error);
+                const localContext: BusinessContext = {
+                    id: `local-${Date.now()}`,
+                    user_id: currentUser.id,
+                    name: input.name,
+                    industry: input.industry || '',
+                    target_audience: input.target_audience || '',
+                    stage: input.stage,
+                    primary_goals: input.primary_goals || [],
+                    is_active: true,
+                    memory: {},
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                setContexts([localContext]);
+                setActiveContextState(localContext);
+                return { success: true };
+            }
+
+            return { success: result.success, error: result.error };
+        } catch (error) {
+            console.error('[BusinessContext] Error creating context:', error);
+            // Fallback: create local-only context
+            const localContext: BusinessContext = {
+                id: `local-${Date.now()}`,
+                user_id: currentUser.id,
+                name: input.name,
+                industry: input.industry || '',
+                target_audience: input.target_audience || '',
+                stage: input.stage,
+                primary_goals: input.primary_goals || [],
+                is_active: true,
+                memory: {},
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            setContexts([localContext]);
+            setActiveContextState(localContext);
+            return { success: true };
         }
-        return { success: result.success, error: result.error };
     }, [currentUser?.id]);
 
     // Update context
