@@ -1,34 +1,25 @@
 /**
  * Business Panel - AI COO Operating System
- * The main container for the full Business Operating System
+ * The main container for the full Business Operating System (Simplified)
  */
 
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useBusinessContext } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Sparkles, Construction, Plus } from 'lucide-react';
+import { ArrowLeft, Sparkles, Construction, Plus, Settings } from 'lucide-react';
 
 // Navigation & Command Bar
 import { BusinessNav, type BusinessPage } from './BusinessNav';
 import { BusinessCommandBar } from './BusinessCommandBar';
 import { BusinessOnboarding } from './BusinessOnboarding';
 
-// Pages
+// Pages (Simplified - 6 Core Pages Only)
 import { OverviewPage } from './pages/OverviewPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { TasksPage } from './pages/TasksPage';
-import {
-    AssetsPage,
-    DecisionsPage,
-    AnalyticsPage,
-    CompetitorsPage,
-    MarketPage,
-    ReportsPage,
-    UpdatesPage,
-    ContextPage,
-    TeamPage
-} from './pages/PlaceholderPages';
+import { DecisionsPage } from './pages/PlaceholderPages';
+import { RunwayPage } from './pages/RunwayPage';
 
 // Admin email for full access
 const ADMIN_EMAIL = 'atirek.sd11@gmail.com';
@@ -129,7 +120,7 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
         }
     };
 
-    // Render active page
+    // Render active page (6 Core Pages Only)
     const renderPage = () => {
         const pageProps = { isDark, contextName: activeContext?.name };
 
@@ -140,28 +131,37 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
                 return <GoalsPage isDark={isDark} />;
             case 'tasks':
                 return <TasksPage isDark={isDark} />;
-            case 'assets':
-                return <AssetsPage isDark={isDark} />;
             case 'decisions':
                 return <DecisionsPage isDark={isDark} />;
-            case 'analytics':
-                return <AnalyticsPage isDark={isDark} />;
-            case 'competitors':
-                return <CompetitorsPage isDark={isDark} />;
-            case 'market':
-                return <MarketPage isDark={isDark} />;
-            case 'reports':
-                return <ReportsPage isDark={isDark} />;
-            case 'updates':
-                return <UpdatesPage isDark={isDark} />;
-            case 'context':
-                return <ContextPage isDark={isDark} />;
-            case 'team':
-                return <TeamPage isDark={isDark} />;
+            case 'runway':
+                return <RunwayPage isDark={isDark} />;
+            case 'settings':
+                return <SettingsPlaceholder isDark={isDark} />;
             default:
                 return <OverviewPage {...pageProps} />;
         }
     };
+
+    // Simple settings placeholder
+    const SettingsPlaceholder: React.FC<{ isDark: boolean }> = ({ isDark }) => (
+        <div className={`flex-1 flex items-center justify-center ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+            <div className="max-w-md text-center px-6">
+                <div className={`
+                    w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center
+                    ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}
+                `}>
+                    <Settings className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                </div>
+                <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                    Settings
+                </h1>
+                <p className={`text-sm ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                    Business context configuration coming soon.
+                </p>
+            </div>
+        </div>
+    );
 
     // Show loading
     if (isLoading) {

@@ -1,6 +1,7 @@
 /**
- * Business Navigation Sidebar
- * Premium design with green glow, animations, and improved typography
+ * Business Navigation Sidebar (Simplified)
+ * Based on research: Only 6 core pages founders actually need
+ * Premium green design
  */
 
 import React from 'react';
@@ -8,15 +9,9 @@ import {
     LayoutDashboard,
     Target,
     CheckSquare,
-    FolderOpen,
     Scale,
-    BarChart3,
-    Radar,
-    Globe,
-    FileText,
-    Send,
-    Building2,
-    Users,
+    DollarSign,
+    Settings,
     ChevronRight,
     Sparkles,
     ArrowLeft
@@ -28,26 +23,15 @@ export type BusinessPage =
     | 'overview'
     | 'goals'
     | 'tasks'
-    | 'assets'
     | 'decisions'
-    | 'analytics'
-    | 'competitors'
-    | 'market'
-    | 'reports'
-    | 'updates'
-    | 'context'
-    | 'team';
+    | 'runway'
+    | 'settings';
 
 interface NavItem {
     id: BusinessPage;
     label: string;
     icon: React.ElementType;
     description?: string;
-}
-
-interface NavSection {
-    title: string;
-    items: NavItem[];
 }
 
 interface BusinessNavProps {
@@ -58,41 +42,16 @@ interface BusinessNavProps {
     onBack?: () => void;
 }
 
-// ===== NAVIGATION STRUCTURE =====
+// ===== SIMPLIFIED NAVIGATION (6 Core Pages) =====
+// Removed: Assets, Analytics, Competitors, Market, Reports, Updates, Team
 
-const NAV_SECTIONS: NavSection[] = [
-    {
-        title: 'Workspace',
-        items: [
-            { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: 'Command center' },
-            { id: 'goals', label: 'Goals', icon: Target, description: 'OKRs & targets' },
-            { id: 'tasks', label: 'Tasks', icon: CheckSquare, description: 'Execution' },
-            { id: 'assets', label: 'Assets', icon: FolderOpen, description: 'Knowledge base' },
-            { id: 'decisions', label: 'Decisions', icon: Scale, description: 'Decision log' },
-        ],
-    },
-    {
-        title: 'Intelligence',
-        items: [
-            { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Metrics & trends' },
-            { id: 'competitors', label: 'Competitors', icon: Radar, description: 'Market intel' },
-            { id: 'market', label: 'Market', icon: Globe, description: 'Research' },
-        ],
-    },
-    {
-        title: 'Output',
-        items: [
-            { id: 'reports', label: 'Reports', icon: FileText, description: 'Generate reports' },
-            { id: 'updates', label: 'Updates', icon: Send, description: 'Stakeholder comms' },
-        ],
-    },
-    {
-        title: 'Settings',
-        items: [
-            { id: 'context', label: 'Business', icon: Building2, description: 'Context settings' },
-            { id: 'team', label: 'Team', icon: Users, description: 'Permissions' },
-        ],
-    },
+const NAV_ITEMS: NavItem[] = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: 'Morning focus' },
+    { id: 'goals', label: 'Goals', icon: Target, description: 'OKRs (max 3)' },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare, description: 'Execution' },
+    { id: 'decisions', label: 'Decisions', icon: Scale, description: 'Decision log' },
+    { id: 'runway', label: 'Runway', icon: DollarSign, description: 'Cash + Burn' },
+    { id: 'settings', label: 'Settings', icon: Settings, description: 'Business context' },
 ];
 
 // ===== COMPONENT =====
@@ -162,67 +121,63 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                 </div>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Simplified Single List */}
             <nav className="flex-1 overflow-y-auto py-4 px-3">
-                {NAV_SECTIONS.map((section, sectionIdx) => (
-                    <div key={section.title} className={sectionIdx > 0 ? 'mt-6' : ''}>
-                        {/* Section Title */}
-                        <p className={`
-                            px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest
-                            ${isDark ? 'text-emerald-500/30' : 'text-gray-400'}
-                        `}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                            {section.title}
-                        </p>
+                <p className={`
+                    px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest
+                    ${isDark ? 'text-emerald-500/30' : 'text-gray-400'}
+                `}
+                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                    Core
+                </p>
 
-                        {/* Section Items */}
-                        <div className="space-y-1">
-                            {section.items.map((item) => {
-                                const isActive = activePage === item.id;
-                                const Icon = item.icon;
+                <div className="space-y-1">
+                    {NAV_ITEMS.map((item) => {
+                        const isActive = activePage === item.id;
+                        const Icon = item.icon;
+                        const isSettings = item.id === 'settings';
 
-                                return (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => onPageChange(item.id)}
-                                        title={item.description}
-                                        className={`
-                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                            text-left transition-all duration-200 group relative
-                                            ${isActive
-                                                ? 'bg-emerald-500/15 text-emerald-400'
-                                                : (isDark
-                                                    ? 'text-white/50 hover:text-emerald-400 hover:bg-emerald-500/5'
-                                                    : 'text-gray-600 hover:text-emerald-600 hover:bg-emerald-50')}
-                                        `}
-                                        style={{
-                                            boxShadow: isActive && isDark
-                                                ? 'inset 0 0 20px rgba(16, 185, 129, 0.1), 0 0 10px rgba(16, 185, 129, 0.05)'
-                                                : 'none'
-                                        }}
-                                    >
-                                        {/* Icon */}
-                                        <Icon className={`
-                                            w-4 h-4 flex-shrink-0 transition-colors duration-200
-                                            ${isActive ? 'text-emerald-400' : 'group-hover:text-emerald-400'}
-                                        `} />
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => onPageChange(item.id)}
+                                title={item.description}
+                                className={`
+                                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                                    text-left transition-all duration-200 group relative
+                                    ${isSettings ? 'mt-4 pt-4 border-t ' + (isDark ? 'border-emerald-500/10' : 'border-gray-100') : ''}
+                                    ${isActive
+                                        ? 'bg-emerald-500/15 text-emerald-400'
+                                        : (isDark
+                                            ? 'text-white/50 hover:text-emerald-400 hover:bg-emerald-500/5'
+                                            : 'text-gray-600 hover:text-emerald-600 hover:bg-emerald-50')}
+                                `}
+                                style={{
+                                    boxShadow: isActive && isDark
+                                        ? 'inset 0 0 20px rgba(16, 185, 129, 0.1), 0 0 10px rgba(16, 185, 129, 0.05)'
+                                        : 'none'
+                                }}
+                            >
+                                {/* Icon */}
+                                <Icon className={`
+                                    w-4 h-4 flex-shrink-0 transition-colors duration-200
+                                    ${isActive ? 'text-emerald-400' : 'group-hover:text-emerald-400'}
+                                `} />
 
-                                        {/* Label */}
-                                        <span className="text-sm font-medium flex-1"
-                                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                                            {item.label}
-                                        </span>
+                                {/* Label */}
+                                <span className="text-sm font-medium flex-1"
+                                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    {item.label}
+                                </span>
 
-                                        {/* Arrow for active */}
-                                        {isActive && (
-                                            <ChevronRight className="w-3.5 h-3.5 text-emerald-500/50" />
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
+                                {/* Arrow for active */}
+                                {isActive && (
+                                    <ChevronRight className="w-3.5 h-3.5 text-emerald-500/50" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </nav>
 
             {/* Bottom Badge */}
@@ -241,7 +196,7 @@ export const BusinessNav: React.FC<BusinessNavProps> = ({
                             boxShadow: isDark ? '0 0 10px rgba(16, 185, 129, 0.2)' : 'none'
                         }}
                     >
-                        Beta
+                        v1.0
                     </span>
                 </div>
             </div>
