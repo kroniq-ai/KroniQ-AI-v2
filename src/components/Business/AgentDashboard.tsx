@@ -50,93 +50,105 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => (
     <button
         onClick={onClick}
         className={`
-            group relative w-full p-8 rounded-3xl text-left overflow-hidden
+            group relative w-full rounded-3xl text-center overflow-hidden
             border transition-all duration-500
-            hover:scale-[1.02]
+            hover:scale-[1.01]
             ${isDark
-                ? 'bg-gradient-to-br from-emerald-950/80 via-[#0d0d0d] to-[#0d0d0d] border-emerald-500/30 hover:border-emerald-400/60'
-                : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:border-emerald-400'}
+                ? 'bg-gradient-to-b from-emerald-950/60 via-[#0a0a0a] to-[#0a0a0a] border-emerald-500/30 hover:border-emerald-400/60'
+                : 'bg-gradient-to-b from-emerald-50 to-white border-emerald-200 hover:border-emerald-400'}
         `}
         style={{
             boxShadow: isDark
-                ? '0 0 60px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(16, 185, 129, 0.1)'
-                : '0 10px 40px rgba(16, 185, 129, 0.1)'
+                ? '0 0 80px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(16, 185, 129, 0.15)'
+                : '0 15px 50px rgba(16, 185, 129, 0.15)'
         }}
     >
-        {/* Animated glow orb */}
+        {/* Large animated glow orb behind crown */}
         <div className={`
-            absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl
-            opacity-30 group-hover:opacity-50 transition-opacity duration-700
+            absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] rounded-full blur-3xl
+            opacity-40 group-hover:opacity-60 transition-opacity duration-700
             ${isDark ? 'bg-emerald-500' : 'bg-emerald-200'}
         `} />
 
-        {/* Grid pattern */}
+        {/* Grid pattern overlay */}
         <div
-            className="absolute inset-0 opacity-10"
+            className="absolute inset-0 opacity-5"
             style={{
-                backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.3) 1px, transparent 1px),
-                                  linear-gradient(90deg, rgba(16, 185, 129, 0.3) 1px, transparent 1px)`,
-                backgroundSize: '30px 30px'
+                backgroundImage: `linear-gradient(rgba(16, 185, 129, 1) 1px, transparent 1px),
+                                  linear-gradient(90deg, rgba(16, 185, 129, 1) 1px, transparent 1px)`,
+                backgroundSize: '40px 40px'
             }}
         />
 
-        <div className="relative flex items-start justify-between">
-            <div className="flex-1">
-                {/* Badge */}
-                <div className={`
-                    inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-4
-                    ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}
-                `}>
-                    <Sparkles className="w-3 h-3" />
-                    Your AI COO
-                </div>
-
-                {/* Title */}
-                <h2
-                    className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                >
-                    CEO Agent
-                </h2>
-
-                {/* Description */}
-                <p className={`text-sm mb-4 max-w-md ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                    Your all-in-one business strategist. Ask anything about strategy, marketing, finance,
-                    product — I handle it all in one place.
-                </p>
-
-                {/* Quick stats */}
-                <div className="flex items-center gap-4">
-                    <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>All-in-one mode</span>
-                    </div>
-                    <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>Full context</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Icon */}
+        {/* Content - centered vertical layout */}
+        <div className="relative py-10 px-8">
+            {/* Crown icon - large and prominent */}
             <div className={`
-                w-20 h-20 rounded-2xl flex items-center justify-center
-                bg-gradient-to-br from-emerald-500/30 to-emerald-600/10
+                w-24 h-24 mx-auto rounded-3xl flex items-center justify-center mb-6
+                bg-gradient-to-br from-emerald-500/30 via-emerald-500/20 to-emerald-600/10
                 group-hover:scale-110 transition-transform duration-500
             `}
-                style={{ boxShadow: isDark ? '0 0 40px rgba(16, 185, 129, 0.3)' : 'none' }}
+                style={{
+                    boxShadow: isDark
+                        ? '0 0 60px rgba(16, 185, 129, 0.4), inset 0 0 30px rgba(16, 185, 129, 0.1)'
+                        : '0 10px 40px rgba(16, 185, 129, 0.2)'
+                }}
             >
-                <Crown className={`w-10 h-10 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                <Crown className={`w-12 h-12 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
             </div>
-        </div>
 
-        {/* CTA */}
-        <div className={`
-            relative mt-6 flex items-center gap-2 text-sm font-semibold
-            ${isDark ? 'text-emerald-400' : 'text-emerald-600'}
-        `}>
-            Start chatting
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+            {/* Badge */}
+            <div className={`
+                inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold mb-4
+                ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}
+            `}>
+                <Sparkles className="w-3.5 h-3.5" />
+                YOUR AI COO
+            </div>
+
+            {/* Title */}
+            <h2
+                className={`text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+            >
+                CEO Agent
+            </h2>
+
+            {/* Description */}
+            <p className={`text-sm mb-6 max-w-lg mx-auto ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                Your all-in-one business strategist. Ask anything about strategy, marketing,
+                finance, product — I handle it all in one conversation.
+            </p>
+
+            {/* Feature pills */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+                <div className={`
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                    ${isDark ? 'bg-emerald-500/10 text-emerald-400/80' : 'bg-emerald-50 text-emerald-600'}
+                `}>
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    All-in-one mode
+                </div>
+                <div className={`
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                    ${isDark ? 'bg-emerald-500/10 text-emerald-400/80' : 'bg-emerald-50 text-emerald-600'}
+                `}>
+                    <Zap className="w-3.5 h-3.5" />
+                    Full business context
+                </div>
+            </div>
+
+            {/* CTA Button */}
+            <div className={`
+                inline-flex items-center gap-2 px-6 py-3 rounded-xl
+                font-semibold text-sm transition-all duration-300
+                ${isDark
+                    ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30'
+                    : 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200'}
+            `}>
+                Start chatting with CEO
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+            </div>
         </div>
     </button>
 );

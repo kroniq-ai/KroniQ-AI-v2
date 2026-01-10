@@ -50,18 +50,46 @@ const BusinessContextContext = createContext<BusinessContextValue | undefined>(u
 
 // ===== PROVIDER =====
 
+const STORAGE_KEY = 'kroniq_business_context';
+
+// Load from localStorage
+function loadLocalContext(): { contexts: BusinessContext[], active: BusinessContext | null } {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const data = JSON.parse(saved);
+            return { contexts: data.contexts || [], active: data.active || null };
+        }
+    } catch (e) {
+        console.warn('[BusinessContext] Failed to load from localStorage');
+    }
+    return { contexts: [], active: null };
+}
+
+// Save to localStorage
+function saveLocalContext(contexts: BusinessContext[], active: BusinessContext | null) {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ contexts, active }));
+    } catch (e) {
+        console.warn('[BusinessContext] Failed to save to localStorage');
+    }
+}
+
 export const BusinessContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { currentUser } = useAuth();
 
-    const [contexts, setContexts] = useState<BusinessContext[]>([]);
-    const [activeContext, setActiveContextState] = useState<BusinessContext | null>(null);
+    // Load initial state from localStorage
+    const savedData = loadLocalContext();
+
+    const [contexts, setContexts] = useState<BusinessContext[]>(savedData.contexts);
+    const [activeContext, setActiveContextState] = useState<BusinessContext | null>(savedData.active);
     const [access, setAccess] = useState<BusinessPanelAccess>({
-        hasAccess: false,
-        planType: 'free',
-        contextLimit: 0,
-        message: 'Loading...',
+        hasAccess: true, // Default to true for local mode
+        planType: 'premium',
+        contextLimit: 999,
+        message: 'Ready',
     });
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false); // Start false if we have local data
     const [error, setError] = useState<string | null>(null);
 
     // Load contexts and check access
@@ -151,6 +179,7 @@ export const BusinessContextProvider: React.FC<{ children: ReactNode }> = ({ chi
                 };
                 setContexts([localContext]);
                 setActiveContextState(localContext);
+                saveLocalContext([localContext], localContext); // Persist to localStorage
                 return { success: true };
             }
 
@@ -173,6 +202,7 @@ export const BusinessContextProvider: React.FC<{ children: ReactNode }> = ({ chi
             };
             setContexts([localContext]);
             setActiveContextState(localContext);
+            saveLocalContext([localContext], localContext); // Persist to localStorage
             return { success: true };
         }
     }, [currentUser?.id]);
