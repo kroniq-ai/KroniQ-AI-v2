@@ -163,7 +163,7 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => {
     );
 };
 
-// ===== COMPACT SPECIALIST CARD (FOR SIDES) =====
+// ===== SPECIALIST CARD (SQUARE, BIGGER) =====
 
 interface SpecialistCardProps {
     agent: AgentDefinition;
@@ -173,7 +173,7 @@ interface SpecialistCardProps {
     compact?: boolean;
 }
 
-const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark, onClick, compact }) => {
+const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark, onClick }) => {
     const Icon = ICON_MAP[agent.icon] || Bot;
 
     return (
@@ -182,40 +182,44 @@ const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark
             className={`
                 group relative rounded-2xl cursor-pointer
                 border transition-all duration-300 hover:translate-y-[-2px]
-                ${compact ? 'p-4' : 'p-5'}
+                p-5 min-h-[120px] flex flex-col justify-center
                 ${isDark
-                    ? 'bg-[#0c0c0c] border-emerald-500/15 hover:border-emerald-500/50'
+                    ? 'bg-[#0c0c0c] border-emerald-500/20 hover:border-emerald-500/50'
                     : 'bg-white border-gray-200 hover:border-emerald-400 hover:shadow-lg'}
             `}
             style={{
                 boxShadow: isDark ? '0 0 0 rgba(16, 185, 129, 0)' : '0 2px 10px rgba(0,0,0,0.04)',
             }}
             onMouseEnter={(e) => {
-                if (isDark) e.currentTarget.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.15)';
+                if (isDark) e.currentTarget.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.2)';
             }}
             onMouseLeave={(e) => {
                 if (isDark) e.currentTarget.style.boxShadow = '0 0 0 rgba(16, 185, 129, 0)';
             }}
         >
-            <div className={compact ? 'flex items-center gap-3' : 'flex items-start gap-4'}>
-                {/* Icon */}
+            <div className="flex items-center gap-4">
+                {/* Icon - bigger */}
                 <div className={`
-                    ${compact ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl flex items-center justify-center flex-shrink-0
-                    bg-gradient-to-br from-emerald-500/25 to-emerald-600/10
+                    w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0
+                    bg-gradient-to-br from-emerald-500/30 to-emerald-600/15
                     group-hover:scale-110 transition-transform duration-300
-                    ring-1 ring-emerald-500/20
-                `}>
-                    <Icon className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                    ring-1 ring-emerald-500/25
+                `}
+                    style={{
+                        boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none'
+                    }}
+                >
+                    <Icon className={`w-7 h-7 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
                     <h3
-                        className={`font-bold ${compact ? 'text-xs' : 'text-sm'} mb-0.5 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        className={`font-bold text-sm mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}
                         style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                     >
                         {agent.shortName}
                     </h3>
-                    <p className={`text-[10px] ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                    <p className={`text-xs leading-snug ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
                         {agent.description}
                     </p>
                 </div>
@@ -224,37 +228,39 @@ const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark
     );
 };
 
-// ===== ADD AGENT CARD (COMPACT) =====
+// ===== ADD AGENT CARD (BIGGER) =====
 
 interface AddAgentCardProps {
     isDark: boolean;
     onClick: () => void;
-    compact?: boolean;
 }
 
-const AddAgentCard: React.FC<AddAgentCardProps> = ({ isDark, onClick, compact }) => (
+const AddAgentCard: React.FC<AddAgentCardProps> = ({ isDark, onClick }) => (
     <div
         onClick={onClick}
         className={`
             group rounded-2xl cursor-pointer
             border-2 border-dashed transition-all duration-300 hover:scale-[1.02]
-            ${compact ? 'p-4' : 'p-5'}
+            p-5 min-h-[120px] flex flex-col justify-center
             ${isDark
-                ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                ? 'border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/5'
                 : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'}
         `}
     >
-        <div className={compact ? 'flex items-center gap-3' : 'flex items-center gap-4'}>
+        <div className="flex items-center gap-4">
             <div className={`
-                ${compact ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl flex items-center justify-center
+                w-14 h-14 rounded-xl flex items-center justify-center
                 ${isDark ? 'bg-emerald-500/15' : 'bg-gray-100 group-hover:bg-emerald-100'}
                 transition-colors duration-300
             `}>
-                <Plus className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} ${isDark ? 'text-emerald-400' : 'text-gray-400 group-hover:text-emerald-600'} transition-colors`} />
+                <Plus className={`w-7 h-7 ${isDark ? 'text-emerald-400' : 'text-gray-400 group-hover:text-emerald-600'} transition-colors`} />
             </div>
             <div>
-                <p className={`font-semibold ${compact ? 'text-xs' : 'text-sm'} ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                <p className={`font-bold text-sm ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
                     Add Agent
+                </p>
+                <p className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                    Create or choose preset
                 </p>
             </div>
         </div>
