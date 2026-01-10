@@ -1,6 +1,6 @@
 /**
- * Agent Dashboard — Premium Redesign v3
- * Fixed CEO card, better agent picker, custom agent creation
+ * Agent Dashboard — CEO-Centric Layout
+ * CEO in center, specialists on sides
  */
 
 import React, { useState } from 'react';
@@ -47,7 +47,7 @@ interface AgentDashboardProps {
     isDark: boolean;
 }
 
-// ===== CEO HERO CARD (FIXED) =====
+// ===== CEO HERO CARD (CENTER) =====
 
 interface CEOHeroCardProps {
     isDark: boolean;
@@ -59,23 +59,24 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => {
         <div
             onClick={onClick}
             className={`
-                group relative w-full rounded-3xl overflow-hidden cursor-pointer
+                group relative h-full min-h-[400px] rounded-3xl overflow-hidden cursor-pointer
                 border transition-all duration-500 hover:scale-[1.01]
+                flex flex-col items-center justify-center text-center p-8
                 ${isDark
-                    ? 'bg-gradient-to-br from-emerald-900/40 via-[#0c0c0c] to-[#0a0a0a] border-emerald-500/40 hover:border-emerald-400/70'
-                    : 'bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border-emerald-300 hover:border-emerald-400'}
+                    ? 'bg-gradient-to-b from-emerald-900/50 via-[#0a0a0a] to-[#0a0a0a] border-emerald-500/40 hover:border-emerald-400/70'
+                    : 'bg-gradient-to-b from-emerald-50 via-white to-white border-emerald-300 hover:border-emerald-400'}
             `}
             style={{
                 boxShadow: isDark
-                    ? '0 0 100px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(16, 185, 129, 0.2)'
+                    ? '0 0 100px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(16, 185, 129, 0.2)'
                     : '0 20px 60px rgba(16, 185, 129, 0.2)'
             }}
         >
-            {/* Animated glow orbs */}
+            {/* Animated glow */}
             <div className={`
-                absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[400px] rounded-full blur-3xl pointer-events-none
-                opacity-50 group-hover:opacity-70 transition-opacity duration-700
-                ${isDark ? 'bg-gradient-to-b from-emerald-500/40 to-transparent' : 'bg-gradient-to-b from-emerald-200 to-transparent'}
+                absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] rounded-full blur-3xl pointer-events-none
+                opacity-60 group-hover:opacity-80 transition-opacity duration-700
+                ${isDark ? 'bg-gradient-to-b from-emerald-500/50 to-transparent' : 'bg-gradient-to-b from-emerald-200 to-transparent'}
             `} />
 
             {/* Grid pattern */}
@@ -84,32 +85,32 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => {
                 style={{
                     backgroundImage: `linear-gradient(rgba(16, 185, 129, 1) 1px, transparent 1px),
                                       linear-gradient(90deg, rgba(16, 185, 129, 1) 1px, transparent 1px)`,
-                    backgroundSize: '50px 50px'
+                    backgroundSize: '40px 40px'
                 }}
             />
 
             {/* Content */}
-            <div className="relative p-8 md:p-10 text-center">
+            <div className="relative z-10">
                 {/* Large Crown Icon */}
                 <div className={`
-                    w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-6
+                    w-24 h-24 mx-auto rounded-3xl flex items-center justify-center mb-6
                     bg-gradient-to-br from-emerald-500/40 via-emerald-500/20 to-transparent
                     group-hover:scale-110 transition-transform duration-500
-                    ring-2 ring-emerald-500/20
+                    ring-2 ring-emerald-500/30
                 `}
                     style={{
                         boxShadow: isDark
-                            ? '0 0 50px rgba(16, 185, 129, 0.5), inset 0 0 20px rgba(16, 185, 129, 0.2)'
-                            : '0 10px 40px rgba(16, 185, 129, 0.3)'
+                            ? '0 0 60px rgba(16, 185, 129, 0.5), inset 0 0 30px rgba(16, 185, 129, 0.2)'
+                            : '0 15px 50px rgba(16, 185, 129, 0.3)'
                     }}
                 >
-                    <Crown className={`w-10 h-10 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                    <Crown className={`w-12 h-12 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
 
                 {/* Badge */}
                 <div className={`
                     inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide mb-4
-                    ${isDark ? 'bg-emerald-500/25 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}
+                    ${isDark ? 'bg-emerald-500/30 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}
                 `}>
                     <Sparkles className="w-3.5 h-3.5" />
                     YOUR AI COO
@@ -117,15 +118,15 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => {
 
                 {/* Title */}
                 <h2
-                    className={`text-2xl md:text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    className={`text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}
                     style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                 >
                     CEO Agent
                 </h2>
 
                 {/* Description */}
-                <p className={`text-sm md:text-base mb-6 max-w-md mx-auto leading-relaxed ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                    Your all-in-one business strategist. Strategy, marketing, finance, product — handled in one conversation.
+                <p className={`text-sm mb-6 max-w-xs mx-auto leading-relaxed ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                    Your all-in-one business strategist. Strategy, marketing, finance, product — all in one place.
                 </p>
 
                 {/* Feature pills */}
@@ -134,22 +135,15 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => {
                         flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
                         ${isDark ? 'bg-white/5 text-emerald-400/90 ring-1 ring-emerald-500/20' : 'bg-emerald-50 text-emerald-600'}
                     `}>
-                        <MessageSquare className="w-3.5 h-3.5" />
+                        <Zap className="w-3 h-3" />
                         All-in-one
                     </div>
                     <div className={`
                         flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
                         ${isDark ? 'bg-white/5 text-emerald-400/90 ring-1 ring-emerald-500/20' : 'bg-emerald-50 text-emerald-600'}
                     `}>
-                        <Zap className="w-3.5 h-3.5" />
+                        <Star className="w-3 h-3" />
                         Full context
-                    </div>
-                    <div className={`
-                        flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-                        ${isDark ? 'bg-white/5 text-emerald-400/90 ring-1 ring-emerald-500/20' : 'bg-emerald-50 text-emerald-600'}
-                    `}>
-                        <Star className="w-3.5 h-3.5" />
-                        Premium
                     </div>
                 </div>
 
@@ -158,127 +152,116 @@ const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => {
                     inline-flex items-center gap-2 px-6 py-3 rounded-xl
                     font-semibold text-sm transition-all duration-300
                     ${isDark
-                        ? 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-lg shadow-emerald-500/30'
+                        ? 'bg-emerald-500 text-white hover:bg-emerald-400 shadow-lg shadow-emerald-500/40'
                         : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/30'}
                 `}>
-                    Start chatting with CEO
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    Start chatting
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
         </div>
     );
 };
 
-// ===== SPECIALIST AGENT CARD =====
+// ===== COMPACT SPECIALIST CARD (FOR SIDES) =====
 
 interface SpecialistCardProps {
     agent: AgentDefinition;
-    metadata: { messageCount: number; lastActive: Date | null };
+    metadata: { messageCount: number };
     isDark: boolean;
     onClick: () => void;
+    compact?: boolean;
 }
 
-const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark, onClick }) => {
+const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark, onClick, compact }) => {
     const Icon = ICON_MAP[agent.icon] || Bot;
 
     return (
         <div
             onClick={onClick}
             className={`
-                group relative p-5 rounded-2xl cursor-pointer
+                group relative rounded-2xl cursor-pointer
                 border transition-all duration-300 hover:translate-y-[-2px]
+                ${compact ? 'p-4' : 'p-5'}
                 ${isDark
-                    ? 'bg-[#111111] border-emerald-500/15 hover:border-emerald-500/50 hover:bg-[#151515]'
-                    : 'bg-white border-gray-200 hover:border-emerald-400 hover:shadow-xl'}
+                    ? 'bg-[#0c0c0c] border-emerald-500/15 hover:border-emerald-500/50'
+                    : 'bg-white border-gray-200 hover:border-emerald-400 hover:shadow-lg'}
             `}
             style={{
                 boxShadow: isDark ? '0 0 0 rgba(16, 185, 129, 0)' : '0 2px 10px rgba(0,0,0,0.04)',
             }}
             onMouseEnter={(e) => {
-                if (isDark) e.currentTarget.style.boxShadow = '0 0 40px rgba(16, 185, 129, 0.15)';
+                if (isDark) e.currentTarget.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.15)';
             }}
             onMouseLeave={(e) => {
                 if (isDark) e.currentTarget.style.boxShadow = '0 0 0 rgba(16, 185, 129, 0)';
             }}
         >
-            <div className="flex items-start gap-4">
+            <div className={compact ? 'flex items-center gap-3' : 'flex items-start gap-4'}>
                 {/* Icon */}
                 <div className={`
-                    w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
+                    ${compact ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl flex items-center justify-center flex-shrink-0
                     bg-gradient-to-br from-emerald-500/25 to-emerald-600/10
                     group-hover:scale-110 transition-transform duration-300
                     ring-1 ring-emerald-500/20
                 `}>
-                    <Icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                    <Icon className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
 
                 <div className="flex-1 min-w-0">
                     <h3
-                        className={`font-bold text-sm mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        className={`font-bold ${compact ? 'text-xs' : 'text-sm'} mb-0.5 ${isDark ? 'text-white' : 'text-gray-900'}`}
                         style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                     >
-                        {agent.name}
+                        {agent.shortName}
                     </h3>
-                    <p className={`text-xs mb-2 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                    <p className={`text-[10px] ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                         {agent.description}
                     </p>
-                    <div className={`
-                        inline-flex items-center gap-1 text-[10px] font-medium
-                        ${isDark ? 'text-emerald-500/60' : 'text-emerald-600/70'}
-                    `}>
-                        <MessageSquare className="w-3 h-3" />
-                        {metadata.messageCount} messages
-                    </div>
                 </div>
-
-                <ArrowRight className={`
-                    w-4 h-4 opacity-0 group-hover:opacity-100 transition-all duration-300
-                    ${isDark ? 'text-emerald-400' : 'text-emerald-500'}
-                `} />
             </div>
         </div>
     );
 };
 
-// ===== ADD AGENT CARD =====
+// ===== ADD AGENT CARD (COMPACT) =====
 
 interface AddAgentCardProps {
     isDark: boolean;
     onClick: () => void;
+    compact?: boolean;
 }
 
-const AddAgentCard: React.FC<AddAgentCardProps> = ({ isDark, onClick }) => (
+const AddAgentCard: React.FC<AddAgentCardProps> = ({ isDark, onClick, compact }) => (
     <div
         onClick={onClick}
         className={`
-            group p-5 rounded-2xl cursor-pointer
+            group rounded-2xl cursor-pointer
             border-2 border-dashed transition-all duration-300 hover:scale-[1.02]
+            ${compact ? 'p-4' : 'p-5'}
             ${isDark
-                ? 'border-emerald-500/25 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5'
                 : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50'}
         `}
     >
-        <div className="flex items-center gap-4">
+        <div className={compact ? 'flex items-center gap-3' : 'flex items-center gap-4'}>
             <div className={`
-                w-12 h-12 rounded-xl flex items-center justify-center
+                ${compact ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl flex items-center justify-center
                 ${isDark ? 'bg-emerald-500/15' : 'bg-gray-100 group-hover:bg-emerald-100'}
                 transition-colors duration-300
             `}>
-                <Plus className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-gray-400 group-hover:text-emerald-600'} transition-colors`} />
+                <Plus className={`${compact ? 'w-5 h-5' : 'w-6 h-6'} ${isDark ? 'text-emerald-400' : 'text-gray-400 group-hover:text-emerald-600'} transition-colors`} />
             </div>
             <div>
-                <p className={`font-semibold text-sm ${isDark ? 'text-white/70' : 'text-gray-600'}`}>
-                    Add More Agents
-                </p>
-                <p className={`text-xs ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                    Choose from list or create custom
+                <p className={`font-semibold ${compact ? 'text-xs' : 'text-sm'} ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                    Add Agent
                 </p>
             </div>
         </div>
     </div>
 );
 
-// ===== AGENT PICKER MODAL (REDESIGNED) =====
+// ===== AGENT PICKER MODAL =====
 
 interface AgentPickerProps {
     isDark: boolean;
@@ -297,13 +280,12 @@ const AgentPicker: React.FC<AgentPickerProps> = ({ isDark, activeAgents, onSelec
         a => !activeAgents.includes(a.type) && a.type !== 'ceo'
     );
 
-    // Suggested custom agents
     const suggestedAgents = [
-        { name: 'Outreach Agent', description: 'Cold emails, LinkedIn, partnerships', icon: 'Mail' },
-        { name: 'Automation Agent', description: 'Workflows, integrations, efficiency', icon: 'Settings2' },
-        { name: 'Sales Agent', description: 'Pipeline, demos, closing deals', icon: 'Briefcase' },
-        { name: 'Growth Agent', description: 'Viral loops, referrals, acquisition', icon: 'Rocket' },
-        { name: 'Analytics Agent', description: 'Metrics, insights, dashboards', icon: 'Target' },
+        { name: 'Outreach Agent', description: 'Cold emails, LinkedIn, partnerships' },
+        { name: 'Automation Agent', description: 'Workflows, integrations, efficiency' },
+        { name: 'Sales Agent', description: 'Pipeline, demos, closing deals' },
+        { name: 'Growth Agent', description: 'Viral loops, referrals, acquisition' },
+        { name: 'Analytics Agent', description: 'Metrics, insights, dashboards' },
     ];
 
     const handleCreateCustom = () => {
@@ -328,27 +310,21 @@ const AgentPicker: React.FC<AgentPickerProps> = ({ isDark, activeAgents, onSelec
                         : '0 30px 100px rgba(0,0,0,0.3)'
                 }}
             >
-                {/* Glow */}
                 {isDark && (
                     <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[300px] h-[200px] rounded-full blur-3xl bg-emerald-500/20 pointer-events-none" />
                 )}
 
-                {/* Header */}
                 <div className={`relative px-6 py-5 border-b ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}
-                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {showCustom ? 'Create Custom Agent' : 'Add Agent'}
                             </h2>
                             <p className={`text-sm mt-1 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                                 {showCustom ? 'Describe what you need' : 'Expand your AI team'}
                             </p>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className={`p-2 rounded-xl transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100'}`}
-                        >
+                        <button onClick={onClose} className={`p-2 rounded-xl ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100'}`}>
                             <X className={`w-5 h-5 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
                         </button>
                     </div>
@@ -356,7 +332,6 @@ const AgentPicker: React.FC<AgentPickerProps> = ({ isDark, activeAgents, onSelec
 
                 <div className="relative overflow-y-auto max-h-[60vh]">
                     {showCustom ? (
-                        /* Custom Agent Creator */
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white/70' : 'text-gray-700'}`}>
@@ -366,15 +341,13 @@ const AgentPicker: React.FC<AgentPickerProps> = ({ isDark, activeAgents, onSelec
                                     type="text"
                                     value={customName}
                                     onChange={(e) => setCustomName(e.target.value)}
-                                    placeholder="e.g., Outreach Agent, Automation Agent..."
+                                    placeholder="e.g., Outreach Agent..."
                                     className={`
-                                        w-full px-4 py-3 rounded-xl text-sm font-medium
-                                        border transition-colors
+                                        w-full px-4 py-3 rounded-xl text-sm font-medium border outline-none
                                         ${isDark
                                             ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-emerald-500/50'
                                             : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-emerald-400'}
                                     `}
-                                    style={{ outline: 'none' }}
                                 />
                             </div>
                             <div>
@@ -384,155 +357,82 @@ const AgentPicker: React.FC<AgentPickerProps> = ({ isDark, activeAgents, onSelec
                                 <textarea
                                     value={customDescription}
                                     onChange={(e) => setCustomDescription(e.target.value)}
-                                    placeholder="Describe the agent's role, tasks, and expertise..."
-                                    rows={3}
+                                    placeholder="Describe the agent's role..."
+                                    rows={2}
                                     className={`
-                                        w-full px-4 py-3 rounded-xl text-sm font-medium resize-none
-                                        border transition-colors
+                                        w-full px-4 py-3 rounded-xl text-sm font-medium resize-none border outline-none
                                         ${isDark
                                             ? 'bg-white/5 border-white/10 text-white placeholder-white/30 focus:border-emerald-500/50'
                                             : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-emerald-400'}
                                     `}
-                                    style={{ outline: 'none' }}
                                 />
                             </div>
-
-                            {/* Suggestions */}
                             <div>
-                                <p className={`text-xs font-medium mb-2 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                                    QUICK IDEAS
-                                </p>
+                                <p className={`text-xs font-medium mb-2 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>QUICK IDEAS</p>
                                 <div className="flex flex-wrap gap-2">
                                     {suggestedAgents.map((agent) => (
                                         <button
                                             key={agent.name}
-                                            onClick={() => {
-                                                setCustomName(agent.name);
-                                                setCustomDescription(agent.description);
-                                            }}
-                                            className={`
-                                                px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
-                                                ${isDark
-                                                    ? 'bg-white/5 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400'
-                                                    : 'bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600'}
-                                            `}
+                                            onClick={() => { setCustomName(agent.name); setCustomDescription(agent.description); }}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-white/5 text-white/50 hover:bg-emerald-500/20 hover:text-emerald-400' : 'bg-gray-100 text-gray-500 hover:bg-emerald-100 hover:text-emerald-600'}`}
                                         >
                                             {agent.name}
                                         </button>
                                     ))}
                                 </div>
                             </div>
-
                             <div className="flex gap-3 pt-2">
-                                <button
-                                    onClick={() => setShowCustom(false)}
-                                    className={`
-                                        flex-1 py-3 rounded-xl text-sm font-medium transition-colors
-                                        ${isDark ? 'bg-white/5 text-white/50 hover:bg-white/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}
-                                    `}
-                                >
-                                    Back
-                                </button>
+                                <button onClick={() => setShowCustom(false)} className={`flex-1 py-3 rounded-xl text-sm font-medium ${isDark ? 'bg-white/5 text-white/50' : 'bg-gray-100 text-gray-500'}`}>Back</button>
                                 <button
                                     onClick={handleCreateCustom}
                                     disabled={!customName.trim()}
-                                    className={`
-                                        flex-1 py-3 rounded-xl text-sm font-semibold transition-colors
-                                        flex items-center justify-center gap-2
-                                        ${customName.trim()
-                                            ? 'bg-emerald-500 text-white hover:bg-emerald-400'
-                                            : (isDark ? 'bg-white/5 text-white/20' : 'bg-gray-100 text-gray-300')}
-                                    `}
+                                    className={`flex-1 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${customName.trim() ? 'bg-emerald-500 text-white hover:bg-emerald-400' : (isDark ? 'bg-white/5 text-white/20' : 'bg-gray-100 text-gray-300')}`}
                                 >
-                                    <Wand2 className="w-4 h-4" />
-                                    Create Agent
+                                    <Wand2 className="w-4 h-4" /> Create
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        /* Standard Agent List */
                         <div className="p-4 space-y-3">
-                            {/* Create Custom Button */}
                             <button
                                 onClick={() => setShowCustom(true)}
-                                className={`
-                                    w-full flex items-center gap-4 p-4 rounded-2xl
-                                    border-2 border-dashed transition-all duration-200
-                                    ${isDark
-                                        ? 'border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/10'
-                                        : 'border-emerald-300 hover:border-emerald-400 hover:bg-emerald-50'}
-                                `}
+                                className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed ${isDark ? 'border-emerald-500/30 hover:border-emerald-500/60 hover:bg-emerald-500/10' : 'border-emerald-300 hover:border-emerald-400 hover:bg-emerald-50'}`}
                             >
-                                <div className={`
-                                    w-12 h-12 rounded-xl flex items-center justify-center
-                                    ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}
-                                `}>
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
                                     <Wand2 className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                                 </div>
                                 <div className="text-left flex-1">
-                                    <p className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                                        Create Custom Agent
-                                    </p>
-                                    <p className={`text-xs ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>
-                                        Build any agent you need with a prompt
-                                    </p>
+                                    <p className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Create Custom Agent</p>
+                                    <p className={`text-xs ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>Build any agent you need</p>
                                 </div>
-                                <ArrowRight className={`w-4 h-4 ${isDark ? 'text-emerald-500/50' : 'text-emerald-400'}`} />
                             </button>
 
-                            {/* Divider */}
                             {availableAgents.length > 0 && (
                                 <div className="flex items-center gap-3 py-2">
                                     <div className={`flex-1 h-px ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
-                                    <span className={`text-[10px] font-medium ${isDark ? 'text-white/20' : 'text-gray-400'}`}>
-                                        OR CHOOSE PRESET
-                                    </span>
+                                    <span className={`text-[10px] font-medium ${isDark ? 'text-white/20' : 'text-gray-400'}`}>OR CHOOSE PRESET</span>
                                     <div className={`flex-1 h-px ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
                                 </div>
                             )}
 
-                            {/* Preset Agents */}
                             {availableAgents.map(agent => {
                                 const Icon = ICON_MAP[agent.icon] || Bot;
                                 return (
                                     <button
                                         key={agent.type}
                                         onClick={() => onSelect(agent.type)}
-                                        className={`
-                                            w-full flex items-center gap-4 p-4 rounded-2xl
-                                            border transition-all duration-200
-                                            ${isDark
-                                                ? 'bg-white/[0.02] border-white/5 hover:border-emerald-500/40 hover:bg-white/5'
-                                                : 'bg-gray-50 border-gray-100 hover:border-emerald-300 hover:bg-emerald-50'}
-                                        `}
+                                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border ${isDark ? 'bg-white/[0.02] border-white/5 hover:border-emerald-500/40' : 'bg-gray-50 border-gray-100 hover:border-emerald-300'}`}
                                     >
-                                        <div className={`
-                                            w-12 h-12 rounded-xl flex items-center justify-center
-                                            bg-gradient-to-br from-emerald-500/20 to-emerald-600/10
-                                            ring-1 ${isDark ? 'ring-emerald-500/20' : 'ring-emerald-200'}
-                                        `}>
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 ring-1 ${isDark ? 'ring-emerald-500/20' : 'ring-emerald-200'}`}>
                                             <Icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                                         </div>
                                         <div className="text-left flex-1">
-                                            <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                                {agent.name}
-                                            </p>
-                                            <p className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                                                {agent.description}
-                                            </p>
+                                            <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{agent.name}</p>
+                                            <p className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>{agent.description}</p>
                                         </div>
-                                        <ArrowRight className={`w-4 h-4 ${isDark ? 'text-white/20' : 'text-gray-300'}`} />
                                     </button>
                                 );
                             })}
-
-                            {availableAgents.length === 0 && (
-                                <div className={`text-center py-6 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
-                                    <Bot className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                                    <p className="text-sm">All preset agents are active!</p>
-                                    <p className="text-xs mt-1">Create a custom one above</p>
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>
@@ -553,6 +453,10 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
         .map(type => getAgentDefinition(type))
         .filter(Boolean) as AgentDefinition[];
 
+    // Split agents into left and right columns
+    const leftAgents = activeAgentDefs.filter((_, i) => i % 2 === 0);
+    const rightAgents = activeAgentDefs.filter((_, i) => i % 2 === 1);
+
     const handleCEOClick = () => {
         setMode('single');
         openAgent('ceo');
@@ -568,24 +472,15 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
     };
 
     const handleCreateCustomAgent = (name: string, description: string) => {
-        // For custom agents, we'll add them with a generated type
-        const customType = `custom_${Date.now()}` as AgentType;
-        if (addCustomAgent) {
-            addCustomAgent(name, description);
-        }
+        if (addCustomAgent) addCustomAgent(name, description);
         setShowPicker(false);
     };
 
     const handleGlobalInput = async () => {
         if (!inputValue.trim() || isProcessing) return;
-
         setIsProcessing(true);
         const intent = detectIntent(inputValue);
-
-        if (!state.activeAgents.includes(intent.primaryAgent)) {
-            addAgent(intent.primaryAgent);
-        }
-
+        if (!state.activeAgents.includes(intent.primaryAgent)) addAgent(intent.primaryAgent);
         openAgent(intent.primaryAgent);
         setInputValue('');
         setIsProcessing(false);
@@ -597,14 +492,13 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
             <div className="absolute inset-0 pointer-events-none">
                 {isDark && (
                     <>
-                        <div className="absolute top-0 left-1/3 w-[600px] h-[600px] rounded-full blur-3xl bg-emerald-900/30" />
-                        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-3xl bg-emerald-900/20" />
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full blur-3xl bg-emerald-900/30" />
                         <div
-                            className="absolute inset-0 opacity-40"
+                            className="absolute inset-0 opacity-30"
                             style={{
                                 backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
                                                   linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px)`,
-                                backgroundSize: '60px 60px'
+                                backgroundSize: '50px 50px'
                             }}
                         />
                     </>
@@ -612,40 +506,66 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 md:px-6 py-6 md:py-8 overflow-y-auto">
+            <div className="relative z-10 flex-1 flex flex-col max-w-6xl mx-auto w-full px-4 md:px-6 py-6 overflow-y-auto">
                 {/* Header */}
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="text-center mb-6">
+                    <div className="flex items-center justify-center gap-2 mb-1">
                         <Sparkles className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                         <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-emerald-500/60' : 'text-emerald-600/80'}`}>
                             Business OS
                         </span>
                     </div>
                     <h1
-                        className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}
                         style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                     >
                         Your AI Team
                     </h1>
                     <p className={`text-sm mt-1 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                        {activeAgentDefs.length + 1} agents • Shared context across all
+                        {activeAgentDefs.length + 1} agents • Shared context
                     </p>
                 </div>
 
-                {/* CEO Hero Card */}
-                <CEOHeroCard isDark={isDark} onClick={handleCEOClick} />
+                {/* 3-Column Layout: Specialists | CEO | Specialists */}
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_1.5fr_1fr] gap-4 mb-6">
+                    {/* Left Column - Specialists */}
+                    <div className="hidden lg:flex flex-col gap-3">
+                        {leftAgents.map(agent => (
+                            <SpecialistCard
+                                key={agent.type}
+                                agent={agent}
+                                metadata={state.agentMetadata[agent.type]}
+                                isDark={isDark}
+                                onClick={() => handleAgentClick(agent.type)}
+                                compact
+                            />
+                        ))}
+                        {leftAgents.length < rightAgents.length && (
+                            <AddAgentCard isDark={isDark} onClick={() => setShowPicker(true)} compact />
+                        )}
+                    </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-4 my-6">
-                    <div className={`flex-1 h-px ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
-                    <span className={`text-[10px] font-bold tracking-wider ${isDark ? 'text-white/20' : 'text-gray-400'}`}>
-                        SPECIALIST AGENTS
-                    </span>
-                    <div className={`flex-1 h-px ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} />
+                    {/* Center Column - CEO */}
+                    <CEOHeroCard isDark={isDark} onClick={handleCEOClick} />
+
+                    {/* Right Column - Specialists */}
+                    <div className="hidden lg:flex flex-col gap-3">
+                        {rightAgents.map(agent => (
+                            <SpecialistCard
+                                key={agent.type}
+                                agent={agent}
+                                metadata={state.agentMetadata[agent.type]}
+                                isDark={isDark}
+                                onClick={() => handleAgentClick(agent.type)}
+                                compact
+                            />
+                        ))}
+                        <AddAgentCard isDark={isDark} onClick={() => setShowPicker(true)} compact />
+                    </div>
                 </div>
 
-                {/* Specialist Agents Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                {/* Mobile: Specialists Grid */}
+                <div className="lg:hidden grid grid-cols-2 gap-3 mb-6">
                     {activeAgentDefs.map(agent => (
                         <SpecialistCard
                             key={agent.type}
@@ -653,13 +573,11 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
                             metadata={state.agentMetadata[agent.type]}
                             isDark={isDark}
                             onClick={() => handleAgentClick(agent.type)}
+                            compact
                         />
                     ))}
-                    <AddAgentCard isDark={isDark} onClick={() => setShowPicker(true)} />
+                    <AddAgentCard isDark={isDark} onClick={() => setShowPicker(true)} compact />
                 </div>
-
-                {/* Spacer */}
-                <div className="flex-1" />
 
                 {/* Global Input */}
                 <div className={`
@@ -668,65 +586,38 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
                 `}>
                     <div
                         className={`
-                            flex items-center gap-3 px-4 md:px-5 py-3.5 md:py-4 rounded-2xl
-                            transition-all duration-300
+                            flex items-center gap-3 px-4 md:px-5 py-3.5 rounded-2xl max-w-2xl mx-auto
                             ${isDark
-                                ? 'bg-[#111111] border border-white/10 focus-within:border-emerald-500/50'
+                                ? 'bg-[#0c0c0c] border border-white/10 focus-within:border-emerald-500/50'
                                 : 'bg-white border border-gray-200 focus-within:border-emerald-400 shadow-lg'}
                         `}
-                        style={{
-                            boxShadow: isDark
-                                ? '0 0 40px rgba(16, 185, 129, 0.08)'
-                                : '0 10px 40px rgba(0,0,0,0.1)'
-                        }}
+                        style={{ boxShadow: isDark ? '0 0 40px rgba(16, 185, 129, 0.1)' : '0 10px 40px rgba(0,0,0,0.1)' }}
                     >
                         <Sparkles className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-emerald-500/50' : 'text-emerald-400'}`} />
-
                         <input
                             type="text"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleGlobalInput();
-                                }
-                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGlobalInput(); } }}
                             placeholder="Ask anything — routes to the right agent..."
                             disabled={isProcessing}
-                            className={`
-                                flex-1 bg-transparent border-none outline-none text-sm font-medium min-w-0
-                                ${isDark ? 'text-white placeholder-white/30' : 'text-gray-900 placeholder-gray-400'}
-                            `}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                            className={`flex-1 bg-transparent border-none outline-none text-sm font-medium min-w-0 ${isDark ? 'text-white placeholder-white/30' : 'text-gray-900 placeholder-gray-400'}`}
                         />
-
                         <button
                             onClick={handleGlobalInput}
                             disabled={!inputValue.trim() || isProcessing}
-                            className={`
-                                p-2.5 md:p-3 rounded-xl transition-all duration-300 flex-shrink-0
-                                ${inputValue.trim() && !isProcessing
-                                    ? 'bg-emerald-500 text-white hover:bg-emerald-400'
-                                    : (isDark ? 'bg-white/5 text-white/20' : 'bg-gray-100 text-gray-300')}
-                            `}
-                            style={{
-                                boxShadow: inputValue.trim() && !isProcessing && isDark
-                                    ? '0 0 25px rgba(16, 185, 129, 0.5)'
-                                    : 'none'
-                            }}
+                            className={`p-2.5 rounded-xl flex-shrink-0 ${inputValue.trim() && !isProcessing ? 'bg-emerald-500 text-white hover:bg-emerald-400' : (isDark ? 'bg-white/5 text-white/20' : 'bg-gray-100 text-gray-300')}`}
+                            style={{ boxShadow: inputValue.trim() && !isProcessing && isDark ? '0 0 20px rgba(16, 185, 129, 0.5)' : 'none' }}
                         >
                             {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                         </button>
                     </div>
-
                     <p className={`text-center text-[10px] mt-2 ${isDark ? 'text-white/20' : 'text-gray-400'}`}>
                         All agents share context — they collaborate like a real team
                     </p>
                 </div>
             </div>
 
-            {/* Agent Picker Modal */}
             {showPicker && (
                 <AgentPicker
                     isDark={isDark}
