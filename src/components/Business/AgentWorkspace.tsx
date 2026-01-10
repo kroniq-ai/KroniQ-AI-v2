@@ -51,6 +51,11 @@ import { RunwayPage } from './pages/RunwayPage';
 import { IncomePage } from './pages/IncomePage';
 import { ExpensesPage } from './pages/ExpensesPage';
 
+// Marketing Pages
+import { CampaignsPage } from './pages/CampaignsPage';
+import { MetricsPage } from './pages/MetricsPage';
+import { ContentPage } from './pages/ContentPage';
+
 // ===== ICON MAP =====
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -432,6 +437,18 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
                     return <IncomePage isDark={isDark} />;
                 case 'expenses':
                     return <ExpensesPage isDark={isDark} />;
+            }
+        }
+
+        // Marketing Agent sections
+        if (agentType === 'marketing' || agentType === 'ceo') {
+            switch (state.currentSection) {
+                case 'campaigns':
+                    return <CampaignsPage isDark={isDark} />;
+                case 'metrics':
+                    return <MetricsPage isDark={isDark} />;
+                case 'content':
+                    return <ContentPage isDark={isDark} />;
             }
         }
 
