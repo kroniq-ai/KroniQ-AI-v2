@@ -12,6 +12,9 @@ export interface SharedAgentState {
     // Which agents user has active
     activeAgents: AgentType[];
 
+    // Custom agents created by user
+    customAgents: AgentDefinition[];
+
     // Mode: multi-agent (boxes) or single-agent (CEO)
     mode: 'multi' | 'single';
 
@@ -198,6 +201,7 @@ interface SharedAgentContextValue {
     addAgent: (type: AgentType) => void;
     removeAgent: (type: AgentType) => void;
     setActiveAgents: (agents: AgentType[]) => void;
+    addCustomAgent: (name: string, description: string) => void;
 
     // Navigation
     openAgent: (type: AgentType) => void;
@@ -228,6 +232,7 @@ const initialMetadata = (): Record<AgentType, AgentMetadata> => {
 export const SharedAgentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<SharedAgentState>({
         activeAgents: DEFAULT_AGENTS,
+        customAgents: [],
         mode: 'multi',
         currentAgent: null,
         currentSection: 'today',
@@ -256,6 +261,33 @@ export const SharedAgentProvider: React.FC<{ children: ReactNode }> = ({ childre
     // Set active agents
     const setActiveAgents = useCallback((agents: AgentType[]) => {
         setState(prev => ({ ...prev, activeAgents: agents }));
+    }, []);
+
+    // Add custom agent
+    const addCustomAgent = useCallback((name: string, description: string) => {
+        const customAgent: AgentDefinition = {
+            type: `custom_${Date.now()}` as AgentType,
+            name,
+            shortName: name.split(' ')[0],
+            icon: 'Bot',
+            description,
+            color: 'emerald',
+            commonSections: COMMON_SECTIONS.map(s => s.id),
+            specificSections: [],
+        };
+
+        setState(prev => ({
+            ...prev,
+            customAgents: [...prev.customAgents, customAgent],
+            activeAgents: [...prev.activeAgents, customAgent.type],
+            agentMetadata: {
+                ...prev.agentMetadata,
+                [customAgent.type]: { messageCount: 0, lastActive: null, tasks: 0, unread: 0 }
+            }
+        }));
+
+        // Also add to the AGENT_DEFINITIONS dynamically for lookup
+        AGENT_DEFINITIONS.push(customAgent);
     }, []);
 
     // Open agent workspace
@@ -324,6 +356,7 @@ export const SharedAgentProvider: React.FC<{ children: ReactNode }> = ({ childre
         addAgent,
         removeAgent,
         setActiveAgents,
+        addCustomAgent,
         openAgent,
         closeAgent,
         setSection,
