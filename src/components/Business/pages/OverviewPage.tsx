@@ -13,9 +13,9 @@ import {
     Sparkles,
     ArrowUpRight,
     ArrowDownRight,
-    ChevronRight,
     Zap
 } from 'lucide-react';
+import { MorningFocus } from '../MorningFocus';
 
 // ===== TYPES =====
 
@@ -358,14 +358,22 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({
                         </div>
                     </div>
 
-                    {/* AI Insight Column */}
-                    <div>
-                        <h2 className={`text-sm font-semibold uppercase tracking-wider mb-5 ${isDark ? 'text-white/60' : 'text-gray-600'}`}
-                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                            <Sparkles className="w-4 h-4 inline mr-2 text-emerald-500" />
-                            AI Recommendation
-                        </h2>
-                        <AIInsightCard isDark={isDark} />
+                    {/* AI Column */}
+                    <div className="space-y-6">
+                        {/* Morning Focus */}
+                        <div>
+                            <MorningFocus isDark={isDark} />
+                        </div>
+
+                        {/* AI Insight */}
+                        <div>
+                            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-5 ${isDark ? 'text-white/60' : 'text-gray-600'}`}
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                <Sparkles className="w-4 h-4 inline mr-2 text-emerald-500" />
+                                AI Recommendation
+                            </h2>
+                            <AIInsightCard isDark={isDark} />
+                        </div>
                     </div>
                 </div>
             </div>
