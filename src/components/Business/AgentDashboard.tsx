@@ -1,7 +1,7 @@
 /**
- * Agent Dashboard
- * Grid of agent boxes with global input
- * Premium green design
+ * Agent Dashboard — Premium Redesign
+ * CEO hero card in center, specialist agents around
+ * Ultra-premium green glowing design
  */
 
 import React, { useState } from 'react';
@@ -18,18 +18,19 @@ import {
     Code,
     CheckSquare,
     Scale,
-    Settings,
-    Zap
+    Zap,
+    ArrowRight,
+    MessageSquare,
+    X
 } from 'lucide-react';
 import { useSharedAgentContext, getAgentDefinition, AGENT_DEFINITIONS, type AgentDefinition } from '../../contexts/SharedAgentContext';
 import type { AgentType } from '../../lib/agents/types';
 import { detectIntent } from '../../lib/agents/AgentRouter';
-import { getAgentResponse } from '../../lib/agents/AgentService';
 
 // ===== ICON MAP =====
 
 const ICON_MAP: Record<string, React.ElementType> = {
-    Crown, DollarSign, Users, Megaphone, Palette, Code, CheckSquare, Scale
+    Crown, DollarSign, Users, Megaphone, Palette, Code, CheckSquare, Scale, Zap
 };
 
 // ===== TYPES =====
@@ -38,16 +39,118 @@ interface AgentDashboardProps {
     isDark: boolean;
 }
 
-// ===== AGENT BOX =====
+// ===== CEO HERO CARD =====
 
-interface AgentBoxProps {
+interface CEOHeroCardProps {
+    isDark: boolean;
+    onClick: () => void;
+}
+
+const CEOHeroCard: React.FC<CEOHeroCardProps> = ({ isDark, onClick }) => (
+    <button
+        onClick={onClick}
+        className={`
+            group relative w-full p-8 rounded-3xl text-left overflow-hidden
+            border transition-all duration-500
+            hover:scale-[1.02]
+            ${isDark
+                ? 'bg-gradient-to-br from-emerald-950/80 via-[#0d0d0d] to-[#0d0d0d] border-emerald-500/30 hover:border-emerald-400/60'
+                : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:border-emerald-400'}
+        `}
+        style={{
+            boxShadow: isDark
+                ? '0 0 60px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(16, 185, 129, 0.1)'
+                : '0 10px 40px rgba(16, 185, 129, 0.1)'
+        }}
+    >
+        {/* Animated glow orb */}
+        <div className={`
+            absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl
+            opacity-30 group-hover:opacity-50 transition-opacity duration-700
+            ${isDark ? 'bg-emerald-500' : 'bg-emerald-200'}
+        `} />
+
+        {/* Grid pattern */}
+        <div
+            className="absolute inset-0 opacity-10"
+            style={{
+                backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.3) 1px, transparent 1px),
+                                  linear-gradient(90deg, rgba(16, 185, 129, 0.3) 1px, transparent 1px)`,
+                backgroundSize: '30px 30px'
+            }}
+        />
+
+        <div className="relative flex items-start justify-between">
+            <div className="flex-1">
+                {/* Badge */}
+                <div className={`
+                    inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-4
+                    ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}
+                `}>
+                    <Sparkles className="w-3 h-3" />
+                    Your AI COO
+                </div>
+
+                {/* Title */}
+                <h2
+                    className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                >
+                    CEO Agent
+                </h2>
+
+                {/* Description */}
+                <p className={`text-sm mb-4 max-w-md ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                    Your all-in-one business strategist. Ask anything about strategy, marketing, finance,
+                    product — I handle it all in one place.
+                </p>
+
+                {/* Quick stats */}
+                <div className="flex items-center gap-4">
+                    <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>All-in-one mode</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-emerald-400/70' : 'text-emerald-600'}`}>
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>Full context</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Icon */}
+            <div className={`
+                w-20 h-20 rounded-2xl flex items-center justify-center
+                bg-gradient-to-br from-emerald-500/30 to-emerald-600/10
+                group-hover:scale-110 transition-transform duration-500
+            `}
+                style={{ boxShadow: isDark ? '0 0 40px rgba(16, 185, 129, 0.3)' : 'none' }}
+            >
+                <Crown className={`w-10 h-10 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+            </div>
+        </div>
+
+        {/* CTA */}
+        <div className={`
+            relative mt-6 flex items-center gap-2 text-sm font-semibold
+            ${isDark ? 'text-emerald-400' : 'text-emerald-600'}
+        `}>
+            Start chatting
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+        </div>
+    </button>
+);
+
+// ===== SPECIALIST AGENT CARD =====
+
+interface SpecialistCardProps {
     agent: AgentDefinition;
     metadata: { messageCount: number; lastActive: Date | null };
     isDark: boolean;
     onClick: () => void;
 }
 
-const AgentBox: React.FC<AgentBoxProps> = ({ agent, metadata, isDark, onClick }) => {
+const SpecialistCard: React.FC<SpecialistCardProps> = ({ agent, metadata, isDark, onClick }) => {
     const Icon = ICON_MAP[agent.icon] || Sparkles;
 
     return (
@@ -58,88 +161,89 @@ const AgentBox: React.FC<AgentBoxProps> = ({ agent, metadata, isDark, onClick })
                 border transition-all duration-300
                 hover:translate-y-[-4px]
                 ${isDark
-                    ? 'bg-[#0d0d0d] border-emerald-500/10 hover:border-emerald-500/40'
-                    : 'bg-white border-gray-100 hover:border-emerald-300 hover:shadow-lg'}
+                    ? 'bg-[#0d0d0d]/80 border-emerald-500/10 hover:border-emerald-500/40'
+                    : 'bg-white border-gray-100 hover:border-emerald-300 hover:shadow-xl'}
             `}
             style={{
-                boxShadow: isDark ? '0 0 0 rgba(16, 185, 129, 0)' : 'none',
+                boxShadow: isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.03)',
             }}
             onMouseEnter={(e) => {
                 if (isDark) {
-                    e.currentTarget.style.boxShadow = '0 0 30px rgba(16, 185, 129, 0.15)';
+                    e.currentTarget.style.boxShadow = '0 0 40px rgba(16, 185, 129, 0.1)';
                 }
             }}
             onMouseLeave={(e) => {
                 if (isDark) {
-                    e.currentTarget.style.boxShadow = '0 0 0 rgba(16, 185, 129, 0)';
+                    e.currentTarget.style.boxShadow = 'none';
                 }
             }}
         >
-            {/* Glow effect on hover */}
+            {/* Subtle glow on hover */}
             <div className={`
-                absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500
                 ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : ''}
             `} />
 
-            {/* Icon */}
-            <div className={`
-                relative w-12 h-12 rounded-xl flex items-center justify-center mb-4
-                bg-gradient-to-br from-emerald-500/20 to-emerald-600/10
-                group-hover:scale-110 transition-transform duration-300
-            `}
-                style={{ boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.2)' : 'none' }}
-            >
-                <Icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-            </div>
+            <div className="relative flex items-start gap-4">
+                {/* Icon */}
+                <div className={`
+                    w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
+                    bg-gradient-to-br from-emerald-500/20 to-emerald-600/5
+                    group-hover:scale-110 transition-transform duration-300
+                `}
+                    style={{ boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none' }}
+                >
+                    <Icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                </div>
 
-            {/* Name */}
-            <h3
-                className={`relative text-base font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-            >
-                {agent.shortName}
-            </h3>
+                <div className="flex-1 min-w-0">
+                    {/* Name */}
+                    <h3
+                        className={`font-bold mb-0.5 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                    >
+                        {agent.shortName}
+                    </h3>
 
-            {/* Description */}
-            <p className={`relative text-xs mb-3 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                {agent.description}
-            </p>
+                    {/* Description */}
+                    <p className={`text-xs mb-2 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                        {agent.description}
+                    </p>
 
-            {/* Stats */}
-            <div className={`
-                relative flex items-center gap-3 text-xs
-                ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}
-            `}>
-                <span>{metadata.messageCount} messages</span>
-                {metadata.lastActive && (
-                    <span>•</span>
-                )}
-            </div>
+                    {/* Message count */}
+                    <div className={`
+                        inline-flex items-center gap-1 text-[10px] font-medium
+                        ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/60'}
+                    `}>
+                        <MessageSquare className="w-3 h-3" />
+                        {metadata.messageCount} messages
+                    </div>
+                </div>
 
-            {/* Arrow indicator */}
-            <div className={`
-                absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100
-                transition-all duration-300 group-hover:translate-x-1
-                ${isDark ? 'text-emerald-400' : 'text-emerald-500'}
-            `}>
-                →
+                {/* Arrow */}
+                <div className={`
+                    opacity-0 group-hover:opacity-100 transition-all duration-300
+                    ${isDark ? 'text-emerald-400' : 'text-emerald-500'}
+                `}>
+                    <ArrowRight className="w-4 h-4" />
+                </div>
             </div>
         </button>
     );
 };
 
-// ===== ADD AGENT BUTTON =====
+// ===== ADD MORE AGENTS =====
 
-interface AddAgentButtonProps {
+interface AddMoreAgentsProps {
     isDark: boolean;
     onClick: () => void;
 }
 
-const AddAgentButton: React.FC<AddAgentButtonProps> = ({ isDark, onClick }) => (
+const AddMoreAgents: React.FC<AddMoreAgentsProps> = ({ isDark, onClick }) => (
     <button
         onClick={onClick}
         className={`
-            p-5 rounded-2xl text-center
+            group p-5 rounded-2xl text-left
             border-2 border-dashed transition-all duration-300
             hover:scale-[1.02]
             ${isDark
@@ -147,15 +251,23 @@ const AddAgentButton: React.FC<AddAgentButtonProps> = ({ isDark, onClick }) => (
                 : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50'}
         `}
     >
-        <div className={`
-            w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4
-            ${isDark ? 'bg-emerald-500/10' : 'bg-gray-100'}
-        `}>
-            <Plus className={`w-6 h-6 ${isDark ? 'text-emerald-500/50' : 'text-gray-400'}`} />
+        <div className="flex items-center gap-4">
+            <div className={`
+                w-12 h-12 rounded-xl flex items-center justify-center
+                ${isDark ? 'bg-emerald-500/10' : 'bg-gray-100 group-hover:bg-emerald-100'}
+                transition-colors duration-300
+            `}>
+                <Plus className={`w-6 h-6 ${isDark ? 'text-emerald-500/50 group-hover:text-emerald-400' : 'text-gray-400 group-hover:text-emerald-600'} transition-colors`} />
+            </div>
+            <div>
+                <p className={`font-semibold text-sm ${isDark ? 'text-white/50 group-hover:text-white/80' : 'text-gray-500 group-hover:text-gray-700'} transition-colors`}>
+                    Add More Agents
+                </p>
+                <p className={`text-xs ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                    Customize your team
+                </p>
+            </div>
         </div>
-        <p className={`text-sm font-medium ${isDark ? 'text-emerald-500/50' : 'text-gray-400'}`}>
-            Add Agent
-        </p>
     </button>
 );
 
@@ -175,90 +287,92 @@ const AgentPicker: React.FC<AgentPickerProps> = ({ isDark, activeAgents, onSelec
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
             <div className={`
-                relative w-full max-w-md rounded-2xl p-6
+                relative w-full max-w-md rounded-3xl overflow-hidden
                 ${isDark ? 'bg-[#0c0c0c]' : 'bg-white'}
             `}
-                style={{ boxShadow: isDark ? '0 0 60px rgba(16, 185, 129, 0.1)' : '0 20px 60px rgba(0,0,0,0.2)' }}
+                style={{
+                    boxShadow: isDark
+                        ? '0 0 80px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)'
+                        : '0 25px 80px rgba(0,0,0,0.25)'
+                }}
             >
-                <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                    style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-                    Add an Agent
-                </h2>
-                <p className={`text-sm mb-6 ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                    Choose an agent to add to your dashboard
-                </p>
+                {/* Grid pattern */}
+                {isDark && (
+                    <div
+                        className="absolute inset-0 opacity-20 pointer-events-none"
+                        style={{
+                            backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+                                              linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)`,
+                            backgroundSize: '20px 20px'
+                        }}
+                    />
+                )}
 
-                <div className="space-y-2">
-                    {availableAgents.map(agent => {
-                        const Icon = ICON_MAP[agent.icon] || Sparkles;
-                        return (
-                            <button
-                                key={agent.type}
-                                onClick={() => onSelect(agent.type)}
-                                className={`
-                                    w-full flex items-center gap-4 p-4 rounded-xl
-                                    border transition-all duration-200
-                                    ${isDark
-                                        ? 'bg-emerald-500/5 border-emerald-500/10 hover:border-emerald-500/40'
-                                        : 'bg-gray-50 border-gray-100 hover:border-emerald-300'}
-                                `}
-                            >
-                                <div className={`
-                                    w-10 h-10 rounded-lg flex items-center justify-center
-                                    bg-gradient-to-br from-emerald-500/20 to-emerald-600/10
-                                `}>
-                                    <Icon className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                                </div>
-                                <div className="text-left">
-                                    <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                        {agent.name}
-                                    </p>
-                                    <p className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                                        {agent.description}
-                                    </p>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Single Agent Mode Option */}
-                <div className={`mt-6 pt-4 border-t ${isDark ? 'border-emerald-500/10' : 'border-gray-100'}`}>
-                    <button
-                        onClick={() => onSelect('ceo')}
-                        className={`
-                            w-full flex items-center gap-4 p-4 rounded-xl
-                            border transition-all duration-200
-                            ${isDark
-                                ? 'bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/50'
-                                : 'bg-emerald-50 border-emerald-100 hover:border-emerald-400'}
-                        `}
-                    >
-                        <div className={`
-                            w-10 h-10 rounded-lg flex items-center justify-center
-                            bg-gradient-to-br from-emerald-500/30 to-emerald-600/20
-                        `}>
-                            <Crown className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                        </div>
-                        <div className="text-left">
-                            <p className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                                CEO Agent (All-in-One)
-                            </p>
-                            <p className={`text-xs ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>
-                                Switch to single-agent mode
+                {/* Header */}
+                <div className={`relative px-6 py-5 border-b ${isDark ? 'border-emerald-500/10' : 'border-gray-100'}`}>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                Add Specialist Agent
+                            </h2>
+                            <p className={`text-sm mt-1 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                                Expand your AI team
                             </p>
                         </div>
-                    </button>
+                        <button
+                            onClick={onClose}
+                            className={`p-2 rounded-xl transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100'}`}
+                        >
+                            <X className={`w-5 h-5 ${isDark ? 'text-white/40' : 'text-gray-400'}`} />
+                        </button>
+                    </div>
                 </div>
 
-                <button
-                    onClick={onClose}
-                    className={`mt-4 w-full py-2 text-sm ${isDark ? 'text-white/40 hover:text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                    Cancel
-                </button>
+                {/* Agents */}
+                <div className="relative p-4 max-h-[60vh] overflow-y-auto space-y-2">
+                    {availableAgents.length > 0 ? (
+                        availableAgents.map(agent => {
+                            const Icon = ICON_MAP[agent.icon] || Sparkles;
+                            return (
+                                <button
+                                    key={agent.type}
+                                    onClick={() => onSelect(agent.type)}
+                                    className={`
+                                        w-full flex items-center gap-4 p-4 rounded-2xl
+                                        border transition-all duration-200
+                                        ${isDark
+                                            ? 'bg-emerald-500/5 border-emerald-500/10 hover:border-emerald-500/40 hover:bg-emerald-500/10'
+                                            : 'bg-gray-50 border-gray-100 hover:border-emerald-300 hover:bg-emerald-50'}
+                                    `}
+                                >
+                                    <div className={`
+                                        w-12 h-12 rounded-xl flex items-center justify-center
+                                        bg-gradient-to-br from-emerald-500/20 to-emerald-600/10
+                                    `}>
+                                        <Icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                    </div>
+                                    <div className="text-left flex-1">
+                                        <p className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                            {agent.name}
+                                        </p>
+                                        <p className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                                            {agent.description}
+                                        </p>
+                                    </div>
+                                    <ArrowRight className={`w-4 h-4 ${isDark ? 'text-emerald-500/50' : 'text-gray-300'}`} />
+                                </button>
+                            );
+                        })
+                    ) : (
+                        <div className={`text-center py-8 ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                            <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>All agents are already active!</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -276,16 +390,17 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
         .map(type => getAgentDefinition(type))
         .filter(Boolean) as AgentDefinition[];
 
+    const handleCEOClick = () => {
+        setMode('single');
+        openAgent('ceo');
+    };
+
     const handleAgentClick = (type: AgentType) => {
         openAgent(type);
     };
 
     const handleAddAgent = (type: AgentType) => {
-        if (type === 'ceo') {
-            setMode('single');
-        } else {
-            addAgent(type);
-        }
+        addAgent(type);
         setShowPicker(false);
     };
 
@@ -295,12 +410,10 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
         setIsProcessing(true);
         const intent = detectIntent(inputValue);
 
-        // Add the agent if not already active
         if (!state.activeAgents.includes(intent.primaryAgent)) {
             addAgent(intent.primaryAgent);
         }
 
-        // Open that agent
         openAgent(intent.primaryAgent);
         setInputValue('');
         setIsProcessing(false);
@@ -309,84 +422,100 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
     return (
         <div className="flex-1 flex flex-col relative overflow-hidden">
             {/* Background */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    backgroundImage: isDark
-                        ? `linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px)`
-                        : 'none',
-                    backgroundSize: '50px 50px',
-                }}
-            />
+            <div className="absolute inset-0">
+                {/* Gradient orbs */}
+                <div className={`
+                    absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-3xl
+                    ${isDark ? 'bg-emerald-900/20' : 'bg-emerald-100/50'}
+                `} />
+                <div className={`
+                    absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-3xl
+                    ${isDark ? 'bg-emerald-900/10' : 'bg-emerald-50/50'}
+                `} />
 
-            {/* Top glow */}
-            <div className={`
-                absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] rounded-full blur-3xl pointer-events-none
-                ${isDark ? 'bg-emerald-500/5' : 'bg-emerald-100/30'}
-            `} />
+                {/* Grid lines */}
+                {isDark && (
+                    <div
+                        className="absolute inset-0 opacity-30"
+                        style={{
+                            backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+                                              linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px)`,
+                            backgroundSize: '60px 60px'
+                        }}
+                    />
+                )}
+            </div>
 
             {/* Content */}
-            <div className="relative z-10 flex-1 flex flex-col max-w-4xl mx-auto w-full px-6 py-8">
+            <div className="relative z-10 flex-1 flex flex-col max-w-4xl mx-auto w-full px-6 py-8 overflow-y-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className={`
-                            w-10 h-10 rounded-xl flex items-center justify-center
-                            bg-gradient-to-br from-emerald-500/20 to-emerald-600/10
-                        `}
-                            style={{ boxShadow: isDark ? '0 0 20px rgba(16, 185, 129, 0.3)' : 'none' }}
-                        >
-                            <Zap className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                        </div>
-                        <div>
-                            <h1
-                                className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
-                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                            >
-                                Your Agents
-                            </h1>
-                            <p className={`text-sm ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>
-                                {activeAgentDefs.length} agents active • All share context
-                            </p>
-                        </div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                        <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-emerald-500/50' : 'text-emerald-600/70'}`}>
+                            Business OS
+                        </span>
                     </div>
+                    <h1
+                        className={`text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}
+                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                    >
+                        Your AI Team
+                    </h1>
+                    <p className={`text-sm mt-1 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                        {activeAgentDefs.length + 1} agents ready • Shared context across all
+                    </p>
                 </div>
 
-                {/* Agent Grid */}
-                <div className="flex-1">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {activeAgentDefs.map(agent => (
-                            <AgentBox
-                                key={agent.type}
-                                agent={agent}
-                                metadata={state.agentMetadata[agent.type]}
-                                isDark={isDark}
-                                onClick={() => handleAgentClick(agent.type)}
-                            />
-                        ))}
-                        <AddAgentButton isDark={isDark} onClick={() => setShowPicker(true)} />
-                    </div>
+                {/* CEO Hero Card */}
+                <CEOHeroCard isDark={isDark} onClick={handleCEOClick} />
+
+                {/* Divider */}
+                <div className="flex items-center gap-4 my-8">
+                    <div className={`flex-1 h-px ${isDark ? 'bg-emerald-500/10' : 'bg-gray-100'}`} />
+                    <span className={`text-xs font-medium ${isDark ? 'text-white/20' : 'text-gray-400'}`}>
+                        SPECIALIST AGENTS
+                    </span>
+                    <div className={`flex-1 h-px ${isDark ? 'bg-emerald-500/10' : 'bg-gray-100'}`} />
                 </div>
+
+                {/* Specialist Agents Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {activeAgentDefs.map(agent => (
+                        <SpecialistCard
+                            key={agent.type}
+                            agent={agent}
+                            metadata={state.agentMetadata[agent.type]}
+                            isDark={isDark}
+                            onClick={() => handleAgentClick(agent.type)}
+                        />
+                    ))}
+                    <AddMoreAgents isDark={isDark} onClick={() => setShowPicker(true)} />
+                </div>
+
+                {/* Spacer */}
+                <div className="flex-1" />
 
                 {/* Global Input */}
                 <div className={`
-                    mt-8 pt-4 border-t
-                    ${isDark ? 'border-emerald-500/10' : 'border-gray-100'}
+                    sticky bottom-0 pt-4 pb-2
+                    ${isDark ? 'bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent' : 'bg-gradient-to-t from-gray-50 via-gray-50 to-transparent'}
                 `}>
                     <div
                         className={`
-                            flex items-center gap-3 px-4 py-3.5 rounded-2xl
+                            flex items-center gap-3 px-5 py-4 rounded-2xl
                             transition-all duration-300
                             ${isDark
-                                ? 'bg-emerald-500/5 border border-emerald-500/15 focus-within:border-emerald-500/40'
-                                : 'bg-gray-50 border border-gray-200 focus-within:border-emerald-400'}
+                                ? 'bg-[#0d0d0d] border border-emerald-500/20 focus-within:border-emerald-500/50'
+                                : 'bg-white border border-gray-200 focus-within:border-emerald-400 shadow-lg'}
                         `}
                         style={{
-                            boxShadow: isDark ? 'inset 0 0 30px rgba(16, 185, 129, 0.03), 0 0 20px rgba(16, 185, 129, 0.05)' : 'none'
+                            boxShadow: isDark
+                                ? 'inset 0 0 30px rgba(16, 185, 129, 0.03), 0 0 30px rgba(16, 185, 129, 0.08)'
+                                : '0 10px 40px rgba(0,0,0,0.08)'
                         }}
                     >
-                        <Sparkles className={`w-5 h-5 ${isDark ? 'text-emerald-500/40' : 'text-emerald-400'}`} />
+                        <Sparkles className={`w-5 h-5 ${isDark ? 'text-emerald-500/50' : 'text-emerald-400'}`} />
 
                         <input
                             type="text"
@@ -398,11 +527,11 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
                                     handleGlobalInput();
                                 }
                             }}
-                            placeholder="Ask anything... (routes to the right agent)"
+                            placeholder="Ask anything — I'll route to the right agent..."
                             disabled={isProcessing}
                             className={`
                                 flex-1 bg-transparent border-none outline-none text-sm font-medium
-                                ${isDark ? 'text-white placeholder-emerald-500/30' : 'text-gray-900 placeholder-gray-400'}
+                                ${isDark ? 'text-white placeholder-white/30' : 'text-gray-900 placeholder-gray-400'}
                             `}
                             style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                         />
@@ -411,28 +540,27 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({ isDark }) => {
                             onClick={handleGlobalInput}
                             disabled={!inputValue.trim() || isProcessing}
                             className={`
-                                p-2.5 rounded-xl transition-all duration-300
+                                p-3 rounded-xl transition-all duration-300
                                 ${inputValue.trim() && !isProcessing
-                                    ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+                                    ? 'bg-emerald-500 text-white hover:bg-emerald-400 scale-100'
                                     : (isDark ? 'bg-emerald-500/10 text-emerald-500/30' : 'bg-gray-100 text-gray-300')}
                             `}
                             style={{
                                 boxShadow: inputValue.trim() && !isProcessing && isDark
-                                    ? '0 0 20px rgba(16, 185, 129, 0.4)'
+                                    ? '0 0 25px rgba(16, 185, 129, 0.5)'
                                     : 'none'
                             }}
                         >
                             {isProcessing ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
-                                <Send className="w-4 h-4" />
+                                <Send className="w-5 h-5" />
                             )}
                         </button>
                     </div>
 
-                    <p className={`text-center text-[10px] mt-2 ${isDark ? 'text-emerald-500/20' : 'text-gray-300'}`}>
-                        <Sparkles className="w-3 h-3 inline mr-1" />
-                        All agents share context — talk to one, they all know
+                    <p className={`text-center text-[10px] mt-3 ${isDark ? 'text-emerald-500/30' : 'text-gray-400'}`}>
+                        All agents share context — they collaborate like a real team
                     </p>
                 </div>
             </div>
