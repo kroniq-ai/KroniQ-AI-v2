@@ -14,6 +14,7 @@ import { SettingsView } from '../Settings/SettingsView';
 import { ProfilePage } from '../Profile/ProfilePage';
 import { BusinessPanel } from '../Business/BusinessPanel';
 import { SuperKroniqChat } from '../Chat/SuperKroniqChat';
+import { SocialKroniq } from '../Social/SocialKroniq';
 import {
     Search,
     ChevronDown, Sun, Moon, X, Menu, PanelLeftClose, PanelLeft,
@@ -3343,11 +3344,12 @@ const _PlaygroundModelBar: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 // Mode Toggle with animated pill - Super KroniQ and Business modes only
 const ModeToggle: React.FC<{
     isDark: boolean;
-    mode: 'super' | 'business';
-    onModeChange: (mode: 'super' | 'business') => void;
+    mode: 'super' | 'business' | 'social';
+    onModeChange: (mode: 'super' | 'business' | 'social') => void;
 }> = ({ isDark, mode, onModeChange }) => {
     const buttonRef1 = useRef<HTMLButtonElement>(null);
     const buttonRef2 = useRef<HTMLButtonElement>(null);
+    const buttonRef3 = useRef<HTMLButtonElement>(null);
     const [pillStyle, setPillStyle] = useState({ left: 0, width: 0 });
 
     // Update pill position when mode changes
@@ -3355,7 +3357,8 @@ const ModeToggle: React.FC<{
         const updatePill = () => {
             let targetButton: HTMLButtonElement | null = null;
             if (mode === 'super') targetButton = buttonRef1.current;
-            else targetButton = buttonRef2.current;
+            else if (mode === 'business') targetButton = buttonRef2.current;
+            else if (mode === 'social') targetButton = buttonRef3.current;
 
             if (targetButton) {
                 setPillStyle({
@@ -3392,7 +3395,9 @@ const ModeToggle: React.FC<{
                     absolute h-[calc(100%-8px)] rounded-full transition-all duration-300 ease-out
                     ${mode === 'super'
                         ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/15'
-                        : 'bg-gradient-to-r from-teal-500/15 to-cyan-500/15'}
+                        : mode === 'business'
+                            ? 'bg-gradient-to-r from-teal-500/15 to-cyan-500/15'
+                            : 'bg-gradient-to-r from-pink-500/15 to-purple-500/15'}
                 `}
                 style={{
                     left: `${pillStyle.left}px`,
@@ -3439,6 +3444,23 @@ const ModeToggle: React.FC<{
             >
                 <Compass className={`w-4 h-4 transition-all duration-200 ${mode === 'business' ? 'text-teal-400 scale-110' : ''}`} />
                 <span>Business</span>
+            </button>
+
+            {/* Social Button */}
+            <button
+                ref={buttonRef3}
+                onClick={() => onModeChange('social')}
+                className={`
+                    relative z-10 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full 
+                    text-sm font-medium whitespace-nowrap
+                    transition-all duration-200 ease-out
+                    ${mode === 'social'
+                        ? 'text-pink-400'
+                        : (isDark ? 'text-white/40 hover:text-white/60' : 'text-gray-400 hover:text-gray-600')}
+                `}
+            >
+                <Share2Icon className={`w-4 h-4 transition-all duration-200 ${mode === 'social' ? 'text-pink-400 scale-110' : ''}`} />
+                <span>Social</span>
             </button>
         </div>
     );
@@ -3756,8 +3778,8 @@ const PremiumInputBar: React.FC<{
 // Main content
 const MainContent: React.FC<{
     isDark: boolean;
-    mode: 'super' | 'business';
-    onModeChange: (mode: 'super' | 'business') => void;
+    mode: 'super' | 'business' | 'social';
+    onModeChange: (mode: 'super' | 'business' | 'social') => void;
     isInChat?: boolean;
     initialMessage?: string | null;
     projectId?: string | null;
@@ -3765,6 +3787,7 @@ const MainContent: React.FC<{
     onResetChat?: () => void;
 }> = ({ isDark, mode, onModeChange, isInChat, initialMessage, projectId, onStartChat, onResetChat }) => {
     const isBusinessMode = mode === 'business';
+    const isSocialMode = mode === 'social';
 
     // Handle message from PremiumInputBar
     const handleSendMessage = (message: string) => {
@@ -3773,6 +3796,15 @@ const MainContent: React.FC<{
             onStartChat(message);
         }
     };
+
+    // Render Social KroniQ if in social mode
+    if (isSocialMode) {
+        return (
+            <main className={`flex-1 flex relative overflow-hidden h-full ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+                <SocialKroniq onBack={() => onModeChange('super')} />
+            </main>
+        );
+    }
 
     // Render Business Panel if in business mode
     if (isBusinessMode) {
@@ -3893,7 +3925,7 @@ export const AppShell: React.FC = () => {
     const { currentView, navigateTo } = useNavigation();
     const { setIsSuperMode } = useStudioMode();
     const isDark = currentTheme === 'cosmic-dark';
-    const [mode, setMode] = useState<'super' | 'business'>('super');
+    const [mode, setMode] = useState<'super' | 'business' | 'social'>('super');
 
     // Mobile sidebar toggle state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -3921,7 +3953,7 @@ export const AppShell: React.FC = () => {
     }, []);
 
     // Sync mode toggle with context for MainChat access
-    const handleModeChange = (newMode: 'super' | 'business') => {
+    const handleModeChange = (newMode: 'super' | 'business' | 'social') => {
         setMode(newMode);
         setIsSuperMode(newMode === 'super');
         // Collapse sidebar when entering Business mode

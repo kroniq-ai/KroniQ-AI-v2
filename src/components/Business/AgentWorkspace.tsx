@@ -45,6 +45,7 @@ import type { AgentType, AgentMessage } from '../../lib/agents/types';
 import { AGENT_NAMES } from '../../lib/agents/AgentRouter';
 import { getAgentResponse } from '../../lib/agents/AgentService';
 import { detectIntent } from '../../lib/agents/AgentRouter';
+import { useAgentIntelligence } from '../../lib/agents/AgentIntelligence';
 
 // Finance Pages
 import { RunwayPage } from './pages/RunwayPage';
@@ -57,6 +58,7 @@ import { MetricsPage } from './pages/MetricsPage';
 import { ContentPage } from './pages/ContentPage';
 
 // Customer Pages
+import { CustomersPage } from './pages/CustomersPage';
 import { InsightsPage } from './pages/InsightsPage';
 import { FeedbackPage } from './pages/FeedbackPage';
 
@@ -71,6 +73,9 @@ import { BugsPage } from './pages/BugsPage';
 // Shared Pages
 import { TasksPage } from './pages/TasksPage';
 import { GoalsPage } from './pages/GoalsPage';
+import { DecisionsPage } from './pages/DecisionsPage';
+import { AssetsPage } from './pages/AssetsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 // ===== ICON MAP =====
 
@@ -386,6 +391,14 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [localMessages, setLocalMessages] = useState<AgentMessage[]>([]);
 
+    // Get business context for intelligent responses
+    let businessCtx: ReturnType<typeof useAgentIntelligence> | null = null;
+    try {
+        businessCtx = useAgentIntelligence();
+    } catch {
+        // Context not available, will use default behavior
+    }
+
     const agentType = state.currentAgent;
     if (!agentType) return null;
 
@@ -402,14 +415,34 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
         setIsProcessing(true);
 
         try {
+            // Get agent-specific context if available
+            const agentContext = businessCtx?.getAgentContext(agentType);
+
+            // Build execution context for intent handling
+            const executionContext = businessCtx ? {
+                addTask: businessCtx.addTask,
+                addCustomer: businessCtx.addCustomer,
+                updateFinances: businessCtx.updateFinances,
+                addDecision: businessCtx.addDecision,
+                addGoal: businessCtx.addGoal,
+                agentType
+            } : undefined;
+
             const response = await getAgentResponse({
                 message,
                 agentType,
                 conversationHistory: localMessages.map(m => ({
                     role: m.role,
                     content: m.content
-                }))
-            }, 'pro');
+                })),
+                businessContext: agentContext
+            }, 'pro', undefined, executionContext);
+
+            // Save conversation to memory if context available
+            if (businessCtx && response.message) {
+                const summary = message.length > 50 ? message.substring(0, 50) + '...' : message;
+                businessCtx.saveConversation(agentType, summary);
+            }
 
             const agentMessage: AgentMessage = {
                 id: (Date.now() + 1).toString(),
@@ -471,6 +504,8 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
         // Customer Agent sections
         if (agentType === 'customer' || agentType === 'ceo') {
             switch (state.currentSection) {
+                case 'customers':
+                    return <CustomersPage isDark={isDark} />;
                 case 'insights':
                     return <InsightsPage isDark={isDark} />;
                 case 'feedback':
@@ -481,7 +516,7 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
         // Branding Agent sections
         if (agentType === 'branding' || agentType === 'ceo') {
             switch (state.currentSection) {
-                case 'brandkit':
+                case 'brand-kit':
                     return <BrandKitPage isDark={isDark} />;
                 case 'voice':
                     return <VoicePage isDark={isDark} />;
@@ -504,6 +539,12 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({ isDark }) => {
                 return <TasksPage isDark={isDark} agentType={agentType} />;
             case 'goals':
                 return <GoalsPage isDark={isDark} agentType={agentType} />;
+            case 'decisions':
+                return <DecisionsPage isDark={isDark} />;
+            case 'assets':
+                return <AssetsPage isDark={isDark} agentType={agentType} />;
+            case 'settings':
+                return <SettingsPage isDark={isDark} agentType={agentType} />;
         }
 
         // Placeholder for other sections

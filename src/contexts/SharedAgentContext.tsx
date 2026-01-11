@@ -79,11 +79,24 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
         color: 'emerald',
         commonSections: COMMON_SECTIONS.map(s => s.id),
         specificSections: [
-            { id: 'runway', label: 'Runway', icon: 'DollarSign' },
+            // Finance
+            { id: 'runway', label: 'Runway', icon: 'TrendingDown' },
+            { id: 'income', label: 'Income', icon: 'TrendingUp' },
+            { id: 'expenses', label: 'Expenses', icon: 'CreditCard' },
+            // Customer
             { id: 'customers', label: 'Customers', icon: 'Users' },
-            { id: 'marketing', label: 'Marketing', icon: 'Megaphone' },
-            { id: 'branding', label: 'Branding', icon: 'Palette' },
-            { id: 'product', label: 'Product', icon: 'Code' },
+            { id: 'insights', label: 'Insights', icon: 'Lightbulb' },
+            { id: 'feedback', label: 'Feedback', icon: 'MessageCircle' },
+            // Marketing
+            { id: 'campaigns', label: 'Campaigns', icon: 'Rocket' },
+            { id: 'metrics', label: 'Metrics', icon: 'BarChart2' },
+            { id: 'content', label: 'Content', icon: 'FileText' },
+            // Branding
+            { id: 'brand-kit', label: 'Brand Kit', icon: 'Palette' },
+            { id: 'voice', label: 'Voice Guide', icon: 'Volume2' },
+            // Product
+            { id: 'roadmap', label: 'Roadmap', icon: 'Map' },
+            { id: 'bugs', label: 'Bugs', icon: 'Bug' },
         ],
     },
     {

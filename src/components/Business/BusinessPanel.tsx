@@ -8,6 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useBusinessContext } from '../../contexts/BusinessContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { SharedAgentProvider, useSharedAgentContext } from '../../contexts/SharedAgentContext';
+import { AgentIntelligenceProvider } from '../../lib/agents/AgentIntelligence';
 import { ArrowLeft, Sparkles, Construction } from 'lucide-react';
 
 // Components
@@ -176,21 +177,23 @@ export const BusinessPanel: React.FC<BusinessPanelProps> = ({ onModeChange }) =>
         );
     }
 
-    // Main panel with SharedAgentProvider
+    // Main panel with SharedAgentProvider and AgentIntelligenceProvider
     return (
-        <SharedAgentProvider>
-            <div className={`flex-1 flex flex-col ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
-                {/* Top Bar */}
-                <TopBar
-                    isDark={isDark}
-                    onBack={handleBack}
-                    contextName={activeContext?.name}
-                />
+        <AgentIntelligenceProvider>
+            <SharedAgentProvider>
+                <div className={`flex-1 flex flex-col ${isDark ? 'bg-[#0a0a0a]' : 'bg-gray-50'}`}>
+                    {/* Top Bar */}
+                    <TopBar
+                        isDark={isDark}
+                        onBack={handleBack}
+                        contextName={activeContext?.name}
+                    />
 
-                {/* Main Content */}
-                <MainContent isDark={isDark} onBack={handleBack} />
-            </div>
-        </SharedAgentProvider>
+                    {/* Main Content */}
+                    <MainContent isDark={isDark} onBack={handleBack} />
+                </div>
+            </SharedAgentProvider>
+        </AgentIntelligenceProvider>
     );
 };
 
