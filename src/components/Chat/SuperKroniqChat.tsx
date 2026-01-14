@@ -1132,55 +1132,70 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                 }
 
                 // Fallback: Override intent if user explicitly mentions image/logo keywords
-                const imageKeywords = [
-                    // Logo keywords
-                    'turn into logo', 'turn this into a logo', 'turn it into a logo',
-                    'make a logo', 'create a logo', 'generate a logo', 'design a logo',
-                    'logo for', 'logo based on',
-                    // Image creation keywords
-                    'make an image', 'create an image', 'generate an image',
-                    'turn into image', 'turn this into an image', 'visualize this',
-                    'create a visual', 'make a visual', 'turn into visual',
-                    'generate image', 'create image', 'make image',
-                    'draw this', 'illustrate this', 'picture of this',
-                    'image of', 'picture of', 'photo of', 'artwork of', 'illustration of',
-                    'generate a picture', 'create a picture', 'make a picture',
-                    'draw a', 'draw an', 'sketch of', 'render of', 'graphic of',
-                    // Additional patterns for comprehensive detection
-                    'stunning image', 'create a stunning', 'make a stunning',
-                    'beautiful image', 'realistic image', 'photorealistic',
-                    'visualize', 'visualization of', 'visual of',
-                    'based on this content', 'visually striking',
-                    'design an image', 'design a picture', 'design a visual',
-                    'poster of', 'banner of', 'flyer for', 'mockup of',
-                    'generate art', 'create art', 'make art', 'artwork for',
-                    'icon of', 'icon for', 'symbol of',
-                    'portrait of', 'landscape of', 'scene of',
-                    'show me', 'show an image', 'show a picture'
+                // BUT NOT if user is asking to ANALYZE an attached image!
+                const imageAnalysisKeywords = [
+                    'analyze', 'describe', 'what is in', 'what\'s in', 'tell me about',
+                    'explain', 'identify', 'recognize', 'look at', 'see in',
+                    'check this', 'review this', 'my picture', 'my image', 'my photo',
+                    'attached image', 'attached photo', 'attached picture', 'this image',
+                    'the image', 'the photo', 'the picture', 'uploaded'
                 ];
-                if (imageKeywords.some(kw => lowerText.includes(kw))) {
-                    console.log('🖼️ Image keyword detected, overriding intent to image');
-                    interpretation.intent = 'image';
+                const isAnalyzingAttachment = hasImages && imageAnalysisKeywords.some(kw => lowerText.includes(kw));
 
-                    // For "turn into" requests, enhance the prompt with context from the last AI response
-                    if (lowerText.includes('turn') && (lowerText.includes('into') || lowerText.includes('to'))) {
-                        // Find the last AI message to use as context
-                        const lastAIMessage = recentMessages.filter(m => m.role === 'assistant').pop();
-                        if (lastAIMessage) {
-                            const contextText = lastAIMessage.content.substring(0, 500);
+                if (isAnalyzingAttachment) {
+                    console.log('🔍 [Intent] User wants to ANALYZE attached image - keeping chat intent for vision');
+                    // Don't override to image generation - let vision handle it in default case
+                } else {
+                    const imageKeywords = [
+                        // Logo keywords
+                        'turn into logo', 'turn this into a logo', 'turn it into a logo',
+                        'make a logo', 'create a logo', 'generate a logo', 'design a logo',
+                        'logo for', 'logo based on',
+                        // Image creation keywords
+                        'make an image', 'create an image', 'generate an image',
+                        'turn into image', 'turn this into an image', 'visualize this',
+                        'create a visual', 'make a visual', 'turn into visual',
+                        'generate image', 'create image', 'make image',
+                        'draw this', 'illustrate this', 'picture of this',
+                        'image of', 'picture of', 'photo of', 'artwork of', 'illustration of',
+                        'generate a picture', 'create a picture', 'make a picture',
+                        'draw a', 'draw an', 'sketch of', 'render of', 'graphic of',
+                        // Additional patterns for comprehensive detection
+                        'stunning image', 'create a stunning', 'make a stunning',
+                        'beautiful image', 'realistic image', 'photorealistic',
+                        'visualize', 'visualization of', 'visual of',
+                        'based on this content', 'visually striking',
+                        'design an image', 'design a picture', 'design a visual',
+                        'poster of', 'banner of', 'flyer for', 'mockup of',
+                        'generate art', 'create art', 'make art', 'artwork for',
+                        'icon of', 'icon for', 'symbol of',
+                        'portrait of', 'landscape of', 'scene of',
+                        'show me', 'show an image', 'show a picture'
+                    ];
+                    if (imageKeywords.some(kw => lowerText.includes(kw))) {
+                        console.log('🖼️ Image keyword detected, overriding intent to image');
+                        interpretation.intent = 'image';
 
-                            // Determine what type of image
-                            const isLogo = lowerText.includes('logo');
-                            const isVisual = lowerText.includes('visual');
-                            const isImage = lowerText.includes('image') || lowerText.includes('picture');
+                        // For "turn into" requests, enhance the prompt with context from the last AI response
+                        if (lowerText.includes('turn') && (lowerText.includes('into') || lowerText.includes('to'))) {
+                            // Find the last AI message to use as context
+                            const lastAIMessage = recentMessages.filter(m => m.role === 'assistant').pop();
+                            if (lastAIMessage) {
+                                const contextText = lastAIMessage.content.substring(0, 500);
 
-                            if (isLogo) {
-                                interpretation.enhancedPrompt = `Create a professional, modern logo design inspired by this concept:\n\n${contextText}\n\nThe logo should be clean, memorable, and suitable for branding. Use bold shapes and colors.`;
-                            } else if (isVisual || isImage) {
-                                interpretation.enhancedPrompt = `Create a stunning visual representation based on:\n\n${contextText}\n\nMake it visually striking and clear.`;
+                                // Determine what type of image
+                                const isLogo = lowerText.includes('logo');
+                                const isVisual = lowerText.includes('visual');
+                                const isImage = lowerText.includes('image') || lowerText.includes('picture');
+
+                                if (isLogo) {
+                                    interpretation.enhancedPrompt = `Create a professional, modern logo design inspired by this concept:\n\n${contextText}\n\nThe logo should be clean, memorable, and suitable for branding. Use bold shapes and colors.`;
+                                } else if (isVisual || isImage) {
+                                    interpretation.enhancedPrompt = `Create a stunning visual representation based on:\n\n${contextText}\n\nMake it visually striking and clear.`;
+                                }
+
+                                console.log('📝 [Image] Enhanced prompt from context:', interpretation.enhancedPrompt.substring(0, 100));
                             }
-
-                            console.log('📝 [Image] Enhanced prompt from context:', interpretation.enhancedPrompt.substring(0, 100));
                         }
                     }
                 }
