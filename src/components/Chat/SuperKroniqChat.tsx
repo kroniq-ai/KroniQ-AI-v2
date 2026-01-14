@@ -708,13 +708,17 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
             setCurrentStatus('thinking');
         }
 
+        console.log('📎 [Attachments] Processing attachments count:', attachments.length, attachments);
         if (attachments.length > 0) {
             for (const attachment of attachments) {
+                console.log('📎 [Attachment] Type:', attachment.type, 'File:', attachment.file?.name);
                 if (attachment.type === 'image') {
                     hasImages = true;
+                    console.log('🖼️ [Image] Encoding image to base64...');
                     // Encode image for vision model
                     const base64 = await encodeImageToBase64(attachment.file);
                     imageData.push({ base64, mimeType: attachment.file.type });
+                    console.log('🖼️ [Image] Encoded! base64 length:', base64?.length, 'mimeType:', attachment.file.type);
                 } else if (attachment.type === 'document') {
                     // Read text-based documents (txt, md, json, html, css, js, etc.)
                     const fileName = attachment.file.name.toLowerCase();
@@ -1618,18 +1622,26 @@ ${interpretation.enhancedPrompt}
                         }
 
                         // Use vision model if images are attached
+                        console.log('🔍 [Vision Check] hasImages:', hasImages, 'imageData.length:', imageData.length);
                         if (hasImages && imageData.length > 0) {
-                            console.log('🔍 [Vision] Processing with vision model, images:', imageData.length);
-                            const visionResponse = await getOpenRouterVisionResponse(
-                                interpretation.enhancedPrompt,
-                                imageData,
-                                recentMessages.slice(-5) as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
-                                buildSystemPrompt(),
-                                'google/gemini-2.0-flash-exp:free'
-                            );
-                            response = visionResponse.content;
-                            console.log('✅ [Vision] Response received');
+                            console.log('🔍 [Vision] ✨ USING VISION MODEL! Processing with', imageData.length, 'images');
+                            console.log('🔍 [Vision] First image base64 length:', imageData[0]?.base64?.length || 0);
+                            try {
+                                const visionResponse = await getOpenRouterVisionResponse(
+                                    interpretation.enhancedPrompt,
+                                    imageData,
+                                    recentMessages.slice(-5) as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+                                    buildSystemPrompt(),
+                                    'google/gemini-2.0-flash-exp:free'
+                                );
+                                response = visionResponse.content;
+                                console.log('✅ [Vision] Response received, length:', response?.length);
+                            } catch (visionError: any) {
+                                console.error('❌ [Vision] API error:', visionError);
+                                response = `I can see your image! But I encountered an error analyzing it: ${visionError.message || 'Unknown error'}. Please try again.`;
+                            }
                         } else {
+                            console.log('🔍 [Vision] NOT using vision model - hasImages:', hasImages, 'imageData:', imageData.length);
                             const aiResponse = await getOpenRouterResponseWithUsage(
                                 interpretation.enhancedPrompt,
                                 recentMessages.slice(-10) as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
