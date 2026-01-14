@@ -58,7 +58,7 @@ import {
     resumePendingTasks,
     getCompletedTasks,
 } from '../../lib/generationTaskService';
-import { getOpenRouterVisionResponse } from '../../lib/openRouterService';
+import { analyzeImageWithGemini } from '../../lib/geminiVisionService';
 
 
 // ===== TYPES =====
@@ -1624,15 +1624,13 @@ ${interpretation.enhancedPrompt}
                         // Use vision model if images are attached
                         console.log('🔍 [Vision Check] hasImages:', hasImages, 'imageData.length:', imageData.length);
                         if (hasImages && imageData.length > 0) {
-                            console.log('🔍 [Vision] ✨ USING VISION MODEL! Processing with', imageData.length, 'images');
+                            console.log('🔍 [Vision] ✨ USING GEMINI VISION! Processing with', imageData.length, 'images');
                             console.log('🔍 [Vision] First image base64 length:', imageData[0]?.base64?.length || 0);
                             try {
-                                const visionResponse = await getOpenRouterVisionResponse(
-                                    interpretation.enhancedPrompt,
-                                    imageData,
-                                    recentMessages.slice(-5) as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
-                                    buildSystemPrompt(),
-                                    'openai/gpt-4o-mini' // Reliable vision model with better rate limits
+                                // Use Gemini Vision API directly (no rate limits!)
+                                const visionResponse = await analyzeImageWithGemini(
+                                    interpretation.enhancedPrompt || text,
+                                    imageData
                                 );
                                 response = visionResponse.content;
                                 console.log('✅ [Vision] Response received, length:', response?.length);
