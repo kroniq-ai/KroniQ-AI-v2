@@ -1632,7 +1632,7 @@ ${interpretation.enhancedPrompt}
                                     imageData,
                                     recentMessages.slice(-5) as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
                                     buildSystemPrompt(),
-                                    'google/gemini-2.0-flash-exp:free'
+                                    'openai/gpt-4o-mini' // Reliable vision model with better rate limits
                                 );
                                 response = visionResponse.content;
                                 console.log('✅ [Vision] Response received, length:', response?.length);
