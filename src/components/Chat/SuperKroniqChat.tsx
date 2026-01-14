@@ -58,7 +58,7 @@ import {
     resumePendingTasks,
     getCompletedTasks,
 } from '../../lib/generationTaskService';
-import { analyzeImageWithGemini } from '../../lib/geminiVisionService';
+import { getOpenRouterVisionResponse } from '../../lib/openRouterService';
 
 
 // ===== TYPES =====
@@ -1624,19 +1624,40 @@ ${interpretation.enhancedPrompt}
                         // Use vision model if images are attached
                         console.log('🔍 [Vision Check] hasImages:', hasImages, 'imageData.length:', imageData.length);
                         if (hasImages && imageData.length > 0) {
-                            console.log('🔍 [Vision] ✨ USING GEMINI VISION! Processing with', imageData.length, 'images');
+                            console.log('🔍 [Vision] ✨ Processing with', imageData.length, 'images');
                             console.log('🔍 [Vision] First image base64 length:', imageData[0]?.base64?.length || 0);
-                            try {
-                                // Use Gemini Vision API directly (no rate limits!)
-                                const visionResponse = await analyzeImageWithGemini(
-                                    interpretation.enhancedPrompt || text,
-                                    imageData
-                                );
-                                response = visionResponse.content;
-                                console.log('✅ [Vision] Response received, length:', response?.length);
-                            } catch (visionError: any) {
-                                console.error('❌ [Vision] API error:', visionError);
-                                response = `I can see your image! But I encountered an error analyzing it: ${visionError.message || 'Unknown error'}. Please try again.`;
+
+                            // Vision models to try in order (free models first, then paid as backup)
+                            const visionModels = [
+                                'google/gemini-2.0-flash-exp:free',      // Free Gemini
+                                'meta-llama/llama-3.2-90b-vision-instruct', // Free Llama vision
+                                'openai/gpt-4o-mini',                     // Paid backup
+                            ];
+
+                            let visionSuccess = false;
+                            for (const visionModel of visionModels) {
+                                if (visionSuccess) break;
+                                try {
+                                    console.log('🔍 [Vision] Trying model:', visionModel);
+                                    const visionResponse = await getOpenRouterVisionResponse(
+                                        interpretation.enhancedPrompt || text,
+                                        imageData,
+                                        recentMessages.slice(-5) as Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
+                                        buildSystemPrompt(),
+                                        visionModel
+                                    );
+                                    response = visionResponse.content;
+                                    visionSuccess = true;
+                                    console.log('✅ [Vision] Response received from', visionModel, 'length:', response?.length);
+                                } catch (visionError: any) {
+                                    console.warn('⚠️ [Vision] Model', visionModel, 'failed:', visionError.message);
+                                    // Continue to next model
+                                }
+                            }
+
+                            if (!visionSuccess) {
+                                console.error('❌ [Vision] All vision models failed');
+                                response = `I can see your image but all vision models are currently unavailable. This might be due to high demand. Please try again in a moment!`;
                             }
                         } else {
                             console.log('🔍 [Vision] NOT using vision model - hasImages:', hasImages, 'imageData:', imageData.length);
