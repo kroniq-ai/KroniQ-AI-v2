@@ -3624,20 +3624,7 @@ const PremiumInputBar: React.FC<{
     };
 
     return (
-        <div className="w-full mx-auto relative pt-20" style={{ maxWidth: 'calc(100% - 24px)' }}>
-            {/* Active mode indicator */}
-            {activeMode !== 'normal' && (
-                <div className={`absolute -top-8 left-4 flex items-center gap-2 text-sm ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
-                    <span>{getModeLabel()}</span>
-                    <button
-                        onClick={() => setActiveMode('normal')}
-                        className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'}`}
-                    >
-                        ✕
-                    </button>
-                </div>
-            )}
-
+        <div className="w-full mx-auto flex flex-col gap-3" style={{ maxWidth: 'calc(100% - 24px)' }}>
             {/* Hidden file input */}
             <input
                 ref={fileInputRef}
@@ -3656,23 +3643,39 @@ const PremiumInputBar: React.FC<{
                 }}
             />
 
-            {/* Attached files preview */}
+            {/* Attached files preview - NOW VISIBLE ABOVE INPUT */}
             {attachedFiles.length > 0 && (
-                <div className={`absolute -top-16 left-0 right-0 flex flex-wrap gap-2 px-4 py-2 rounded-xl mb-2 ${isDark ? 'bg-white/10' : 'bg-gray-100'}`}>
+                <div className={`flex flex-wrap gap-2 px-4 py-3 rounded-2xl ${isDark ? 'bg-white/10 border border-white/10' : 'bg-gray-100 border border-gray-200'}`}>
                     {attachedFiles.map((file, index) => (
                         <div
                             key={`${file.name}-${index}`}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${isDark ? 'bg-white/15 text-white' : 'bg-white text-gray-700 border border-gray-200'}`}
+                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm ${isDark ? 'bg-white/15 text-white border border-white/20' : 'bg-white text-gray-700 border border-gray-200'}`}
                         >
-                            <span className="truncate max-w-[150px]">{file.name}</span>
+                            <span className="truncate max-w-[150px] font-medium">{file.name}</span>
+                            <span className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                                {(file.size / 1024).toFixed(0)}KB
+                            </span>
                             <button
                                 onClick={() => setAttachedFiles(prev => prev.filter((_, i) => i !== index))}
-                                className={`flex-shrink-0 w-4 h-4 flex items-center justify-center rounded-full ${isDark ? 'hover:bg-white/20 text-white/60 hover:text-white' : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}
+                                className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full transition-colors ${isDark ? 'hover:bg-white/20 text-white/60 hover:text-white' : 'hover:bg-gray-200 text-gray-400 hover:text-gray-600'}`}
                             >
                                 ×
                             </button>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Active mode indicator */}
+            {activeMode !== 'normal' && (
+                <div className={`flex items-center gap-2 text-sm ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                    <span>{getModeLabel()}</span>
+                    <button
+                        onClick={() => setActiveMode('normal')}
+                        className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-200 hover:bg-gray-300'}`}
+                    >
+                        ✕
+                    </button>
                 </div>
             )}
 
