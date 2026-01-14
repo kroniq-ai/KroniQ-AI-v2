@@ -3624,7 +3624,7 @@ const PremiumInputBar: React.FC<{
     };
 
     return (
-        <div className="w-full mx-auto" style={{ maxWidth: 'calc(100% - 24px)' }}>
+        <div className="w-full mx-auto relative pt-20" style={{ maxWidth: 'calc(100% - 24px)' }}>
             {/* Active mode indicator */}
             {activeMode !== 'normal' && (
                 <div className={`absolute -top-8 left-4 flex items-center gap-2 text-sm ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
