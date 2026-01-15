@@ -4,6 +4,8 @@
  * Uses VITE_GEMINI_API_KEY (same key as Google Lyria service)
  */
 
+import { logger } from './logger';
+
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
@@ -23,9 +25,9 @@ export async function analyzeImageWithGemini(
         throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
     }
 
-    console.log('🔍 [Gemini Vision] Analyzing image with Gemini 2.0 Flash');
-    console.log('🔍 [Gemini Vision] Prompt:', prompt.substring(0, 100) + '...');
-    console.log('🔍 [Gemini Vision] Images count:', images.length);
+    logger.info('Analyzing image with Gemini 2.0 Flash');
+    logger.debug('Prompt:', prompt.substring(0, 100) + '...');
+    logger.debug('Images count:', images.length);
 
     // Build the parts array with text and images
     const parts: any[] = [
@@ -73,17 +75,17 @@ export async function analyzeImageWithGemini(
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('❌ [Gemini Vision] API error:', response.status, errorText);
+            logger.error('Gemini Vision API error', { status: response.status, error: errorText });
             throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('✅ [Gemini Vision] Response received');
+        logger.success('Gemini Vision response received');
 
         // Extract text from response
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) {
-            console.error('❌ [Gemini Vision] No text in response:', data);
+            logger.error('No text in Gemini response', data);
             throw new Error('No content in Gemini response');
         }
 
@@ -92,7 +94,7 @@ export async function analyzeImageWithGemini(
             model: 'gemini-2.0-flash'
         };
     } catch (error: any) {
-        console.error('❌ [Gemini Vision] Error:', error);
+        logger.error('Gemini Vision error', error);
         throw error;
     }
 }

@@ -106,10 +106,22 @@ export const signUpWithEmail = async (email: string, password: string, displayNa
         full_name: displayName,
         display_name: displayName,
       },
+      // Redirect to /app after email confirmation
+      emailRedirectTo: `${window.location.origin}/app`,
     },
   });
 
   if (error) throw error;
+
+  // Check if email confirmation is required
+  // If user object exists but email is not confirmed, they need to check email
+  if (data?.user && !data.session) {
+    // User exists but no session = email confirmation required
+    const confirmationRequired = new Error('CONFIRMATION_REQUIRED');
+    (confirmationRequired as any).requiresConfirmation = true;
+    throw confirmationRequired;
+  }
+
   return data;
 };
 
@@ -127,7 +139,8 @@ export const signInWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/`,
+      // Redirect to /app after successful Google OAuth
+      redirectTo: `${window.location.origin}/app`,
       queryParams: {
         access_type: 'offline',
         prompt: 'select_account',

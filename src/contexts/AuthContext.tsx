@@ -224,13 +224,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setCurrentUser(session?.user ?? null);
-      setLoading(false); // Always stop loading immediately
-
-      // Fetch tier in background (non-blocking)
-      if (session?.user?.id) {
+      // Only set currentUser if session exists (means email is confirmed for email/password signup)
+      // This prevents premature redirect during signup when email confirmation is pending
+      if (session?.user) {
+        setCurrentUser(session.user);
+        // Fetch tier in background (non-blocking)
         fetchTierFromDB(session.user.id);
+      } else {
+        setCurrentUser(null);
       }
+      setLoading(false); // Always stop loading immediately
     }).catch(() => {
       setLoading(false); // Ensure loading stops even on error
     });
@@ -238,14 +241,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log(`🔐 [AuthContext] Auth state change: ${event}`, { hasSession: !!session, hasUser: !!session?.user });
         setSession(session);
-        setCurrentUser(session?.user ?? null);
-        setLoading(false);
 
-        // Fetch tier in background when user signs in (non-blocking)
-        if (event === 'SIGNED_IN' && session?.user?.id) {
-          fetchTierFromDB(session.user.id);
+        // Only set currentUser if we have a valid session
+        // This is critical for signup flow - unconfirmed users won't have a session
+        if (session?.user) {
+          setCurrentUser(session.user);
+          // Fetch tier in background when user signs in (non-blocking)
+          if (event === 'SIGNED_IN') {
+            fetchTierFromDB(session.user.id);
+          }
+        } else {
+          // Clear user if no session (logout or unconfirmed signup)
+          setCurrentUser(null);
         }
+        setLoading(false);
       }
     );
 

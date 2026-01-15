@@ -66,6 +66,12 @@ const IMAGE_KEYWORDS = [
   'create picture', 'illustration', 'drawing', 'art', 'visual'
 ];
 
+const PPT_KEYWORDS = [
+  'presentation', 'powerpoint', 'ppt', 'pptx', 'slides', 'slide deck',
+  'keynote', 'google slides', 'pitch deck', 'deck', 'slideshow',
+  'business presentation', 'sales pitch', 'lecture', 'seminar'
+];
+
 const CODE_PHRASES = [
   'build a', 'create a component', 'write a function', 'develop an app',
   'implement a feature', 'fix the bug', 'add functionality', 'create an api',
@@ -117,6 +123,15 @@ const IMAGE_PHRASES = [
   'make me an image', 'create me an image', 'give me an image',
   'i want an image', 'i need an image', 'can you create an image',
   'can you make an image', 'please generate an image'
+];
+
+const PPT_PHRASES = [
+  'create a presentation', 'make a presentation', 'generate a presentation',
+  'create slides', 'make slides', 'generate slides', 'ppt about',
+  'presentation about', 'presentation on', 'slides about', 'slides on',
+  'create a ppt', 'make a ppt', 'pitch deck for', 'slide deck about',
+  'powerpoint about', 'powerpoint on', 'keynote about', 'keynote on',
+  'presentation for', 'slides for', 'create slideshow', 'make slideshow'
 ];
 
 /**
@@ -200,6 +215,7 @@ export const classifyIntent = (prompt: string): IntentResult => {
   let voiceScore = 0;
   let musicScore = 0;
   let imageScore = 0;
+  let pptScore = 0;
 
   CODE_KEYWORDS.forEach(keyword => {
     const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
@@ -299,6 +315,20 @@ export const classifyIntent = (prompt: string): IntentResult => {
     }
   });
 
+  PPT_KEYWORDS.forEach(keyword => {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+    const matches = lowerPrompt.match(regex);
+    if (matches) {
+      pptScore += matches.length * 2;
+    }
+  });
+
+  PPT_PHRASES.forEach(phrase => {
+    if (lowerPrompt.includes(phrase)) {
+      pptScore += 5;
+    }
+  });
+
   if (lowerPrompt.includes('.js') || lowerPrompt.includes('.ts') ||
     lowerPrompt.includes('.jsx') || lowerPrompt.includes('.tsx') ||
     lowerPrompt.includes('.css') || lowerPrompt.includes('.html')) {
@@ -323,8 +353,13 @@ export const classifyIntent = (prompt: string): IntentResult => {
     voiceScore += 10;
   }
 
-  const totalScore = codeScore + designScore + videoGenScore + videoEditScore + voiceScore + musicScore + imageScore;
-  const maxScore = Math.max(codeScore, designScore, videoGenScore, videoEditScore, voiceScore, musicScore, imageScore);
+  if (lowerPrompt.includes('.pptx') || lowerPrompt.includes('.ppt') ||
+    lowerPrompt.includes('.key') || lowerPrompt.includes('.odp')) {
+    pptScore += 10;
+  }
+
+  const totalScore = codeScore + designScore + videoGenScore + videoEditScore + voiceScore + musicScore + imageScore + pptScore;
+  const maxScore = Math.max(codeScore, designScore, videoGenScore, videoEditScore, voiceScore, musicScore, imageScore, pptScore);
 
   // Require higher score threshold to avoid false positives
   if (totalScore === 0 || maxScore < 8) {
@@ -394,6 +429,14 @@ export const classifyIntent = (prompt: string): IntentResult => {
       confidence: Math.min(confidence, 1.0),
       suggestedStudio: 'Design Studio',
       reasoning: `Detected design intent with score ${designScore}`,
+      suggestedModel
+    };
+  } else if (pptScore === maxScore && pptScore > 0) {
+    return {
+      intent: 'ppt',
+      confidence: Math.min(confidence, 1.0),
+      suggestedStudio: 'PPT Studio',
+      reasoning: `Detected presentation intent with score ${pptScore}`,
       suggestedModel
     };
   }

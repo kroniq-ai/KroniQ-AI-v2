@@ -7,6 +7,7 @@
 import { classifyIntent, type IntentResult } from './intentClassifier';
 import { PRICING_PLANS, type PlanType } from './pricingPlans';
 import { supabase } from './supabaseClient';
+import { recordUsageWithCost } from './memoryPersistence';
 
 // ===== TYPES =====
 
@@ -132,7 +133,7 @@ function preClassifyIntent(message: string): { intent: ToolType | null; confiden
     for (const { patterns: patternList, intent, weight } of patterns) {
         for (const pattern of patternList) {
             if (pattern.test(lower)) {
-                console.log(`🎯 [Pre-Classify] Local detection: "${intent}" (confidence: ${weight}) for: "${message.substring(0, 50)}..."`);
+                // Local detection matched - silent logging for production
                 return { intent, confidence: weight };
             }
         }
@@ -276,9 +277,8 @@ export async function checkUsage(
         // (Implementation similar but with monthly periods)
         return { allowed: true };
 
-    } catch (error) {
-        console.error('Error checking usage:', error);
-        // On error, allow but log
+    } catch {
+        // On error, allow access gracefully
         return { allowed: true };
     }
 }
@@ -318,10 +318,10 @@ export async function recordUsage(
             });
 
         if (error) {
-            console.error('Error recording usage:', error);
+            // Silent fail for usage recording
         }
-    } catch (error) {
-        console.error('Error in recordUsage:', error);
+    } catch {
+        // Silent fail for usage recording
     }
 }
 
@@ -458,8 +458,7 @@ export async function processMessage(
             { userTier: tier as 'free' | 'starter' | 'pro' | 'premium' }
         );
 
-        console.log('🧠 [Gemini Orchestrator] Intent:', interpretation.intent, 'Confidence:', interpretation.confidence);
-        console.log('✨ [Gemini Orchestrator] Enhanced prompt:', interpretation.enhancedPrompt?.substring(0, 100) + '...');
+        // Intent classification complete - silent in production
 
         // 4. Check if orchestrator can self-answer (simple greetings, etc.)
         if (interpretation.selfAnswer && interpretation.selfAnswerContent) {
@@ -481,7 +480,7 @@ export async function processMessage(
         // override with the local result. This catches cases where Gemini misses obvious phrases
         // like "create an image" or "make a video".
         if (tool === 'chat' && localClassification.intent && localClassification.confidence >= 0.9) {
-            console.log(`🔄 [Fallback] Overriding Gemini 'chat' → '${localClassification.intent}' (local confidence: ${localClassification.confidence})`);
+            // Override with local classification when confidence is high
             tool = localClassification.intent;
         }
 
@@ -553,8 +552,7 @@ export async function processMessage(
             }
         };
 
-    } catch (error) {
-        console.error('Orchestration error:', error);
+    } catch {
         return {
             success: false,
             tool: 'chat',
@@ -612,8 +610,7 @@ async function executeVideoRequest(
         const { generateKieVideo } = await import('./kieAIService');
         const result = await generateKieVideo(message);
         return { url: result, type: 'video' };
-    } catch (error) {
-        console.error('Video generation failed:', error);
+    } catch {
         throw new Error('Video generation is currently unavailable');
     }
 }
@@ -628,8 +625,7 @@ async function executeTTSRequest(
         const { generateWithElevenLabs } = await import('./elevenlabsTTSService');
         const audioUrl = await generateWithElevenLabs({ text: message });
         return { url: audioUrl, type: 'audio' };
-    } catch (error) {
-        console.error('TTS generation failed:', error);
+    } catch {
         throw new Error('Voice generation is currently unavailable');
     }
 }
@@ -644,8 +640,7 @@ async function executePPTRequest(
         const { generateCompletePPT } = await import('./pptAIService');
         const result = await generateCompletePPT({ topic: message });
         return { url: result.downloadUrl || '', type: 'ppt' };
-    } catch (error) {
-        console.error('PPT generation failed:', error);
+    } catch {
         throw new Error('Presentation generation is currently unavailable');
     }
 }

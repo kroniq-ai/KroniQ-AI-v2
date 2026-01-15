@@ -828,9 +828,19 @@ Return JSON only:
 
 // ===== HELPER FUNCTIONS =====
 
+// Using production-safe logger
+import { logger } from './logger';
+
 function log(level: 'info' | 'success' | 'error' | 'warning', message: string) {
-    const emoji = { info: '🧠', success: '✅', error: '❌', warning: '⚠️' }[level];
-    console.log(`${emoji} [Gemini Orchestrator] ${message} `);
+    if (level === 'error') {
+        logger.error(`[Orchestrator] ${message}`);
+    } else if (level === 'warning') {
+        logger.warn(`[Orchestrator] ${message}`);
+    } else if (level === 'success') {
+        logger.success(`[Orchestrator] ${message}`);
+    } else {
+        logger.info(`[Orchestrator] ${message}`);
+    }
 }
 
 async function callGeminiOrchestrator(
@@ -1129,13 +1139,12 @@ export async function interpretRequest(
         const provider = model.split('/')[0] || 'unknown';
         const modelName = model.split('/')[1] || model;
 
-        console.log('🤖 [Model Selection]', {
+        logger.debug('[Model Selection]', {
             taskType: type,
             complexity: complexityLevel,
             userTier: userTier,
             provider: provider,
-            model: modelName,
-            fullModelId: model
+            model: modelName
         });
 
         return model;

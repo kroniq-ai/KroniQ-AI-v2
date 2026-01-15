@@ -1,8 +1,10 @@
+import { logger } from './logger';
+
 const KIE_API_KEY = import.meta.env.VITE_KIE_API_KEY;
 const KIE_BASE_URL = 'https://api.kie.ai';
 
 export async function generateKieImage(prompt: string, model: string = 'flux-pro'): Promise<string> {
-  console.log('🎨 Generating image with Kie AI:', { prompt, model });
+  logger.info('Generating image with Kie AI:', { prompt, model });
 
   if (!KIE_API_KEY) {
     throw new Error('Kie AI API Key is missing. Please add VITE_KIE_API_KEY to your .env file.');
@@ -37,7 +39,7 @@ export async function generateKieImage(prompt: string, model: string = 'flux-pro
 
     return await generateFluxImage(prompt, model);
   } catch (error) {
-    console.error('❌ Kie AI image generation error:', error);
+    logger.error('Kie AI image generation error', error);
     throw error;
   }
 }
@@ -74,12 +76,12 @@ async function generateFluxImage(prompt: string, model: string): Promise<string>
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ msg: 'Unknown error' }));
-    console.error('❌ Flux image generation failed:', response.status, errorData);
+    logger.error('Flux image generation failed', { status: response.status, error: errorData });
     throw new Error(errorData.msg || `Image generation failed: ${response.status}`);
   }
 
   const data = await response.json();
-  console.log('✅ Flux image task created:', data);
+  logger.success('Flux image task created:', data);
 
   if (data.code === 200 && data.data?.taskId) {
     return await pollFluxImageStatus(data.data.taskId);
@@ -89,7 +91,7 @@ async function generateFluxImage(prompt: string, model: string): Promise<string>
 }
 
 async function pollFluxImageStatus(taskId: string, maxAttempts: number = 60): Promise<string> {
-  console.log('⏳ Polling Flux image status:', taskId);
+  logger.debug('Polling Flux image status:', taskId);
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -103,12 +105,12 @@ async function pollFluxImageStatus(taskId: string, maxAttempts: number = 60): Pr
       });
 
       if (!response.ok) {
-        console.log(`⚠️ Polling attempt ${attempt + 1}: response not ok (${response.status})`);
+        logger.warn(`Polling attempt ${attempt + 1}: response not ok (${response.status})`);
         continue;
       }
 
       const data = await response.json();
-      console.log(`📊 Flux polling attempt ${attempt + 1}:`, JSON.stringify(data));
+      logger.debug(`Flux polling attempt ${attempt + 1}:`, JSON.stringify(data));
 
       // Flux API uses:
       // - successFlag: 0=generating, 1=success
@@ -116,7 +118,7 @@ async function pollFluxImageStatus(taskId: string, maxAttempts: number = 60): Pr
       const successFlag = data.data?.successFlag;
       const hasImageUrl = data.data?.response?.resultImageUrl;
 
-      console.log(`🔍 Flux status check: successFlag=${successFlag}, hasImageUrl=${!!hasImageUrl}`);
+      logger.debug(`Flux status check: successFlag=${successFlag}, hasImageUrl=${!!hasImageUrl}`);
 
       // Check if complete - successFlag === 1 means success
       const isComplete = successFlag === 1 || successFlag === '1' || hasImageUrl;
@@ -135,18 +137,18 @@ async function pollFluxImageStatus(taskId: string, maxAttempts: number = 60): Pr
           data.data?.url ||
           data.data?.output;
         if (imageUrl) {
-          console.log('✅ Flux image generation completed:', imageUrl);
+          logger.success('Flux image generation completed:', imageUrl);
           return imageUrl;
         } else {
-          console.log('⚠️ successFlag=1 but no image URL found in response:', JSON.stringify(data));
+          logger.warn('successFlag=1 but no image URL found in response:', JSON.stringify(data));
         }
       } else if (isFailed) {
         throw new Error(data.data?.errorMessage || data.data?.errorCode || 'Image generation failed');
       } else {
-        console.log(`⏳ Flux status: successFlag=${successFlag}, waiting...`);
+        logger.debug(`Flux status: successFlag=${successFlag}, waiting...`);
       }
     } catch (error: any) {
-      console.error(`❌ Polling error attempt ${attempt + 1}:`, error.message);
+      logger.error(`Polling error attempt ${attempt + 1}`, error.message);
       if (attempt === maxAttempts - 1) throw error;
     }
   }
@@ -186,7 +188,7 @@ async function generateGPT4oImage(prompt: string): Promise<string> {
 }
 
 async function pollGPT4oImageStatus(taskId: string, maxAttempts: number = 60): Promise<string> {
-  console.log('⏳ Polling GPT-4o image status:', taskId);
+  logger.debug('Polling GPT-4o image status:', taskId);
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -199,12 +201,12 @@ async function pollGPT4oImageStatus(taskId: string, maxAttempts: number = 60): P
       });
 
       if (!response.ok) {
-        console.log(`⚠️ GPT-4o polling attempt ${attempt + 1}: response not ok`);
+        logger.warn(`GPT-4o polling attempt ${attempt + 1}: response not ok`);
         continue;
       }
 
       const data = await response.json();
-      console.log(`📊 GPT-4o polling attempt ${attempt + 1}:`, JSON.stringify(data));
+      logger.debug(`GPT-4o polling attempt ${attempt + 1}:`, JSON.stringify(data));
 
       // GPT-4o uses status strings: GENERATING, SUCCESS, CREATE_TASK_FAILED, GENERATE_FAILED
       const status = data.data?.status ?? data.status ?? data.data?.result ?? data.result;
@@ -219,7 +221,7 @@ async function pollGPT4oImageStatus(taskId: string, maxAttempts: number = 60): P
         statusStr === 'CREATE_TASK_FAILED' || statusStr === 'GENERATE_FAILED' ||
         statusStr.includes('FAIL') || statusStr.includes('ERROR');
 
-      console.log(`🔍 GPT-4o status check: status="${status}", statusStr="${statusStr}", isComplete=${isComplete}, isFailed=${isFailed}`);
+      logger.debug(`GPT-4o status check: status="${status}", statusStr="${statusStr}", isComplete=${isComplete}, isFailed=${isFailed}`);
 
       if (isComplete) {
         // GPT-4o returns URL in data.info.result_urls array
@@ -235,18 +237,18 @@ async function pollGPT4oImageStatus(taskId: string, maxAttempts: number = 60): P
           data.imageUrl ||
           data.url;
         if (imageUrl) {
-          console.log('✅ GPT-4o image completed:', imageUrl);
+          logger.success('GPT-4o image completed:', imageUrl);
           return imageUrl;
         } else {
-          console.log('⚠️ Status is complete but no image URL found:', JSON.stringify(data));
+          logger.warn('Status is complete but no image URL found:', JSON.stringify(data));
         }
       } else if (isFailed) {
         throw new Error(data.data?.error || data.error || data.message || 'GPT-4o image generation failed');
       } else {
-        console.log(`⏳ GPT-4o status: ${status} (${statusStr}), waiting...`);
+        logger.debug(`GPT-4o status: ${status} (${statusStr}), waiting...`);
       }
     } catch (error: any) {
-      console.error(`❌ GPT-4o polling error:`, error.message);
+      logger.error('GPT-4o polling error', error.message);
       if (attempt === maxAttempts - 1) throw error;
     }
   }
@@ -255,7 +257,7 @@ async function pollGPT4oImageStatus(taskId: string, maxAttempts: number = 60): P
 }
 
 async function generateGoogleImage(prompt: string, model: string): Promise<string> {
-  console.log(`🎨 Generating ${model} image using jobs/createTask...`);
+  logger.info(`Generating ${model} image using jobs/createTask...`);
 
   // Map model IDs to their API model names
   const modelMap: { [key: string]: string } = {
@@ -288,7 +290,7 @@ async function generateGoogleImage(prompt: string, model: string): Promise<strin
 }
 
 async function generateSeedreamImage(prompt: string, model: string): Promise<string> {
-  console.log(`🎨 Generating Seedream image using jobs/createTask...`);
+  logger.info('Generating Seedream image using jobs/createTask...');
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
@@ -313,7 +315,7 @@ async function generateSeedreamImage(prompt: string, model: string): Promise<str
 
 // Nano Banana Pro - High quality image generation
 async function generateNanoBananaProImage(prompt: string): Promise<string> {
-  console.log(`🍌 Generating Nano Banana Pro image...`);
+  logger.info('Generating Nano Banana Pro image...');
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
@@ -339,7 +341,7 @@ async function generateNanoBananaProImage(prompt: string): Promise<string> {
 
 // Bytedance Seedream V4 - Advanced image synthesis
 async function generateSeedreamV4Image(prompt: string, model: string): Promise<string> {
-  console.log(`🎨 Generating Seedream V4 image...`);
+  logger.info('Generating Seedream V4 image...');
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
@@ -364,7 +366,7 @@ async function generateSeedreamV4Image(prompt: string, model: string): Promise<s
 }
 
 async function generateGrokImagineImage(prompt: string, model: string): Promise<string> {
-  console.log(`🎨 Generating Grok Imagine image using jobs/createTask...`);
+  logger.info('Generating Grok Imagine image using jobs/createTask...');
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
@@ -388,7 +390,7 @@ async function generateGrokImagineImage(prompt: string, model: string): Promise<
 
 // Poll for jobs/createTask based image generation (Nano Banana, Imagen, Seedream, Grok Imagine)
 async function pollJobsImageStatus(taskId: string, maxAttempts: number = 60): Promise<string> {
-  console.log(`⏳ Polling jobs task status:`, taskId);
+  logger.debug('Polling jobs task status:', taskId);
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 2000));
     try {
@@ -398,7 +400,7 @@ async function pollJobsImageStatus(taskId: string, maxAttempts: number = 60): Pr
       if (!response.ok) continue;
 
       const data = await response.json();
-      console.log(`📊 Jobs polling attempt ${attempt + 1}:`, JSON.stringify(data));
+      logger.debug(`Jobs polling attempt ${attempt + 1}:`, JSON.stringify(data));
 
       const state = data.data?.state ?? data.data?.status ?? data.state ?? data.status;
       const stateStr = String(state).toLowerCase();
@@ -416,29 +418,29 @@ async function pollJobsImageStatus(taskId: string, maxAttempts: number = 60): Pr
             const result = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson;
             const url = result.resultUrls?.[0] || result.imageUrls?.[0] || result.imageUrl || result.url || result.output;
             if (url) {
-              console.log('✅ Jobs image generation completed:', url);
+              logger.success('Jobs image generation completed:', url);
               return url;
             }
           } catch (e) {
-            console.error('Failed to parse resultJson:', e);
+            logger.error('Failed to parse resultJson', e);
           }
         }
 
         // Try direct URL access
         const directUrl = data.data?.resultUrls?.[0] || data.data?.url || data.data?.imageUrl;
         if (directUrl) {
-          console.log('✅ Jobs image generation completed (direct):', directUrl);
+          logger.success('Jobs image generation completed (direct):', directUrl);
           return directUrl;
         }
 
-        console.log('⚠️ Jobs status complete but no URL found:', JSON.stringify(data));
+        logger.warn('Jobs status complete but no URL found:', JSON.stringify(data));
       } else if (isFailed) {
         throw new Error(data.data?.failMsg || data.data?.error || 'Image generation failed');
       } else {
-        console.log(`⏳ Jobs status: ${state} (${stateStr}), waiting...`);
+        logger.debug(`Jobs status: ${state} (${stateStr}), waiting...`);
       }
     } catch (e: any) {
-      console.error(`❌ Jobs polling error:`, e.message);
+      logger.error('Jobs polling error', e.message);
       if (attempt === maxAttempts - 1) throw e;
     }
   }
@@ -447,7 +449,7 @@ async function pollJobsImageStatus(taskId: string, maxAttempts: number = 60): Pr
 
 // Keep legacy poll function for any remaining endpoints
 async function pollGenericImageStatus(taskId: string, endpoint: string, maxAttempts: number = 60): Promise<string> {
-  console.log(`⏳ Polling ${endpoint} image status:`, taskId);
+  logger.debug(`Polling ${endpoint} image status:`, taskId);
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 2000));
     try {
@@ -475,7 +477,7 @@ async function pollGenericImageStatus(taskId: string, endpoint: string, maxAttem
 }
 
 export async function generateKieVideo(prompt: string, model: string = 'veo3_fast'): Promise<string> {
-  console.log('🎬 Generating video with Kie AI:', { prompt, model });
+  logger.info('Generating video with Kie AI:', { prompt, model });
 
   if (!KIE_API_KEY) {
     throw new Error('Kie AI API Key is missing. Please add VITE_KIE_API_KEY to your .env file.');
@@ -496,7 +498,7 @@ export async function generateKieVideo(prompt: string, model: string = 'veo3_fas
 
     return await generateVeo3Video(prompt);
   } catch (error) {
-    console.error('❌ Kie AI video generation error:', error);
+    logger.error('Kie AI video generation error', error);
     throw error;
   }
 }
@@ -519,12 +521,12 @@ async function generateVeo3Video(prompt: string): Promise<string> {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ msg: 'Unknown error' }));
-    console.error('❌ Veo 3 video generation failed:', response.status, errorData);
+    logger.error('Veo 3 video generation failed', { status: response.status, error: errorData });
     throw new Error(errorData.msg || `Video generation failed: ${response.status}`);
   }
 
   const data = await response.json();
-  console.log('✅ Veo 3 video task created:', data);
+  logger.success('Veo 3 video task created:', data);
 
   if (data.code === 200 && data.data?.taskId) {
     return await pollVeo3VideoStatus(data.data.taskId);
@@ -534,7 +536,7 @@ async function generateVeo3Video(prompt: string): Promise<string> {
 }
 
 async function pollVeo3VideoStatus(taskId: string, maxAttempts: number = 120): Promise<string> {
-  console.log('⏳ Polling Veo 3 video status:', taskId);
+  logger.debug('Polling Veo 3 video status:', taskId);
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -548,12 +550,12 @@ async function pollVeo3VideoStatus(taskId: string, maxAttempts: number = 120): P
       });
 
       if (!response.ok) {
-        console.log(`⚠️ Video polling attempt ${attempt + 1}: response not ok (${response.status})`);
+        logger.warn(`Video polling attempt ${attempt + 1}: response not ok (${response.status})`);
         continue;
       }
 
       const data = await response.json();
-      console.log(`📊 Veo3 video polling attempt ${attempt + 1}:`, JSON.stringify(data));
+      logger.debug(`Veo3 video polling attempt ${attempt + 1}:`, JSON.stringify(data));
 
       // Veo3 API may use successFlag like Flux, or status field
       // Check for both patterns
@@ -562,7 +564,7 @@ async function pollVeo3VideoStatus(taskId: string, maxAttempts: number = 120): P
       const statusStr = String(status).toUpperCase();
       const hasVideoUrl = data.data?.response?.resultUrls?.[0] || data.data?.info?.resultUrls?.[0];
 
-      console.log(`🔍 Veo3 status check: successFlag=${successFlag}, status=${status}, hasVideoUrl=${!!hasVideoUrl}`);
+      logger.debug(`Veo3 status check: successFlag=${successFlag}, status=${status}, hasVideoUrl=${!!hasVideoUrl}`);
 
       // Success detection - check successFlag first, then status patterns
       const isComplete = successFlag === 1 || successFlag === '1' ||
@@ -589,18 +591,18 @@ async function pollVeo3VideoStatus(taskId: string, maxAttempts: number = 120): P
           data.videoUrl ||
           data.url;
         if (videoUrl) {
-          console.log('✅ Veo3 video generation completed:', videoUrl);
+          logger.success('Veo3 video generation completed:', videoUrl);
           return videoUrl;
         } else {
-          console.log('⚠️ Status is complete but no video URL found:', JSON.stringify(data));
+          logger.warn('Status is complete but no video URL found:', JSON.stringify(data));
         }
       } else if (isFailed) {
         throw new Error(data.data?.errorMessage || data.data?.error || data.error || data.data?.message || data.message || 'Video generation failed');
       } else {
-        console.log(`⏳ Veo3 video status: successFlag=${successFlag}, status=${status}, waiting...`);
+        logger.debug(`Veo3 video status: successFlag=${successFlag}, status=${status}, waiting...`);
       }
     } catch (error: any) {
-      console.error(`❌ Video polling error attempt ${attempt + 1}:`, error.message);
+      logger.error(`Video polling error attempt ${attempt + 1}`, error.message);
       if (attempt === maxAttempts - 1) throw error;
     }
   }
@@ -639,7 +641,7 @@ async function generateRunwayVideo(prompt: string): Promise<string> {
 }
 
 async function pollRunwayVideoStatus(taskId: string, maxAttempts: number = 120): Promise<string> {
-  console.log('⏳ Polling Runway video status:', taskId);
+  logger.debug('Polling Runway video status:', taskId);
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -653,12 +655,12 @@ async function pollRunwayVideoStatus(taskId: string, maxAttempts: number = 120):
       });
 
       if (!response.ok) {
-        console.log(`⚠️ Runway polling attempt ${attempt + 1}: response not ok (${response.status})`);
+        logger.warn(`Runway polling attempt ${attempt + 1}: response not ok (${response.status})`);
         continue;
       }
 
       const data = await response.json();
-      console.log(`📊 Runway polling attempt ${attempt + 1}:`, JSON.stringify(data).substring(0, 500));
+      logger.debug(`Runway polling attempt ${attempt + 1}:`, JSON.stringify(data).substring(0, 500));
 
       // API docs: status can be 'wait', 'queueing', 'generating', 'success', 'fail'
       const status = data.data?.status ?? data.status;
@@ -673,18 +675,18 @@ async function pollRunwayVideoStatus(taskId: string, maxAttempts: number = 120):
           data.data?.info?.resultUrls?.[0] ||
           data.data?.resultUrls?.[0];
         if (videoUrl) {
-          console.log('✅ Runway video completed:', videoUrl);
+          logger.success('Runway video completed:', videoUrl);
           return videoUrl;
         } else {
-          console.log('⚠️ Status is complete but no video URL found:', JSON.stringify(data));
+          logger.warn('Status is complete but no video URL found:', JSON.stringify(data));
         }
       } else if (isFailed) {
         throw new Error(data.msg || data.data?.error || 'Runway video generation failed');
       } else {
-        console.log(`⏳ Runway status: ${status}, waiting...`);
+        logger.debug(`Runway status: ${status}, waiting...`);
       }
     } catch (error: any) {
-      console.error(`❌ Runway polling error:`, error.message);
+      logger.error('Runway polling error', error.message);
       if (attempt === maxAttempts - 1) throw error;
     }
   }
@@ -693,7 +695,7 @@ async function pollRunwayVideoStatus(taskId: string, maxAttempts: number = 120):
 }
 
 async function generateSoraVideo(prompt: string, model: string): Promise<string> {
-  console.log(`🎬 Generating Sora 2 video using jobs/createTask...`);
+  logger.info('Generating Sora 2 video using jobs/createTask...');
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
@@ -721,7 +723,7 @@ async function generateWanVideo(prompt: string, model: string): Promise<string> 
   // Support both Wan 2.5 and Wan 2.6
   const isWan26 = model.includes('2-6') || model.includes('2.6');
   const modelId = isWan26 ? 'wan/2-6-text-to-video' : 'wan/2-5-text-to-video';
-  console.log(`🎬 Generating ${isWan26 ? 'Wan 2.6' : 'Wan 2.5'} video using jobs/createTask...`);
+  logger.info(`Generating ${isWan26 ? 'Wan 2.6' : 'Wan 2.5'} video using jobs/createTask...`);
 
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
@@ -750,7 +752,7 @@ async function generateKlingVideo(prompt: string, model: string): Promise<string
   // Support Kling 2.6 and Kling 2.5 Turbo
   const isKling25Turbo = model.includes('2-5-turbo') || model.includes('2.5-turbo') || model.includes('v2-5-turbo');
   const modelId = isKling25Turbo ? 'kling/v2-5-turbo-text-to-video-pro' : 'kling-2.6/text-to-video';
-  console.log(`🎬 Generating ${isKling25Turbo ? 'Kling 2.5 Turbo' : 'Kling 2.6'} video...`);
+  logger.info(`Generating ${isKling25Turbo ? 'Kling 2.5 Turbo' : 'Kling 2.6'} video...`);
 
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
@@ -783,7 +785,7 @@ async function generateKlingVideo(prompt: string, model: string): Promise<string
 
 // Seedance (ByteDance) - AI video generation
 async function generateSeedanceVideo(prompt: string, model: string): Promise<string> {
-  console.log(`🎬 Generating Seedance video...`);
+  logger.info('Generating Seedance video...');
 
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
@@ -811,7 +813,7 @@ async function generateSeedanceVideo(prompt: string, model: string): Promise<str
 }
 
 async function generateGrokVideo(prompt: string, model: string): Promise<string> {
-  console.log(`🎬 Generating Grok video using jobs/createTask...`);
+  logger.info('Generating Grok video using jobs/createTask...');
   const response = await fetch(`${KIE_BASE_URL}/api/v1/jobs/createTask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${KIE_API_KEY}` },
@@ -836,7 +838,7 @@ async function generateGrokVideo(prompt: string, model: string): Promise<string>
 
 // Poll for jobs/createTask based video generation (Sora 2, Wan 2.5, Kling 2.6, Grok Video)
 async function pollJobsVideoStatus(taskId: string, maxAttempts: number = 120): Promise<string> {
-  console.log(`⏳ Polling jobs video task status:`, taskId);
+  logger.debug('Polling jobs video task status:', taskId);
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 5000));
     try {
@@ -846,7 +848,7 @@ async function pollJobsVideoStatus(taskId: string, maxAttempts: number = 120): P
       if (!response.ok) continue;
 
       const data = await response.json();
-      console.log(`📊 Jobs video polling attempt ${attempt + 1}:`, JSON.stringify(data));
+      logger.debug(`Jobs video polling attempt ${attempt + 1}:`, JSON.stringify(data));
 
       // Check for successFlag (like Flux) or state/status field
       const successFlag = data.data?.successFlag;
@@ -854,7 +856,7 @@ async function pollJobsVideoStatus(taskId: string, maxAttempts: number = 120): P
       const stateStr = String(state).toUpperCase();
       const hasVideoUrl = data.data?.response?.resultUrls?.[0] || data.data?.resultJson;
 
-      console.log(`🔍 Jobs video status check: successFlag=${successFlag}, state=${state}, hasVideoUrl=${!!hasVideoUrl}`);
+      logger.debug(`Jobs video status check: successFlag=${successFlag}, state=${state}, hasVideoUrl=${!!hasVideoUrl}`);
 
       // Check for success - use successFlag first, then state patterns
       const isComplete = successFlag === 1 || successFlag === '1' ||
@@ -878,7 +880,7 @@ async function pollJobsVideoStatus(taskId: string, maxAttempts: number = 120): P
               const result = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson;
               videoUrl = result.resultUrls?.[0] || result.resultWaterMarkUrls?.[0] || result.videoUrl || result.video_url || result.url || result.output;
             } catch (e) {
-              console.error('Failed to parse resultJson:', e);
+              logger.error('Failed to parse resultJson', e);
             }
           }
         }
@@ -889,18 +891,18 @@ async function pollJobsVideoStatus(taskId: string, maxAttempts: number = 120): P
         }
 
         if (videoUrl) {
-          console.log('✅ Jobs video generation completed:', videoUrl);
+          logger.success('Jobs video generation completed:', videoUrl);
           return videoUrl;
         }
 
-        console.log('⚠️ Jobs video status complete but no URL found:', JSON.stringify(data));
+        logger.warn('Jobs video status complete but no URL found:', JSON.stringify(data));
       } else if (isFailed) {
         throw new Error(data.data?.errorMessage || data.data?.failMsg || data.data?.error || 'Video generation failed');
       } else {
-        console.log(`⏳ Jobs video status: successFlag=${successFlag}, state=${state}, waiting...`);
+        logger.debug(`Jobs video status: successFlag=${successFlag}, state=${state}, waiting...`);
       }
     } catch (e: any) {
-      console.error(`❌ Jobs video polling error:`, e.message);
+      logger.error('Jobs video polling error', e.message);
       if (attempt === maxAttempts - 1) throw e;
     }
   }
@@ -914,7 +916,7 @@ export async function generateKieMusic(
   title?: string,
   instrumental: boolean = false
 ): Promise<string> {
-  console.log('🎵 Generating music with Kie AI (Suno):', { prompt, customMode, style, title });
+  logger.info('Generating music with Kie AI (Suno):', { prompt, customMode, style, title });
 
   if (!KIE_API_KEY) {
     throw new Error('Kie AI API Key is missing. Please add VITE_KIE_API_KEY to your .env file.');
@@ -947,12 +949,12 @@ export async function generateKieMusic(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ msg: 'Unknown error' }));
-      console.error('❌ Suno music generation failed:', response.status, errorData);
+      logger.error('Suno music generation failed', { status: response.status, error: errorData });
       throw new Error(errorData.msg || `Music generation failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ Suno music task created:', data);
+    logger.success('Suno music task created:', data);
 
     // Try different response structures
     const taskId = data.data?.taskId || data.taskId || data.id || data.task_id || data.data?.id;
@@ -963,20 +965,20 @@ export async function generateKieMusic(
     // If no task ID found, check if the response contains a direct URL
     if (data.data?.audioUrl || data.audioUrl || data.url) {
       const audioUrl = data.data?.audioUrl || data.audioUrl || data.url;
-      console.log('✅ Direct audio URL received:', audioUrl);
+      logger.success('Direct audio URL received:', audioUrl);
       return audioUrl;
     }
 
-    console.error('❌ Unexpected response structure:', data);
+    logger.error('Unexpected response structure', data);
     throw new Error('No task ID or audio URL in response');
   } catch (error) {
-    console.error('❌ Kie AI music generation error:', error);
+    logger.error('Kie AI music generation error', error);
     throw error;
   }
 }
 
 async function pollSunoMusicStatus(taskId: string, maxAttempts: number = 120): Promise<string> {
-  console.log('⏳ Polling Suno music status:', taskId);
+  logger.debug('Polling Suno music status:', taskId);
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -991,12 +993,12 @@ async function pollSunoMusicStatus(taskId: string, maxAttempts: number = 120): P
       });
 
       if (!response.ok) {
-        console.log(`⚠️ Suno polling attempt ${attempt + 1}: response not ok`);
+        logger.warn(`Suno polling attempt ${attempt + 1}: response not ok`);
         continue;
       }
 
       const data = await response.json();
-      console.log(`📊 Suno polling attempt ${attempt + 1}:`, JSON.stringify(data).substring(0, 500));
+      logger.debug(`Suno polling attempt ${attempt + 1}:`, JSON.stringify(data).substring(0, 500));
 
       // Check for successFlag (like Flux pattern) or status field
       const successFlag = data.data?.successFlag;
@@ -1004,7 +1006,7 @@ async function pollSunoMusicStatus(taskId: string, maxAttempts: number = 120): P
       const statusStr = String(status).toUpperCase();
       const hasAudioUrl = data.data?.response?.audioUrls?.[0] || data.data?.audioUrls?.[0];
 
-      console.log(`🔍 Suno status check: successFlag=${successFlag}, status=${status}, hasAudioUrl=${!!hasAudioUrl}`);
+      logger.debug(`Suno status check: successFlag=${successFlag}, status=${status}, hasAudioUrl=${!!hasAudioUrl}`);
 
       // Check for completion - use successFlag first, then status patterns
       const isComplete = successFlag === 1 || successFlag === '1' ||
@@ -1030,18 +1032,18 @@ async function pollSunoMusicStatus(taskId: string, maxAttempts: number = 120): P
           data.audio_url ||
           data.url;
         if (audioUrl) {
-          console.log('✅ Suno music generation completed:', audioUrl);
+          logger.success('Suno music generation completed:', audioUrl);
           return audioUrl;
         } else {
-          console.log('⚠️ Status is complete but no audio URL found:', JSON.stringify(data));
+          logger.warn('Status is complete but no audio URL found:', JSON.stringify(data));
         }
       } else if (isFailed) {
         throw new Error(data.data?.errorMessage || data.data?.error || data.error || 'Music generation failed');
       } else {
-        console.log(`⏳ Suno status: successFlag=${successFlag}, status=${status}, waiting...`);
+        logger.debug(`Suno status: successFlag=${successFlag}, status=${status}, waiting...`);
       }
     } catch (error: any) {
-      console.error(`❌ Suno polling error:`, error.message);
+      logger.error('Suno polling error', error.message);
       if (attempt === maxAttempts - 1) throw error;
     }
   }
@@ -1057,7 +1059,7 @@ async function pollSunoMusicStatus(taskId: string, maxAttempts: number = 120): P
  * @returns URL of the image with transparent background
  */
 export async function removeBackground(imageUrl: string): Promise<string> {
-  console.log('🖼️ [BG Removal] Starting background removal for:', imageUrl);
+  logger.info('Starting background removal for:', imageUrl);
 
   if (!KIE_API_KEY) {
     throw new Error('Kie AI API Key is missing. Please add VITE_KIE_API_KEY to your .env file.');
@@ -1080,12 +1082,12 @@ export async function removeBackground(imageUrl: string): Promise<string> {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ msg: 'Unknown error' }));
-      console.error('❌ [BG Removal] Failed:', response.status, errorData);
+      logger.error('Background removal failed', { status: response.status, error: errorData });
       throw new Error(errorData.msg || `Background removal failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ [BG Removal] Task created:', data);
+    logger.success('Background removal task created:', data);
 
     if (data.code === 200 && data.data?.taskId) {
       return await pollJobsImageStatus(data.data.taskId);
@@ -1093,7 +1095,7 @@ export async function removeBackground(imageUrl: string): Promise<string> {
 
     throw new Error('No task ID in response');
   } catch (error: any) {
-    console.error('❌ [BG Removal] Error:', error);
+    logger.error('Background removal error', error);
     throw error;
   }
 }
@@ -1111,7 +1113,7 @@ export async function editImageWithPrompt(
   prompt: string,
   model: string = 'flux-kontext-pro'
 ): Promise<string> {
-  console.log('🎨 [Img2Img] Editing image with prompt:', prompt.substring(0, 50));
+  logger.info('Editing image with prompt:', prompt.substring(0, 50));
 
   if (!KIE_API_KEY) {
     throw new Error('Kie AI API Key is missing. Please add VITE_KIE_API_KEY to your .env file.');
@@ -1138,12 +1140,12 @@ export async function editImageWithPrompt(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ msg: 'Unknown error' }));
-      console.error('❌ [Img2Img] Failed:', response.status, errorData);
+      logger.error('Image editing failed', { status: response.status, error: errorData });
       throw new Error(errorData.msg || `Image editing failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ [Img2Img] Task created:', data);
+    logger.success('Image editing task created:', data);
 
     if (data.code === 200 && data.data?.taskId) {
       return await pollFluxImageStatus(data.data.taskId);
@@ -1151,7 +1153,7 @@ export async function editImageWithPrompt(
 
     throw new Error('No task ID in response');
   } catch (error: any) {
-    console.error('❌ [Img2Img] Error:', error);
+    logger.error('Image editing error', error);
     throw error;
   }
 }

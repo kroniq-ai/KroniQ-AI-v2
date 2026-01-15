@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
@@ -29,7 +29,7 @@ const LoadingFallback = () => (
 // URL sync component for authenticated users
 const UrlSync: React.FC = () => {
   const location = useLocation();
-  const { navigateTo, setActiveProject, activeProject } = useNavigation();
+  const { setActiveProject, activeProject } = useNavigation();
 
   useEffect(() => {
     const path = location.pathname;
@@ -55,42 +55,167 @@ const UrlSync: React.FC = () => {
   return null;
 };
 
-const MainApp: React.FC = () => {
-  const { currentUser } = useAuth();
-  const [showLogin, setShowLogin] = useState(false);
+// Protected Route wrapper - requires authentication
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
-  // Check if we're on a landing page route
-  const isLandingRoute = ['/', '/about', '/features', '/pricing', '/contact', '/services', '/careers', '/docs', '/privacy', '/terms', '/cookies', '/security', '/promo'].includes(location.pathname);
+  // Still loading auth state
+  if (loading) {
+    return <LoadingFallback />;
+  }
 
-  // Show public landing page for non-authenticated users
+  // Not authenticated - redirect to login
   if (!currentUser) {
-    if (showLogin) {
-      return (
-        <Suspense fallback={<LoadingFallback />}>
-          <LoginPage />
-        </Suspense>
-      );
-    }
-    // For non-authenticated users, show landing pages
-    return (
-      <Suspense fallback={<LoadingFallback />}>
-        <LandingContent onGetStarted={() => setShowLogin(true)} />
-      </Suspense>
-    );
+    // Save the intended destination for post-login redirect
+    const returnTo = location.pathname + location.search;
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />;
   }
 
-  // Authenticated users - redirect from landing routes to app
-  if (isLandingRoute && location.pathname !== '/') {
-    // Stay on app, URL will be handled by NavigationContext
+  return <>{children}</>;
+};
+
+// Public Route wrapper - accessible to all, but authenticated users may be redirected
+const PublicRoute: React.FC<{ children: React.ReactNode; redirectIfAuth?: boolean }> = ({
+  children,
+  redirectIfAuth = false
+}) => {
+  const { currentUser, loading } = useAuth();
+  const location = useLocation();
+
+  // Still loading auth state
+  if (loading) {
+    return <LoadingFallback />;
   }
 
-  // Authenticated users see the app shell
+  // If authenticated and this route should redirect auth users
+  if (currentUser && redirectIfAuth) {
+    // Check for returnTo parameter
+    const searchParams = new URLSearchParams(location.search);
+    const returnTo = searchParams.get('returnTo');
+    return <Navigate to={returnTo || '/app'} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Main routing component
+const AppRoutes: React.FC = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <UrlSync />
-      <AppShell />
+      <Routes>
+        {/* Public landing pages */}
+        <Route path="/" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/about" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/features" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/pricing" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/contact" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/services" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/careers" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/docs" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/privacy" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/terms" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/cookies" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/security" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+        <Route path="/promo" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+
+        {/* Auth routes - redirect to app if already logged in */}
+        <Route path="/login" element={
+          <PublicRoute redirectIfAuth={true}>
+            <LoginPage />
+          </PublicRoute>
+        } />
+        <Route path="/signup" element={
+          <PublicRoute redirectIfAuth={true}>
+            <LoginPage />
+          </PublicRoute>
+        } />
+
+        {/* Protected app routes */}
+        <Route path="/app" element={
+          <ProtectedRoute>
+            <UrlSync />
+            <AppShell />
+          </ProtectedRoute>
+        } />
+        <Route path="/app/*" element={
+          <ProtectedRoute>
+            <UrlSync />
+            <AppShell />
+          </ProtectedRoute>
+        } />
+        <Route path="/chat/*" element={
+          <ProtectedRoute>
+            <UrlSync />
+            <AppShell />
+          </ProtectedRoute>
+        } />
+        <Route path="/studio/*" element={
+          <ProtectedRoute>
+            <UrlSync />
+            <AppShell />
+          </ProtectedRoute>
+        } />
+
+        {/* Catch-all for authenticated users - show app, for others show landing */}
+        <Route path="*" element={
+          <PublicRoute>
+            <LandingContent onGetStarted={() => window.location.href = '/login'} />
+          </PublicRoute>
+        } />
+      </Routes>
     </Suspense>
   );
 };
@@ -107,7 +232,7 @@ function App() {
                   <StudioModeProvider>
                     <BusinessContextProvider>
                       <FontProvider>
-                        <MainApp />
+                        <AppRoutes />
                         <CookieConsent />
                       </FontProvider>
                     </BusinessContextProvider>
@@ -123,4 +248,3 @@ function App() {
 }
 
 export default App;
-

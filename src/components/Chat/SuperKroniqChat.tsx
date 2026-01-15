@@ -12,11 +12,11 @@
  * - Failure fallback with "Refining response..." messaging
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
     Download, ThumbsUp, ThumbsDown, Send, Plus, Loader2, Zap, Trash2,
     Image as ImageIcon, Video, FileText, MessageSquare, ChevronDown,
-    Sparkles, Globe, Pencil, Check, X, Settings, RotateCcw, Minus, Paperclip, Lightbulb, Share2
+    Sparkles, Globe, Pencil, Check, X, Settings, RotateCcw, Minus, Paperclip, Lightbulb, Share2, PlusCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -25,7 +25,9 @@ import { getOpenRouterResponseWithUsage } from '../../lib/openRouterService';
 import { getMessages, createProject, addMessage } from '../../lib/chatService';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { PPTPreview } from './PPTPreview';
-import { getModelLogoUrl, getModelById } from '../../lib/aiModels';
+import DesignStudioCanvas from './DesignStudioCanvas';
+import PPTStudioCanvas from './PPTStudioCanvas';
+// Removed unused imports: getModelLogoUrl, getModelById (always show KroniQ branding)
 import {
     interpretRequest,
     checkToolAccess,
@@ -39,6 +41,7 @@ import {
     performWebSearch,
     performDeepResearch,
     performThinkLonger,
+    performFast,
     enhancePrompt,
     generateChatName,
     type TaskType,
@@ -244,6 +247,18 @@ function preClassifyIntentLocal(message: string): TaskType | null {
     return null;
 }
 
+// Helper to format message timestamp
+const formatMessageTime = (timestamp: Date): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
 // ===== COMPONENT =====
 
 export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
@@ -263,6 +278,8 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
     const [isProcessingRef] = useState({ current: false }); // Prevent reload during processing
     const [currentProjectId, setCurrentProjectId] = useState<string | undefined>(initialProjectId);
     const [isEnhancing, setIsEnhancing] = useState(false); // Enhance prompt state
+    const [chatTitle, setChatTitle] = useState('New Chat');
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
 
     // Orchestration state
     const [currentStatus, setCurrentStatus] = useState<StatusPhase>('idle');
@@ -291,6 +308,18 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
     const [showChatSettings, setShowChatSettings] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Studio split-view state
+    const [activeStudio, setActiveStudio] = useState<'design' | 'ppt' | null>(null);
+    const [designVariations, setDesignVariations] = useState<Array<{ id: string; url: string; label: string }>>([]);
+    const [pptSlides, setPptSlides] = useState<Array<{ id: string; title: string; bulletPoints?: string[] }>>([]);
+    const [studioPrompt, setStudioPrompt] = useState('');
+    const [studioGenerating, setStudioGenerating] = useState(false);
+
+    // Voice input state
+    const [isListening, setIsListening] = useState(false);
+    const [speechSupported, setSpeechSupported] = useState(false);
+    const recognitionRef = useRef<any>(null);
 
     // Input mode - controls how the message is processed
     // 'normal' = Auto-route via Gemini orchestrator
@@ -563,6 +592,56 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
         loadCompletedGenerations();
     }, [currentProjectId]);
 
+    // Initialize speech recognition
+    useEffect(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            setSpeechSupported(true);
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results)
+                    .map((result: any) => result[0].transcript)
+                    .join('');
+                setInputValue(prev => prev + transcript);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error:', event.error);
+                setIsListening(false);
+                if (event.error === 'not-allowed') {
+                    showToast('error', 'Microphone access was denied');
+                }
+            };
+
+            recognitionRef.current = recognition;
+        }
+    }, [showToast]);
+
+    // Toggle voice recognition
+    const toggleVoiceInput = useCallback(() => {
+        if (!recognitionRef.current) return;
+
+        if (isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        } else {
+            try {
+                recognitionRef.current.start();
+                setIsListening(true);
+            } catch (err) {
+                console.error('Failed to start speech recognition:', err);
+            }
+        }
+    }, [isListening]);
+
     // ===== DATA LOADING =====
 
     const loadMessagesFromProject = async (projId: string) => {
@@ -611,6 +690,57 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
             setStatusHistory(prev => [...prev.slice(-4), message]);
         }
     }, []);
+
+    // ===== FILE ATTACHMENT HANDLERS =====
+
+    const handleAttachFiles = () => {
+        fileInputRef.current?.click();
+        setShowPlusMenu(false);
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const newAttachments: { file: File; preview?: string; type: 'image' | 'document' | 'audio' | 'video' }[] = [];
+
+        Array.from(files).forEach(file => {
+            let type: 'image' | 'document' | 'audio' | 'video' = 'document';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('audio/')) type = 'audio';
+            else if (file.type.startsWith('video/')) type = 'video';
+
+            const attachment: { file: File; preview?: string; type: 'image' | 'document' | 'audio' | 'video' } = { file, type };
+
+            // Create preview for images
+            if (type === 'image') {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    setAttachments(prev =>
+                        prev.map(a =>
+                            a.file === file ? { ...a, preview: ev.target?.result as string } : a
+                        )
+                    );
+                };
+                reader.readAsDataURL(file);
+            }
+
+            newAttachments.push(attachment);
+        });
+
+        setAttachments(prev => [...prev, ...newAttachments]);
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+
+        showToast('success', `${files.length} file(s) attached`);
+    };
+
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index));
+    };
 
     // ===== STOP GENERATION HANDLER =====
 
@@ -1033,14 +1163,14 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                     response = `🔬 **Deep Research**\n\nI tried to research: "${text}"\n\n*The research service is currently unavailable. Please try again later.*`;
                 }
             } else if (inputMode === 'fast') {
-                // Fast mode - direct response without extensive research
+                // Fast mode - quick response without extended reasoning
                 updateStatus('generating', 'chat');
                 const conversationHistory = messages.map(msg => ({
                     role: msg.role as 'user' | 'assistant',
                     content: msg.content
                 }));
                 try {
-                    response = await performThinkLonger(text, conversationHistory);
+                    response = await performFast(text, conversationHistory);
                     if (!response) {
                         response = `⚡ **Fast Response**\n\nI processed your request quickly.\n\n*Couldn't complete at this time. Please try again.*`;
                     }
@@ -1224,6 +1354,7 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                             }
 
                             // Use tier-based image generation
+                            setStudioGenerating(true); // Track studio generation state
                             const { generateImageForTier } = await import('../../lib/imageService');
 
                             // Map subscription tier to image service tier
@@ -1286,10 +1417,12 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                             response = `🎨 **Image Generated!**\n\nYour image is ready!${isImageModification ? ' (Modified version)' : ''}\n\n*📊 Daily limit: ${dailyLimit} images/day (${userTier?.toUpperCase() || 'FREE'} tier)*`;
                             mediaUrl = imageResult.url;
                             mediaType = 'image';
+                            setStudioGenerating(false); // Generation complete
                             console.log('✅ [Image] Success:', mediaUrl);
                         } catch (imageError: any) {
                             console.error('❌ [Image] Generation failed:', imageError);
                             response = `🎨 **Image Generation Request**\n\nI tried to create: ${interpretation.enhancedPrompt}\n\n❌ *Error: ${imageError.message || 'Generation failed. Please try again.'}*`;
+                            setStudioGenerating(false); // Generation failed
                         }
                         // Record usage for free tier limit
                         await recordToolUsage(user?.id || '', 'image');
@@ -1740,6 +1873,27 @@ ${interpretation.enhancedPrompt}
                     }
                     : msg
             ));
+
+            // Open Design Studio for image generation
+            if (mediaType === 'image' && mediaUrl) {
+                setDesignVariations([{
+                    id: `design_${Date.now()}`,
+                    url: mediaUrl,
+                    label: 'Generated Design'
+                }]);
+                setStudioPrompt(interpretation.enhancedPrompt);
+                setActiveStudio('design');
+            }
+
+            // Open PPT Studio for presentation generation
+            if (mediaType === 'ppt' && pptStructure) {
+                setPptSlides(pptStructure.slides?.map((slide: any, idx: number) => ({
+                    id: `slide_${idx}`,
+                    title: slide.title || `Slide ${idx + 1}`,
+                    bulletPoints: slide.bullet_points || slide.bullets || []
+                })) || []);
+                setActiveStudio('ppt');
+            }
 
             // Save assistant message
             if (projId) {
@@ -2257,1183 +2411,1453 @@ ${interpretation.enhancedPrompt}
     // ===== RENDER =====
 
     return (
-        <div className="flex-1 flex flex-col h-full relative">
-            {/* Header */}
+        <div className="flex-1 flex h-full relative">
+            {/* Main Chat Area - Takes full width when no studio, or 50% when studio active */}
             <div className={`
-                flex items-center justify-between gap-3 px-6 py-4 border-b
-                ${isDark ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-100 bg-white'}
+                flex flex-col h-full relative transition-all duration-300
+                ${activeStudio ? 'w-1/2' : 'w-full'}
             `}>
-                <div className="flex items-center gap-3">
-                    <img
-                        src="/assets/super-kroniq-rocket.png"
-                        alt="Super KroniQ"
-                        className="w-8 h-8 object-contain"
-                    />
-                    <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Super KroniQ
-                    </span>
+                {/* Header - Minimal Design */}
+                <div className={`
+                    flex items-center justify-between px-4 py-3
+                    ${isDark ? 'bg-transparent' : 'bg-white/50'}
+                `}>
+                    {/* Left - Editable Chat Title */}
+                    <div className="flex items-center">
+                        {isEditingTitle ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={chatTitle}
+                                    onChange={(e) => setChatTitle(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') setIsEditingTitle(false);
+                                        if (e.key === 'Escape') setIsEditingTitle(false);
+                                    }}
+                                    onBlur={() => setIsEditingTitle(false)}
+                                    className={`
+                                        px-3 py-1.5 rounded-lg text-sm font-medium min-w-[150px] max-w-[250px]
+                                        ${isDark
+                                            ? 'bg-white/5 text-white border border-white/10 focus:border-emerald-500/50'
+                                            : 'bg-gray-50 text-gray-900 border border-gray-200 focus:border-emerald-500'}
+                                        outline-none transition-colors
+                                    `}
+                                    autoFocus
+                                />
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setIsEditingTitle(true)}
+                                className={`
+                                    text-sm font-medium flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all group
+                                    ${isDark ? 'text-white/80 hover:text-white hover:bg-white/5' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}
+                                `}
+                            >
+                                {chatTitle}
+                                <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Right - Minimal Action Buttons */}
+                    <div className="flex items-center gap-0.5">
+                        <button
+                            onClick={() => setShowShareModal(true)}
+                            className={`p-2 rounded-lg transition-all ${isDark
+                                ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                }`}
+                            title="Share"
+                        >
+                            <Share2 className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setShowChatSettings(true)}
+                            className={`p-2 rounded-lg transition-all ${isDark
+                                ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                                }`}
+                            title="Settings"
+                        >
+                            <Settings className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
-                {/* Right side buttons */}
-                <div className="flex items-center gap-1">
-                    {/* Share Button */}
-                    <button
-                        onClick={() => setShowShareModal(true)}
-                        className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-500'
-                            }`}
-                        title="Share Chat"
-                    >
-                        <Share2 className="w-4 h-4" />
-                    </button>
+                {/* Status bar removed - status is now shown inline with loading message */}
 
-                    {/* Context Settings Button */}
-                    <button
-                        onClick={() => setShowChatSettings(true)}
-                        className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-500'
-                            }`}
-                        title="Chat Settings"
-                    >
-                        <Settings className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
+                {/* Clarifying Questions are now shown as AI messages in chat, no separate modal */}
 
-            {/* Status bar removed - status is now shown inline with loading message */}
-
-            {/* Clarifying Questions are now shown as AI messages in chat, no separate modal */}
-
-            {/* Messages Area */}
-            <div className={`
+                {/* Messages Area */}
+                <div className={`
                 flex-1 overflow-y-auto px-6 py-6
                 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gradient-to-b from-teal-50/30 to-white'}
             `}>
-                <div className="max-w-3xl mx-auto space-y-6">
-                    {messages.map((message) => {
-                        // Reserved for potential future feedback section
-                        // const isLastAssistantMessage = ...
+                    <div className="max-w-3xl mx-auto space-y-6">
+                        {/* Welcome Screen - Show when no messages */}
+                        {messages.length === 0 && (
+                            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+                                {/* Logo & Title */}
+                                <div className="relative mb-6">
+                                    <div className={`
+                                    absolute inset-0 blur-3xl opacity-30
+                                    bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400
+                                `} />
+                                    <img
+                                        src="/assets/super-kroniq-rocket.png"
+                                        alt="Super KroniQ"
+                                        className="w-20 h-20 object-contain relative z-10"
+                                    />
+                                </div>
+                                <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    Welcome to Super KroniQ
+                                </h1>
+                                <p className={`text-sm sm:text-base mb-8 max-w-md ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                                    Your AI-powered creative assistant. Ask me anything, create designs, generate presentations, or explore ideas.
+                                </p>
 
-                        const modelIcon = getModelIcon(message.model);
+                                {/* Quick Action Buttons */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl mb-8">
+                                    {[
+                                        { icon: '💬', label: 'Chat', desc: 'Ask anything', action: () => setInputValue('Help me with...') },
+                                        { icon: '🎨', label: 'Design', desc: 'Create visuals', action: () => setInputValue('Design a marketing flyer for ') },
+                                        { icon: '📊', label: 'PPT', desc: 'Make slides', action: () => setInputValue('Create a presentation about ') },
+                                        { icon: '🔍', label: 'Research', desc: 'Deep dive', action: () => { setInputMode('research'); setInputValue('Research about '); } },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.label}
+                                            onClick={item.action}
+                                            className={`
+                                            flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-200
+                                            hover:scale-[1.02] hover:shadow-lg
+                                            ${isDark
+                                                    ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-emerald-500/30'
+                                                    : 'bg-white border-gray-200 hover:border-teal-300 hover:shadow-teal-100'
+                                                }
+                                        `}
+                                        >
+                                            <span className="text-2xl">{item.icon}</span>
+                                            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                {item.label}
+                                            </span>
+                                            <span className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                                                {item.desc}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
 
-                        return (
-                            <div key={message.id}>
-                                {message.role === 'user' ? (
-                                    /* User Message */
-                                    <div className="flex justify-end">
-                                        <div className={`
+                                {/* Suggested Prompts */}
+                                <div className="w-full max-w-xl">
+                                    <p className={`text-xs font-medium mb-3 ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                                        TRY THESE
+                                    </p>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {[
+                                            'Explain quantum computing simply',
+                                            'Write a business email',
+                                            'Design a logo concept',
+                                            'Create a pitch deck outline'
+                                        ].map((prompt) => (
+                                            <button
+                                                key={prompt}
+                                                onClick={() => setInputValue(prompt)}
+                                                className={`
+                                                px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                                                ${isDark
+                                                        ? 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                                                    }
+                                            `}
+                                            >
+                                                {prompt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Messages */}
+                        {messages.map((message) => {
+                            // Reserved for potential future feedback section
+                            // const isLastAssistantMessage = ...
+
+                            const modelIcon = getModelIcon(message.model);
+
+                            return (
+                                <div key={message.id}>
+                                    {message.role === 'user' ? (
+                                        /* User Message */
+                                        <div className="flex justify-end">
+                                            <div className={`
                                             max-w-[80%] px-4 py-3 rounded-2xl rounded-br-md
                                             ${isDark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-900'}
                                         `}>
-                                            {/* Attachments Preview */}
-                                            {message.attachments && message.attachments.length > 0 && (
-                                                <div className={`mb-2 ${message.attachments.length > 1 ? 'grid grid-cols-2 gap-2' : ''}`}>
-                                                    {message.attachments.map((att, idx) => (
-                                                        att.type === 'image' ? (
-                                                            <div key={idx} className="rounded-lg overflow-hidden">
-                                                                <img
-                                                                    src={att.url}
-                                                                    alt={att.name}
-                                                                    className="max-h-48 w-full object-cover rounded-lg"
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <div
-                                                                key={idx}
-                                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${isDark ? 'bg-white/5' : 'bg-gray-200'}`}
-                                                            >
-                                                                <span className="opacity-70">
-                                                                    {att.type === 'document' ? '📄' : att.type === 'video' ? '🎬' : '🎵'}
-                                                                </span>
-                                                                <span className="truncate">{att.name}</span>
-                                                            </div>
-                                                        )
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <p className="text-sm leading-relaxed">{message.content}</p>
+                                                {/* Attachments Preview */}
+                                                {message.attachments && message.attachments.length > 0 && (
+                                                    <div className={`mb-2 ${message.attachments.length > 1 ? 'grid grid-cols-2 gap-2' : ''}`}>
+                                                        {message.attachments.map((att, idx) => (
+                                                            att.type === 'image' ? (
+                                                                <div key={idx} className="rounded-lg overflow-hidden">
+                                                                    <img
+                                                                        src={att.url}
+                                                                        alt={att.name}
+                                                                        className="max-h-48 w-full object-cover rounded-lg"
+                                                                    />
+                                                                </div>
+                                                            ) : (
+                                                                <div
+                                                                    key={idx}
+                                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${isDark ? 'bg-white/5' : 'bg-gray-200'}`}
+                                                                >
+                                                                    <span className="opacity-70">
+                                                                        {att.type === 'document' ? '📄' : att.type === 'video' ? '🎬' : '🎵'}
+                                                                    </span>
+                                                                    <span className="truncate">{att.name}</span>
+                                                                </div>
+                                                            )
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <p className="text-sm leading-relaxed">{message.content}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    /* Assistant Message */
-                                    <div className="space-y-3 group">
-                                        {/* Model Badge & Delete - Only show when actual model is determined (not during initial loading) */}
-                                        {(!message.isLoading || (message.model && message.model !== 'Super KroniQ')) && (
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`
+                                    ) : (
+                                        /* Assistant Message */
+                                        <div className="space-y-3 group">
+                                            {/* Model Badge & Delete - Only show when actual model is determined (not during initial loading) */}
+                                            {(!message.isLoading || (message.model && message.model !== 'Super KroniQ')) && (
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`
                                                     w-6 h-6 rounded-full flex items-center justify-center text-xs overflow-hidden
                                                     ${isDark ? 'bg-white/10' : 'bg-gray-100'}
                                                 `}>
-                                                        {modelIcon.logoUrl ? (
-                                                            <img src={modelIcon.logoUrl} alt="" className="w-4 h-4 object-contain" />
-                                                        ) : (
-                                                            <span>{modelIcon.icon}</span>
-                                                        )}
-                                                    </div>
-                                                    <span className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
-                                                        {getModelDisplayName(message.model)}
-                                                    </span>
-                                                    {message.taskType && message.taskType !== 'chat' && (
-                                                        <span className={`
+                                                            {modelIcon.logoUrl ? (
+                                                                <img src={modelIcon.logoUrl} alt="" className="w-4 h-4 object-contain" />
+                                                            ) : (
+                                                                <span>{modelIcon.icon}</span>
+                                                            )}
+                                                        </div>
+                                                        <span className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-gray-500'}`}>
+                                                            {getModelDisplayName(message.model)}
+                                                        </span>
+                                                        {message.taskType && message.taskType !== 'chat' && (
+                                                            <span className={`
                                                         px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1
                                                         ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}
                                                     `}>
-                                                            {getTaskTypeIcon(message.taskType)}
-                                                            {message.taskType.toUpperCase()}
+                                                                {getTaskTypeIcon(message.taskType)}
+                                                                {message.taskType.toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                        {/* Timestamp */}
+                                                        <span className={`text-xs ${isDark ? 'text-white/30' : 'text-gray-400'}`}>
+                                                            · {formatMessageTime(message.timestamp)}
                                                         </span>
-                                                    )}
-                                                </div>
-                                                <button
-                                                    onClick={() => setMessages(prev => prev.filter(m => m.id !== message.id))}
-                                                    className={`
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setMessages(prev => prev.filter(m => m.id !== message.id))}
+                                                        className={`
                                                     p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all
                                                     ${isDark ? 'hover:bg-white/10 text-white/40 hover:text-red-400' : 'hover:bg-gray-100 text-gray-400 hover:text-red-500'}
                                                 `}
-                                                    title="Remove from chat"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        )}
+                                                        title="Remove from chat"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            )}
 
-                                        {/* Content */}
-                                        {message.isLoading ? (
-                                            <div className="flex items-center gap-2 py-2">
-                                                <svg
-                                                    className={`w-4 h-4 animate-spin ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                >
-                                                    <circle cx="11" cy="11" r="8" />
-                                                    <path d="m21 21-4.35-4.35" />
-                                                </svg>
-                                                <span
-                                                    className="text-sm font-medium bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent animate-pulse"
-                                                    style={{ backgroundSize: '200% 100%' }}
-                                                >
-                                                    {STATUS_MESSAGES[currentStatus] || message.statusHistory?.slice(-1)[0] || 'Processing...'}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {/* Media Content */}
-                                                {message.mediaUrl && message.mediaType === 'image' && (
-                                                    <div className="rounded-xl overflow-hidden max-w-md mb-4">
-                                                        <img src={message.mediaUrl} alt="Generated" className="w-full" />
-                                                        <div className="flex gap-2 mt-2">
-                                                            <a
-                                                                href={message.mediaUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-emerald-500 hover:bg-emerald-600 text-white'}`}
+                                            {/* Content */}
+                                            {message.isLoading ? (
+                                                <div className="space-y-3 py-2">
+                                                    {/* Status indicator with spinning icon */}
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20' : 'bg-gradient-to-br from-emerald-100 to-teal-100'}`}>
+                                                                <svg
+                                                                    className={`w-4 h-4 animate-spin ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}
+                                                                    viewBox="0 0 24 24"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    strokeWidth="2"
+                                                                >
+                                                                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                                                                </svg>
+                                                            </div>
+                                                            {/* Pulse ring */}
+                                                            <div className={`absolute inset-0 rounded-full animate-ping ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-400/20'}`} style={{ animationDuration: '2s' }} />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span
+                                                                className="text-sm font-semibold bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent"
+                                                                style={{ backgroundSize: '200% 100%', animation: 'shimmer 2s infinite' }}
                                                             >
-                                                                <Download className="w-4 h-4" />
-                                                                Download
-                                                            </a>
+                                                                {STATUS_MESSAGES[currentStatus] || message.statusHistory?.slice(-1)[0] || 'Processing...'}
+                                                            </span>
+                                                            <span className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
+                                                                KroniQ AI is working on your request
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                )}
 
-                                                {message.mediaUrl && message.mediaType === 'video' && (
-                                                    <div className="rounded-xl overflow-hidden max-w-md mb-4">
-                                                        <video
-                                                            src={message.mediaUrl}
-                                                            controls
-                                                            className="w-full rounded-lg"
-                                                            preload="metadata"
-                                                        />
-                                                        <div className="flex gap-2 mt-2">
-                                                            <a
-                                                                href={message.mediaUrl}
-                                                                download
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-emerald-500 hover:bg-emerald-600 text-white'}`}
-                                                            >
-                                                                <Download className="w-4 h-4" />
-                                                                Download Video
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Audio Player for TTS */}
-                                                {message.mediaUrl && message.mediaType === 'audio' && (
-                                                    <div className={`rounded-xl p-4 mb-4 max-w-md ${isDark ? 'bg-gradient-to-br from-pink-500/20 to-rose-500/10 border border-pink-500/30' : 'bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200'}`}>
-                                                        <audio
-                                                            src={message.mediaUrl}
-                                                            controls
-                                                            className="w-full"
-                                                        />
-                                                        <div className="flex gap-2 mt-3">
-                                                            <a
-                                                                href={message.mediaUrl}
-                                                                download="speech.mp3"
-                                                                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-pink-600 hover:bg-pink-500 text-white' : 'bg-pink-500 hover:bg-pink-600 text-white'}`}
-                                                            >
-                                                                <Download className="w-4 h-4" />
-                                                                Download Audio
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {message.mediaUrl && message.mediaType === 'ppt' && (
-                                                    message.pptStructure ? (
-                                                        <div className="mb-4 max-w-lg">
-                                                            <PPTPreview
-                                                                structure={message.pptStructure}
-                                                                downloadUrl={message.mediaUrl}
-                                                                fileName={message.pptFileName || 'presentation.pptx'}
-                                                                isDark={isDark}
+                                                    {/* Skeleton loading bars */}
+                                                    <div className="space-y-2">
+                                                        <div className={`h-4 rounded-lg overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                                                            <div
+                                                                className="h-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent animate-shimmer"
+                                                                style={{ width: '90%', animation: 'shimmer 1.5s infinite' }}
                                                             />
                                                         </div>
-                                                    ) : (
-                                                        <div className={`rounded-xl p-4 mb-4 max-w-md ${isDark ? 'bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30' : 'bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200'}`}>
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                                <div className={`p-2 rounded-lg ${isDark ? 'bg-orange-500/30' : 'bg-orange-100'}`}>
-                                                                    <FileText className="w-6 h-6 text-orange-500" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>PowerPoint Presentation</div>
-                                                                    <div className={`text-sm ${isDark ? 'text-white/60' : 'text-gray-500'}`}>Ready to download</div>
+                                                        <div className={`h-4 rounded-lg overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                                                            <div
+                                                                className="h-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
+                                                                style={{ width: '75%', animation: 'shimmer 1.5s infinite 0.2s' }}
+                                                            />
+                                                        </div>
+                                                        <div className={`h-4 rounded-lg overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                                                            <div
+                                                                className="h-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
+                                                                style={{ width: '60%', animation: 'shimmer 1.5s infinite 0.4s' }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {/* Media Content */}
+                                                    {message.mediaUrl && message.mediaType === 'image' && (
+                                                        <div className={`rounded-2xl overflow-hidden max-w-xl mb-4 border ${isDark ? 'border-white/10 bg-gradient-to-br from-white/5 to-transparent' : 'border-gray-200 bg-gradient-to-br from-gray-50 to-white'}`}>
+                                                            {/* Image with hover zoom */}
+                                                            <div className="relative group/img cursor-pointer" onClick={() => window.open(message.mediaUrl, '_blank')}>
+                                                                <img
+                                                                    src={message.mediaUrl}
+                                                                    alt="Generated"
+                                                                    className="w-full transition-transform duration-300 group-hover/img:scale-[1.02]"
+                                                                />
+                                                                {/* Overlay on hover */}
+                                                                <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors flex items-center justify-center">
+                                                                    <div className="opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                                                        <div className={`px-3 py-2 rounded-lg backdrop-blur-sm ${isDark ? 'bg-white/20' : 'bg-black/20'}`}>
+                                                                            <span className="text-white text-sm font-medium">Click to view full size</span>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex gap-2">
+                                                            {/* Action bar */}
+                                                            <div className={`flex items-center gap-2 p-3 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
                                                                 <a
                                                                     href={message.mediaUrl}
                                                                     download
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isDark ? 'bg-emerald-600 hover:bg-emerald-500 text-white hover:shadow-lg hover:shadow-emerald-500/25' : 'bg-emerald-500 hover:bg-emerald-600 text-white hover:shadow-lg hover:shadow-emerald-500/25'}`}
                                                                 >
                                                                     <Download className="w-4 h-4" />
-                                                                    Download PPTX
+                                                                    Download
+                                                                </a>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setDesignVariations([{
+                                                                            id: `design_${Date.now()}`,
+                                                                            url: message.mediaUrl!,
+                                                                            label: 'Design'
+                                                                        }]);
+                                                                        setActiveStudio('design');
+                                                                    }}
+                                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                                                                >
+                                                                    <Sparkles className="w-4 h-4" />
+                                                                    Open in Studio
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {message.mediaUrl && message.mediaType === 'video' && (
+                                                        <div className={`rounded-2xl overflow-hidden max-w-xl mb-4 border ${isDark ? 'border-white/10 bg-gradient-to-br from-purple-500/10 to-blue-500/5' : 'border-gray-200 bg-gradient-to-br from-purple-50 to-blue-50'}`}>
+                                                            {/* Video header */}
+                                                            <div className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                                                                <div className={`p-1.5 rounded-lg ${isDark ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
+                                                                    <svg className={`w-4 h-4 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <polygon points="23 7 16 12 23 17 23 7" />
+                                                                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                                                                    </svg>
+                                                                </div>
+                                                                <span className={`text-sm font-medium ${isDark ? 'text-white/80' : 'text-gray-700'}`}>Generated Video</span>
+                                                            </div>
+                                                            {/* Video player */}
+                                                            <video
+                                                                src={message.mediaUrl}
+                                                                controls
+                                                                className="w-full"
+                                                                preload="metadata"
+                                                            />
+                                                            {/* Action bar */}
+                                                            <div className={`flex items-center gap-2 p-3 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                                                                <a
+                                                                    href={message.mediaUrl}
+                                                                    download
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isDark ? 'bg-purple-600 hover:bg-purple-500 text-white hover:shadow-lg hover:shadow-purple-500/25' : 'bg-purple-500 hover:bg-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/25'}`}
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                    Download Video
                                                                 </a>
                                                             </div>
                                                         </div>
-                                                    )
-                                                )}
+                                                    )}
 
-                                                {/* Text Content */}
-                                                <div className="max-w-none">
-                                                    <MarkdownRenderer content={message.content} isDark={isDark} />
-                                                </div>
+                                                    {/* Audio Player for TTS */}
+                                                    {message.mediaUrl && message.mediaType === 'audio' && (
+                                                        <div className={`rounded-xl p-4 mb-4 max-w-md ${isDark ? 'bg-gradient-to-br from-pink-500/20 to-rose-500/10 border border-pink-500/30' : 'bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200'}`}>
+                                                            <audio
+                                                                src={message.mediaUrl}
+                                                                controls
+                                                                className="w-full"
+                                                            />
+                                                            <div className="flex gap-2 mt-3">
+                                                                <a
+                                                                    href={message.mediaUrl}
+                                                                    download="speech.mp3"
+                                                                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark ? 'bg-pink-600 hover:bg-pink-500 text-white' : 'bg-pink-500 hover:bg-pink-600 text-white'}`}
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                    Download Audio
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    )}
 
-                                                {/* Action Buttons - Icons only with tooltips */}
-                                                <div className="flex items-center gap-1 pt-2">
-                                                    {/* Copy */}
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                await navigator.clipboard.writeText(message.content);
-                                                                showToast('success', 'Copied to clipboard!');
-                                                            } catch (err) {
-                                                                showToast('error', 'Failed to copy');
-                                                            }
-                                                        }}
-                                                        className={`
+                                                    {message.mediaUrl && message.mediaType === 'ppt' && (
+                                                        message.pptStructure ? (
+                                                            <div className="mb-4 max-w-lg">
+                                                                <PPTPreview
+                                                                    structure={message.pptStructure}
+                                                                    downloadUrl={message.mediaUrl}
+                                                                    fileName={message.pptFileName || 'presentation.pptx'}
+                                                                    isDark={isDark}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`rounded-xl p-4 mb-4 max-w-md ${isDark ? 'bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30' : 'bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200'}`}>
+                                                                <div className="flex items-center gap-3 mb-3">
+                                                                    <div className={`p-2 rounded-lg ${isDark ? 'bg-orange-500/30' : 'bg-orange-100'}`}>
+                                                                        <FileText className="w-6 h-6 text-orange-500" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>PowerPoint Presentation</div>
+                                                                        <div className={`text-sm ${isDark ? 'text-white/60' : 'text-gray-500'}`}>Ready to download</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <a
+                                                                        href={message.mediaUrl}
+                                                                        download
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white transition-colors"
+                                                                    >
+                                                                        <Download className="w-4 h-4" />
+                                                                        Download PPTX
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    )}
+
+                                                    {/* Text Content */}
+                                                    <div className="max-w-none">
+                                                        <MarkdownRenderer content={message.content} isDark={isDark} />
+                                                    </div>
+
+                                                    {/* Action Buttons - Icons only with tooltips */}
+                                                    <div className="flex items-center gap-1 pt-2">
+                                                        {/* Copy */}
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await navigator.clipboard.writeText(message.content);
+                                                                    showToast('success', 'Copied to clipboard!');
+                                                                } catch (err) {
+                                                                    showToast('error', 'Failed to copy');
+                                                                }
+                                                            }}
+                                                            className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                         `}
-                                                    >
-                                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                                        </svg>
-                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Copy
-                                                        </span>
-                                                    </button>
+                                                        >
+                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                                            </svg>
+                                                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                Copy
+                                                            </span>
+                                                        </button>
 
-                                                    {/* Thumbs Up */}
-                                                    <button
-                                                        onClick={() => {
-                                                            setMessages(prev => prev.map(m =>
-                                                                m.id === message.id
-                                                                    ? { ...m, feedback: m.feedback === 'liked' ? undefined : 'liked' }
-                                                                    : m
-                                                            ));
-                                                            showToast('success', message.feedback === 'liked' ? 'Feedback removed' : 'Thanks for the feedback! 👍');
-                                                        }}
-                                                        className={`
+                                                        {/* Thumbs Up */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setMessages(prev => prev.map(m =>
+                                                                    m.id === message.id
+                                                                        ? { ...m, feedback: m.feedback === 'liked' ? undefined : 'liked' }
+                                                                        : m
+                                                                ));
+                                                                showToast('success', message.feedback === 'liked' ? 'Feedback removed' : 'Thanks for the feedback! 👍');
+                                                            }}
+                                                            className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${message.feedback === 'liked'
-                                                                ? 'bg-emerald-500/20 text-emerald-500'
-                                                                : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                                    ? 'bg-emerald-500/20 text-emerald-500'
+                                                                    : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                         `}
-                                                    >
-                                                        <ThumbsUp className="w-4 h-4" />
-                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Good
-                                                        </span>
-                                                    </button>
+                                                        >
+                                                            <ThumbsUp className="w-4 h-4" />
+                                                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                Good
+                                                            </span>
+                                                        </button>
 
-                                                    {/* Thumbs Down */}
-                                                    <button
-                                                        onClick={() => {
-                                                            setMessages(prev => prev.map(m =>
-                                                                m.id === message.id
-                                                                    ? { ...m, feedback: m.feedback === 'disliked' ? undefined : 'disliked' }
-                                                                    : m
-                                                            ));
-                                                            showToast('info', message.feedback === 'disliked' ? 'Feedback removed' : 'Thanks for the feedback');
-                                                        }}
-                                                        className={`
+                                                        {/* Thumbs Down */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setMessages(prev => prev.map(m =>
+                                                                    m.id === message.id
+                                                                        ? { ...m, feedback: m.feedback === 'disliked' ? undefined : 'disliked' }
+                                                                        : m
+                                                                ));
+                                                                showToast('info', message.feedback === 'disliked' ? 'Feedback removed' : 'Thanks for the feedback');
+                                                            }}
+                                                            className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${message.feedback === 'disliked'
-                                                                ? 'bg-red-500/20 text-red-500'
-                                                                : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                                    ? 'bg-red-500/20 text-red-500'
+                                                                    : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                         `}
-                                                    >
-                                                        <ThumbsDown className="w-4 h-4" />
-                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Bad
-                                                        </span>
-                                                    </button>
+                                                        >
+                                                            <ThumbsDown className="w-4 h-4" />
+                                                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                Bad
+                                                            </span>
+                                                        </button>
 
-                                                    {/* Shorter */}
-                                                    <button
-                                                        onClick={() => handleMakeShorterLonger(message.id, 'shorter')}
-                                                        disabled={modifyingMessageId === message.id}
-                                                        className={`
+                                                        {/* Shorter */}
+                                                        <button
+                                                            onClick={() => handleMakeShorterLonger(message.id, 'shorter')}
+                                                            disabled={modifyingMessageId === message.id}
+                                                            className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                             ${modifyingMessageId === message.id ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
-                                                    >
-                                                        <Minus className="w-4 h-4" />
-                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Shorter
-                                                        </span>
-                                                    </button>
+                                                        >
+                                                            <Minus className="w-4 h-4" />
+                                                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                Shorter
+                                                            </span>
+                                                        </button>
 
-                                                    {/* Longer */}
-                                                    <button
-                                                        onClick={() => handleMakeShorterLonger(message.id, 'longer')}
-                                                        disabled={modifyingMessageId === message.id}
-                                                        className={`
+                                                        {/* Longer */}
+                                                        <button
+                                                            onClick={() => handleMakeShorterLonger(message.id, 'longer')}
+                                                            disabled={modifyingMessageId === message.id}
+                                                            className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                             ${modifyingMessageId === message.id ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Longer
-                                                        </span>
-                                                    </button>
+                                                        >
+                                                            <Plus className="w-4 h-4" />
+                                                            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                Longer
+                                                            </span>
+                                                        </button>
 
-                                                    {/* Regenerate/Retry */}
-                                                    <button
-                                                        onClick={() => handleRegenerate(message.id)}
-                                                        disabled={isLoading}
-                                                        className={`
+                                                        {/* Regenerate/Retry */}
+                                                        <button
+                                                            onClick={() => handleRegenerate(message.id)}
+                                                            disabled={isLoading}
+                                                            className={`
                                                             group/btn relative p-2 rounded-lg transition-all duration-200
                                                             ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
                                                             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
                                                         `}
-                                                    >
-                                                        <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                            Regenerate
-                                                        </span>
-                                                    </button>
-
-                                                    {/* More Options - Turn into */}
-                                                    <div className="relative">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowConvertMenu(showConvertMenu === message.id ? null : message.id)}
-                                                            className={`
-                                                                group/btn relative p-2 rounded-lg transition-all duration-200
-                                                                ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
-                                                            `}
                                                         >
-                                                            <Sparkles className="w-4 h-4" />
+                                                            <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                                                             <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                                                Turn into...
+                                                                Regenerate
                                                             </span>
                                                         </button>
 
-                                                        {showConvertMenu === message.id && (
-                                                            <>
-                                                                <div className="fixed inset-0 z-40" onClick={() => setShowConvertMenu(null)} />
-                                                                <div className={`
+                                                        {/* More Options - Turn into */}
+                                                        <div className="relative">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowConvertMenu(showConvertMenu === message.id ? null : message.id)}
+                                                                className={`
+                                                                group/btn relative p-2 rounded-lg transition-all duration-200
+                                                                ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                            `}
+                                                            >
+                                                                <Sparkles className="w-4 h-4" />
+                                                                <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                                    Turn into...
+                                                                </span>
+                                                            </button>
+
+                                                            {showConvertMenu === message.id && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-40" onClick={() => setShowConvertMenu(null)} />
+                                                                    <div className={`
                                                                     absolute bottom-full left-0 mb-1 py-1 rounded-lg border shadow-xl z-50 min-w-[140px]
                                                                     ${isDark ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-gray-200'}
                                                                 `}>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => { setShowConvertMenu(null); setShowTurnIntoInput(message.id); setTurnIntoValue(''); }}
-                                                                        className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
-                                                                    >
-                                                                        <Sparkles className="w-4 h-4" />
-                                                                        Transform content...
-                                                                    </button>
-                                                                </div>
-                                                            </>
-                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => { setShowConvertMenu(null); setShowTurnIntoInput(message.id); setTurnIntoValue(''); }}
+                                                                            className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
+                                                                        >
+                                                                            <Sparkles className="w-4 h-4" />
+                                                                            Transform content...
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
 
-                                                        {/* Premium Turn Into Input Popup */}
-                                                        {showTurnIntoInput === message.id && (
-                                                            <>
-                                                                <div className="fixed inset-0 z-40" onClick={() => setShowTurnIntoInput(null)} />
-                                                                <div className={`
+                                                            {/* Premium Turn Into Input Popup */}
+                                                            {showTurnIntoInput === message.id && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-40" onClick={() => setShowTurnIntoInput(null)} />
+                                                                    <div className={`
                                                                     absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50
                                                                     w-72 p-4 rounded-2xl overflow-hidden
                                                                     backdrop-blur-2xl shadow-2xl border
                                                                     animate-in fade-in zoom-in-95 duration-200
                                                                     ${isDark
-                                                                        ? 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#1f1f1f]/95 to-[#252525]/95 border-white/20 shadow-[0_25px_50px_rgba(0,0,0,0.5)]'
-                                                                        : 'bg-gradient-to-br from-white/95 via-white/90 to-gray-50/90 border-gray-200/50 shadow-2xl'}
+                                                                            ? 'bg-gradient-to-br from-[#1a1a1a]/95 via-[#1f1f1f]/95 to-[#252525]/95 border-white/20 shadow-[0_25px_50px_rgba(0,0,0,0.5)]'
+                                                                            : 'bg-gradient-to-br from-white/95 via-white/90 to-gray-50/90 border-gray-200/50 shadow-2xl'}
                                                                 `}>
-                                                                    {/* Glowing accent line */}
-                                                                    <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+                                                                        {/* Glowing accent line */}
+                                                                        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
 
-                                                                    {/* Header */}
-                                                                    <div className="flex items-center gap-2 mb-3">
-                                                                        <div className={`
+                                                                        {/* Header */}
+                                                                        <div className="flex items-center gap-2 mb-3">
+                                                                            <div className={`
                                                                             w-7 h-7 rounded-lg flex items-center justify-center
                                                                             bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30
                                                                         `}>
-                                                                            <Sparkles className="w-3.5 h-3.5" />
+                                                                                <Sparkles className="w-3.5 h-3.5" />
+                                                                            </div>
+                                                                            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                                                                                Turn into anything
+                                                                            </span>
                                                                         </div>
-                                                                        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                                                                            Turn into anything
-                                                                        </span>
-                                                                    </div>
 
-                                                                    {/* Input Field */}
-                                                                    <div className={`
+                                                                        {/* Input Field */}
+                                                                        <div className={`
                                                                         flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all duration-300
                                                                         ${isDark
-                                                                            ? 'bg-white/5 border-white/20 focus-within:border-emerald-500/50 focus-within:bg-white/10'
-                                                                            : 'bg-white border-gray-200 focus-within:border-emerald-400 shadow-sm'}
+                                                                                ? 'bg-white/5 border-white/20 focus-within:border-emerald-500/50 focus-within:bg-white/10'
+                                                                                : 'bg-white border-gray-200 focus-within:border-emerald-400 shadow-sm'}
                                                                     `}>
-                                                                        <input
-                                                                            type="text"
-                                                                            value={turnIntoValue}
-                                                                            onChange={(e) => setTurnIntoValue(e.target.value)}
-                                                                            onKeyDown={(e) => {
-                                                                                if (e.key === 'Enter' && turnIntoValue.trim()) {
-                                                                                    handleTurnInto(message.id, turnIntoValue.trim());
-                                                                                }
-                                                                            }}
-                                                                            placeholder="e.g. logo, infographic, blog post..."
-                                                                            autoFocus
-                                                                            className={`
+                                                                            <input
+                                                                                type="text"
+                                                                                value={turnIntoValue}
+                                                                                onChange={(e) => setTurnIntoValue(e.target.value)}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter' && turnIntoValue.trim()) {
+                                                                                        handleTurnInto(message.id, turnIntoValue.trim());
+                                                                                    }
+                                                                                }}
+                                                                                placeholder="e.g. logo, infographic, blog post..."
+                                                                                autoFocus
+                                                                                className={`
                                                                                 flex-1 bg-transparent border-none outline-none text-sm
                                                                                 ${isDark ? 'text-white placeholder-white/40' : 'text-gray-900 placeholder-gray-400'}
                                                                             `}
-                                                                        />
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                if (turnIntoValue.trim()) {
-                                                                                    handleTurnInto(message.id, turnIntoValue.trim());
-                                                                                }
-                                                                            }}
-                                                                            disabled={!turnIntoValue.trim()}
-                                                                            className={`
+                                                                            />
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    if (turnIntoValue.trim()) {
+                                                                                        handleTurnInto(message.id, turnIntoValue.trim());
+                                                                                    }
+                                                                                }}
+                                                                                disabled={!turnIntoValue.trim()}
+                                                                                className={`
                                                                                 p-1.5 rounded-lg transition-all duration-200
                                                                                 ${turnIntoValue.trim()
-                                                                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 hover:scale-105'
-                                                                                    : isDark ? 'bg-white/10 text-white/30' : 'bg-gray-100 text-gray-400'}
+                                                                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 hover:scale-105'
+                                                                                        : isDark ? 'bg-white/10 text-white/30' : 'bg-gray-100 text-gray-400'}
                                                                             `}
-                                                                        >
-                                                                            <Send className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                    </div>
+                                                                            >
+                                                                                <Send className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
 
-                                                                    {/* Quick Suggestions */}
-                                                                    <div className="flex flex-wrap gap-1.5 mt-3">
-                                                                        {['Image', 'Logo', 'PPT', 'Video', 'Tweet', 'Blog'].map((suggestion) => (
-                                                                            <button
-                                                                                key={suggestion}
-                                                                                type="button"
-                                                                                onClick={() => setTurnIntoValue(suggestion)}
-                                                                                className={`
+                                                                        {/* Quick Suggestions */}
+                                                                        <div className="flex flex-wrap gap-1.5 mt-3">
+                                                                            {['Image', 'Logo', 'PPT', 'Video', 'Tweet', 'Blog'].map((suggestion) => (
+                                                                                <button
+                                                                                    key={suggestion}
+                                                                                    type="button"
+                                                                                    onClick={() => setTurnIntoValue(suggestion)}
+                                                                                    className={`
                                                                                     px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200
                                                                                     ${isDark
-                                                                                        ? 'bg-white/10 text-white/70 hover:bg-emerald-500/20 hover:text-emerald-400'
-                                                                                        : 'bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-700'}
+                                                                                            ? 'bg-white/10 text-white/70 hover:bg-emerald-500/20 hover:text-emerald-400'
+                                                                                            : 'bg-gray-100 text-gray-600 hover:bg-emerald-100 hover:text-emerald-700'}
                                                                                 `}
-                                                                            >
-                                                                                {suggestion}
-                                                                            </button>
-                                                                        ))}
+                                                                                >
+                                                                                    {suggestion}
+                                                                                </button>
+                                                                            ))}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            </>
-                                                        )}
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Premium Glassmorphic Assumptions Panel */}
-                                                {message.assumptions && message.assumptions.length > 0 && (
-                                                    <div
-                                                        className={`
+                                                    {/* Premium Glassmorphic Assumptions Panel */}
+                                                    {message.assumptions && message.assumptions.length > 0 && (
+                                                        <div
+                                                            className={`
                                                             group/assumptions mt-4 rounded-2xl overflow-hidden transition-all duration-500 relative
                                                             ${isDark
-                                                                ? 'bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-transparent backdrop-blur-xl'
-                                                                : 'bg-gradient-to-br from-white/80 via-white/60 to-white/40 backdrop-blur-xl shadow-lg'}
+                                                                    ? 'bg-gradient-to-br from-white/[0.08] via-white/[0.04] to-transparent backdrop-blur-xl'
+                                                                    : 'bg-gradient-to-br from-white/80 via-white/60 to-white/40 backdrop-blur-xl shadow-lg'}
                                                             ${isDark ? 'border border-white/10' : 'border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'}
                                                             hover:scale-[1.01] hover:shadow-2xl
                                                         `}
-                                                        style={{
-                                                            boxShadow: isDark
-                                                                ? '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)'
-                                                                : '0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)'
-                                                        }}
-                                                    >
-                                                        {/* Glowing border effect */}
-                                                        <div className={`
+                                                            style={{
+                                                                boxShadow: isDark
+                                                                    ? '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)'
+                                                                    : '0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)'
+                                                            }}
+                                                        >
+                                                            {/* Glowing border effect */}
+                                                            <div className={`
                                                             absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-hover/assumptions:opacity-100 transition-opacity duration-500
                                                             ${isDark
-                                                                ? 'shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]'
-                                                                : 'shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]'}
+                                                                    ? 'shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]'
+                                                                    : 'shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]'}
                                                         `} />
 
-                                                        {/* Header Button */}
-                                                        <button
-                                                            onClick={() => setExpandedAssumptions(
-                                                                expandedAssumptions === message.id ? null : message.id
-                                                            )}
-                                                            className={`
+                                                            {/* Header Button */}
+                                                            <button
+                                                                onClick={() => setExpandedAssumptions(
+                                                                    expandedAssumptions === message.id ? null : message.id
+                                                                )}
+                                                                className={`
                                                                 w-full px-4 py-3 text-left flex items-center justify-between
                                                                 transition-all duration-300 relative z-10
                                                                 ${isDark
-                                                                    ? 'text-white/80 hover:text-white hover:bg-white/5'
-                                                                    : 'text-gray-700 hover:text-gray-900 hover:bg-white/50'}
+                                                                        ? 'text-white/80 hover:text-white hover:bg-white/5'
+                                                                        : 'text-gray-700 hover:text-gray-900 hover:bg-white/50'}
                                                             `}
-                                                        >
-                                                            <span className="flex items-center gap-2.5">
-                                                                <div className={`
+                                                            >
+                                                                <span className="flex items-center gap-2.5">
+                                                                    <div className={`
                                                                     w-6 h-6 rounded-lg flex items-center justify-center
                                                                     ${isDark
-                                                                        ? 'bg-gradient-to-br from-emerald-500/30 to-teal-500/20'
-                                                                        : 'bg-gradient-to-br from-emerald-100 to-teal-50'}
+                                                                            ? 'bg-gradient-to-br from-emerald-500/30 to-teal-500/20'
+                                                                            : 'bg-gradient-to-br from-emerald-100 to-teal-50'}
                                                                     transition-transform duration-300 group-hover/assumptions:scale-110
                                                                 `}>
-                                                                    <Lightbulb className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                                                                </div>
-                                                                <span className="text-sm font-medium">
-                                                                    Assumptions made ({message.assumptions.length})
+                                                                        <Lightbulb className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                                                    </div>
+                                                                    <span className="text-sm font-medium">
+                                                                        Assumptions made ({message.assumptions.length})
+                                                                    </span>
                                                                 </span>
-                                                            </span>
-                                                            <div className={`
+                                                                <div className={`
                                                                 w-6 h-6 rounded-full flex items-center justify-center
                                                                 transition-all duration-300
                                                                 ${expandedAssumptions === message.id ? 'rotate-180' : ''}
                                                                 ${isDark ? 'bg-white/5' : 'bg-gray-100'}
                                                             `}>
-                                                                <ChevronDown className="w-3.5 h-3.5" />
-                                                            </div>
-                                                        </button>
+                                                                    <ChevronDown className="w-3.5 h-3.5" />
+                                                                </div>
+                                                            </button>
 
-                                                        {/* Expandable Content with Animation */}
-                                                        <div className={`
+                                                            {/* Expandable Content with Animation */}
+                                                            <div className={`
                                                             overflow-hidden transition-all duration-500 ease-out
                                                             ${expandedAssumptions === message.id ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
                                                         `}>
-                                                            <div className="px-4 pb-4 space-y-2">
-                                                                {message.assumptions.map((assumption, idx) => (
-                                                                    <div
-                                                                        key={assumption.key}
-                                                                        className={`
+                                                                <div className="px-4 pb-4 space-y-2">
+                                                                    {message.assumptions.map((assumption, idx) => (
+                                                                        <div
+                                                                            key={assumption.key}
+                                                                            className={`
                                                                             group/item flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl
                                                                             transition-all duration-200 cursor-default
                                                                             ${isDark
-                                                                                ? 'bg-white/[0.03] hover:bg-white/[0.08] border border-white/5'
-                                                                                : 'bg-white/60 hover:bg-white/80 border border-white/50 shadow-sm hover:shadow'}
+                                                                                    ? 'bg-white/[0.03] hover:bg-white/[0.08] border border-white/5'
+                                                                                    : 'bg-white/60 hover:bg-white/80 border border-white/50 shadow-sm hover:shadow'}
                                                                         `}
-                                                                        style={{
-                                                                            animationDelay: `${idx * 50}ms`,
-                                                                            animation: expandedAssumptions === message.id ? 'slideInUp 0.3s ease-out forwards' : 'none'
-                                                                        }}
-                                                                    >
-                                                                        <span className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                                                                            {assumption.key.replace(/_/g, ' ')}:
-                                                                        </span>
+                                                                            style={{
+                                                                                animationDelay: `${idx * 50}ms`,
+                                                                                animation: expandedAssumptions === message.id ? 'slideInUp 0.3s ease-out forwards' : 'none'
+                                                                            }}
+                                                                        >
+                                                                            <span className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                                                                                {assumption.key.replace(/_/g, ' ')}:
+                                                                            </span>
 
-                                                                        {editingAssumption?.messageId === message.id && editingAssumption?.key === assumption.key ? (
-                                                                            <div className="flex items-center gap-2 flex-1">
-                                                                                <input
-                                                                                    value={editingValue}
-                                                                                    onChange={e => setEditingValue(e.target.value)}
-                                                                                    className={`
+                                                                            {editingAssumption?.messageId === message.id && editingAssumption?.key === assumption.key ? (
+                                                                                <div className="flex items-center gap-2 flex-1">
+                                                                                    <input
+                                                                                        value={editingValue}
+                                                                                        onChange={e => setEditingValue(e.target.value)}
+                                                                                        className={`
                                                                                         flex-1 px-3 py-1.5 text-xs rounded-lg border transition-all
                                                                                         ${isDark
-                                                                                            ? 'bg-white/10 border-emerald-500/50 text-white focus:border-emerald-400'
-                                                                                            : 'bg-white border-emerald-300 text-gray-900 focus:border-emerald-500'}
+                                                                                                ? 'bg-white/10 border-emerald-500/50 text-white focus:border-emerald-400'
+                                                                                                : 'bg-white border-emerald-300 text-gray-900 focus:border-emerald-500'}
                                                                                         outline-none focus:ring-2 focus:ring-emerald-500/20
                                                                                     `}
-                                                                                    autoFocus
-                                                                                />
-                                                                                <button
-                                                                                    onClick={() => handleSaveAssumption(message.id, assumption.key, editingValue)}
-                                                                                    className={`
+                                                                                        autoFocus
+                                                                                    />
+                                                                                    <button
+                                                                                        onClick={() => handleSaveAssumption(message.id, assumption.key, editingValue)}
+                                                                                        className={`
                                                                                         p-1.5 rounded-lg transition-all duration-200
                                                                                         bg-gradient-to-r from-emerald-500 to-teal-500 text-white
                                                                                         hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-105
                                                                                     `}
-                                                                                >
-                                                                                    <Check className="w-3 h-3" />
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => setEditingAssumption(null)}
-                                                                                    className={`
+                                                                                    >
+                                                                                        <Check className="w-3 h-3" />
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => setEditingAssumption(null)}
+                                                                                        className={`
                                                                                         p-1.5 rounded-lg transition-all duration-200
                                                                                         ${isDark ? 'bg-white/10 hover:bg-red-500/20 text-white/60 hover:text-red-400' : 'bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500'}
                                                                                     `}
-                                                                                >
-                                                                                    <X className="w-3 h-3" />
-                                                                                </button>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className={`
+                                                                                    >
+                                                                                        <X className="w-3 h-3" />
+                                                                                    </button>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className={`
                                                                                     text-xs font-medium px-2.5 py-1 rounded-lg
                                                                                     ${isDark
-                                                                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                                                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}
+                                                                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                                                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-100'}
                                                                                 `}>
-                                                                                    {assumption.value}
-                                                                                </span>
-                                                                                {assumption.editable && (
-                                                                                    <button
-                                                                                        onClick={() => {
-                                                                                            setEditingAssumption({ messageId: message.id, key: assumption.key });
-                                                                                            setEditingValue(assumption.value);
-                                                                                        }}
-                                                                                        className={`
+                                                                                        {assumption.value}
+                                                                                    </span>
+                                                                                    {assumption.editable && (
+                                                                                        <button
+                                                                                            onClick={() => {
+                                                                                                setEditingAssumption({ messageId: message.id, key: assumption.key });
+                                                                                                setEditingValue(assumption.value);
+                                                                                            }}
+                                                                                            className={`
                                                                                             p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 
                                                                                             transition-all duration-200
                                                                                             ${isDark
-                                                                                                ? 'hover:bg-white/10 text-white/40 hover:text-white'
-                                                                                                : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}
+                                                                                                    ? 'hover:bg-white/10 text-white/40 hover:text-white'
+                                                                                                    : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}
                                                                                         `}
-                                                                                    >
-                                                                                        <Pencil className="w-3 h-3" />
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
+                                                                                        >
+                                                                                            <Pencil className="w-3 h-3" />
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
 
-                                                {/* Feedback now integrated into icon buttons above - removed separate section */}
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                    <div ref={messagesEndRef} />
+                                                    {/* Feedback now integrated into icon buttons above - removed separate section */}
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </div>
                 </div>
-            </div>
 
-            {/* Input Area - Compact premium design */}
-            <div className={`
-                border-t px-3 sm:px-4 py-3 pb-4 mb-2 safe-area-bottom
-                ${isDark ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-100 bg-white'}
-            `}>
-                <div className="mx-auto" style={{ maxWidth: 'min(768px, calc(100% - 8px))' }}>
-                    {/* Input Box with integrated plus menu */}
-                    <div className={`
-                        relative flex items-end gap-2 min-h-12 py-2 px-3 rounded-xl border transition-all duration-300
-                        ${isDark
-                            ? 'bg-white/5 border-white/20 focus-within:border-emerald-500/50'
-                            : 'bg-white border-gray-200 focus-within:border-teal-400 shadow-sm'}
-                    `}>
-                        {/* Plus Button with Dropdown */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowPlusMenu(!showPlusMenu)}
-                                className={`
+                {/* Input Area - Seamless Minimal Design */}
+                <div className="px-4 py-4 pb-6">
+                    <div className="mx-auto" style={{ maxWidth: 'min(768px, calc(100% - 8px))' }}>
+                        {/* Input Box - Floating with subtle shadow */}
+                        <div className={`
+                            relative flex items-end gap-2 min-h-[52px] py-2.5 px-3 rounded-2xl transition-all duration-300
+                            ${isDark
+                                ? 'bg-white/[0.03] border border-white/10 focus-within:border-white/20 focus-within:bg-white/[0.05]'
+                                : 'bg-white border border-gray-200 focus-within:border-gray-300 shadow-sm focus-within:shadow-md'}
+                        `}>
+                            {/* Plus Button with Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowPlusMenu(!showPlusMenu)}
+                                    className={`
                                     w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200
                                     ${showPlusMenu
-                                        ? 'bg-emerald-500/20 text-emerald-500'
-                                        : isDark ? 'text-white/50 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}
+                                            ? 'bg-emerald-500/20 text-emerald-500'
+                                            : isDark ? 'text-white/50 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}
                                 `}
-                            >
-                                <Plus className={`w-5 h-5 transition-transform duration-200 ${showPlusMenu ? 'rotate-45' : ''}`} />
-                            </button>
+                                >
+                                    <Plus className={`w-5 h-5 transition-transform duration-200 ${showPlusMenu ? 'rotate-45' : ''}`} />
+                                </button>
 
-                            {/* Premium Dropdown Menu */}
-                            {showPlusMenu && (
-                                <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setShowPlusMenu(false)} />
-                                    <div
-                                        className={`
+                                {/* Premium Dropdown Menu */}
+                                {showPlusMenu && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowPlusMenu(false)} />
+                                        <div
+                                            className={`
                                             absolute bottom-full left-0 mb-3 z-50
                                             w-48 sm:w-52 rounded-2xl overflow-hidden
                                             backdrop-blur-2xl border
                                             animate-in slide-in-from-bottom-3 duration-300
                                             ${isDark
-                                                ? 'bg-gradient-to-br from-white/10 via-white/5 to-transparent border-white/20'
-                                                : 'bg-gradient-to-br from-white/90 via-white/80 to-white/70 border-white/50'}
+                                                    ? 'bg-gradient-to-br from-white/10 via-white/5 to-transparent border-white/20'
+                                                    : 'bg-gradient-to-br from-white/90 via-white/80 to-white/70 border-white/50'}
                                         `}
-                                        style={{
-                                            boxShadow: isDark
-                                                ? '0 20px 60px rgba(0,0,0,0.5), 0 8px 25px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1), 0 0 40px rgba(16,185,129,0.1)'
-                                                : '0 20px 60px rgba(0,0,0,0.15), 0 8px 25px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8)',
-                                            transform: 'perspective(1000px) rotateX(2deg)',
-                                            transformOrigin: 'bottom center'
-                                        }}
-                                    >
-                                        {/* Attach Files */}
-                                        <button
-                                            onClick={handleAttachFiles}
-                                            className={`
+                                            style={{
+                                                boxShadow: isDark
+                                                    ? '0 20px 60px rgba(0,0,0,0.5), 0 8px 25px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1), 0 0 40px rgba(16,185,129,0.1)'
+                                                    : '0 20px 60px rgba(0,0,0,0.15), 0 8px 25px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.8)',
+                                                transform: 'perspective(1000px) rotateX(2deg)',
+                                                transformOrigin: 'bottom center'
+                                            }}
+                                        >
+                                            {/* Attach Files */}
+                                            <button
+                                                onClick={handleAttachFiles}
+                                                className={`
                                             w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all
                                             ${isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
                                         `}>
-                                            <img src="/icons/attach-files-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
-                                            Attach Files
-                                        </button>
+                                                <img src="/icons/attach-files-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
+                                                Attach Files
+                                            </button>
 
-                                        {/* Divider */}
-                                        <div className={`mx-3 my-1 h-px ${isDark ? 'bg-white/10' : 'bg-gray-100'}`} />
+                                            {/* Divider */}
+                                            <div className={`mx-3 my-1 h-px ${isDark ? 'bg-white/10' : 'bg-gray-100'}`} />
 
-                                        {/* Fast Mode */}
-                                        <button
-                                            onClick={() => { setInputMode('fast'); setShowPlusMenu(false); }}
-                                            className={`
+                                            {/* Fast Mode */}
+                                            <button
+                                                onClick={() => { setInputMode('fast'); setShowPlusMenu(false); }}
+                                                className={`
                                                 w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all
                                                 ${inputMode === 'fast'
-                                                    ? isDark ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-50'
-                                                    : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
+                                                        ? isDark ? 'text-emerald-400 bg-emerald-500/10' : 'text-emerald-600 bg-emerald-50'
+                                                        : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
                                             `}
-                                        >
-                                            <img src="/icons/fast-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
-                                            Fast
-                                            {inputMode === 'fast' && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                        </button>
+                                            >
+                                                <img src="/icons/fast-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
+                                                Fast
+                                                {inputMode === 'fast' && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                            </button>
 
-                                        {/* Search Mode */}
-                                        <button
-                                            onClick={() => { setInputMode('search'); setShowPlusMenu(false); }}
-                                            className={`
+                                            {/* Search Mode */}
+                                            <button
+                                                onClick={() => { setInputMode('search'); setShowPlusMenu(false); }}
+                                                className={`
                                                 w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all
                                                 ${inputMode === 'search'
-                                                    ? isDark ? 'text-blue-400 bg-blue-500/10' : 'text-blue-600 bg-blue-50'
-                                                    : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
+                                                        ? isDark ? 'text-blue-400 bg-blue-500/10' : 'text-blue-600 bg-blue-50'
+                                                        : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
                                             `}
-                                        >
-                                            <img src="/icons/websearch-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
-                                            Web Search
-                                            {inputMode === 'search' && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                        </button>
+                                            >
+                                                <img src="/icons/websearch-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
+                                                Web Search
+                                                {inputMode === 'search' && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                            </button>
 
-                                        {/* Research Mode */}
-                                        <button
-                                            onClick={() => { setInputMode('research'); setShowPlusMenu(false); }}
-                                            className={`
+                                            {/* Research Mode */}
+                                            <button
+                                                onClick={() => { setInputMode('research'); setShowPlusMenu(false); }}
+                                                className={`
                                                 w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all
                                                 ${inputMode === 'research'
-                                                    ? isDark ? 'text-purple-400 bg-purple-500/10' : 'text-purple-600 bg-purple-50'
-                                                    : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
+                                                        ? isDark ? 'text-purple-400 bg-purple-500/10' : 'text-purple-600 bg-purple-50'
+                                                        : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
                                             `}
-                                        >
-                                            <img src="/icons/research-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
-                                            Research
-                                            {inputMode === 'research' && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                        </button>
+                                            >
+                                                <img src="/icons/research-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
+                                                Research
+                                                {inputMode === 'research' && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                            </button>
 
-                                        {/* Think Longer Mode */}
-                                        <button
-                                            onClick={() => { setInputMode('think'); setShowPlusMenu(false); }}
-                                            className={`
+                                            {/* Think Longer Mode */}
+                                            <button
+                                                onClick={() => { setInputMode('think'); setShowPlusMenu(false); }}
+                                                className={`
                                                 w-full px-4 py-2.5 text-left text-sm flex items-center gap-3 transition-all
                                                 ${inputMode === 'think'
-                                                    ? isDark ? 'text-amber-400 bg-amber-500/10' : 'text-amber-600 bg-amber-50'
-                                                    : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
+                                                        ? isDark ? 'text-amber-400 bg-amber-500/10' : 'text-amber-600 bg-amber-50'
+                                                        : isDark ? 'text-white/80 hover:bg-white/10' : 'text-gray-700 hover:bg-gray-50'}
                                             `}
-                                        >
-                                            <img src="/icons/think-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
-                                            Think Longer
-                                            {inputMode === 'think' && <Check className="w-3.5 h-3.5 ml-auto" />}
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                                            >
+                                                <img src="/icons/think-icon.png" alt="" className="w-4 h-4 object-contain" style={{ filter: isDark ? 'invert(1)' : 'none' }} />
+                                                Think Longer
+                                                {inputMode === 'think' && <Check className="w-3.5 h-3.5 ml-auto" />}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                        {/* Hidden File Input */}
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept="image/*,.pdf,.doc,.docx,.txt,.md,.csv,.json,.xlsx,.xls,audio/*,video/*"
-                            onChange={handleFileSelect}
-                            className="hidden"
-                        />
+                            {/* Hidden File Input */}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept="image/*,.pdf,.doc,.docx,.txt,.md,.csv,.json,.xlsx,.xls,audio/*,video/*"
+                                onChange={handleFileSelect}
+                                className="hidden"
+                            />
 
-                        {/* Attachment Preview */}
-                        {attachments.length > 0 && (
-                            <div className="flex items-center gap-2 mr-2">
-                                {attachments.map((attachment, index) => (
-                                    <div
-                                        key={index}
-                                        className={`
+                            {/* Attachment Preview */}
+                            {attachments.length > 0 && (
+                                <div className="flex items-center gap-2 mr-2">
+                                    {attachments.map((attachment, index) => (
+                                        <div
+                                            key={index}
+                                            className={`
                                             relative group flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs
                                             ${isDark ? 'bg-white/10 text-white/80' : 'bg-gray-100 text-gray-700'}
                                         `}
-                                    >
-                                        {attachment.type === 'image' && attachment.preview ? (
-                                            <img src={attachment.preview} alt="" className="w-6 h-6 rounded object-cover" />
-                                        ) : (
-                                            <FileText className="w-4 h-4" />
-                                        )}
-                                        <span className="max-w-[80px] truncate">{attachment.file.name}</span>
-                                        <button
-                                            onClick={() => removeAttachment(index)}
-                                            className={`
+                                        >
+                                            {attachment.type === 'image' && attachment.preview ? (
+                                                <img src={attachment.preview} alt="" className="w-6 h-6 rounded object-cover" />
+                                            ) : (
+                                                <FileText className="w-4 h-4" />
+                                            )}
+                                            <span className="max-w-[80px] truncate">{attachment.file.name}</span>
+                                            <button
+                                                onClick={() => removeAttachment(index)}
+                                                className={`
                                                 ml-1 p-0.5 rounded-full opacity-60 hover:opacity-100 transition-opacity
                                                 ${isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'}
                                             `}
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
-                        <textarea
-                            ref={(el) => {
-                                // Auto-expand logic
-                                if (el) {
-                                    el.style.height = 'auto';
-                                    el.style.height = Math.min(el.scrollHeight, 150) + 'px';
-                                }
-                            }}
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyPress}
-                            placeholder="Ask me anything... (Shift+Enter for new line)"
-                            disabled={isLoading || clarifyingQuestions.length > 0}
-                            rows={1}
-                            className={`
+                            <textarea
+                                ref={(el) => {
+                                    // Auto-expand logic
+                                    if (el) {
+                                        el.style.height = 'auto';
+                                        el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+                                    }
+                                }}
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={handleKeyPress}
+                                placeholder="Ask me anything... (Shift+Enter for new line)"
+                                disabled={isLoading || clarifyingQuestions.length > 0}
+                                rows={1}
+                                aria-label="Message input"
+                                aria-describedby="char-count"
+                                className={`
                                 flex-1 bg-transparent border-none outline-none text-sm resize-none overflow-y-auto
                                 ${isDark ? 'text-white placeholder-white/40' : 'text-gray-900 placeholder-gray-400'}
                                 ${isLoading ? 'opacity-50' : ''}
                             `}
-                            style={{ maxHeight: '150px', minHeight: '24px' }}
-                        />
+                                style={{ maxHeight: '150px', minHeight: '24px' }}
+                            />
 
-                        {/* Enhance Prompt button - Magic Wand */}
-                        <button
-                            onClick={handleEnhancePrompt}
-                            disabled={!inputValue.trim() || isEnhancing || isLoading}
-                            title="Enhance prompt with AI"
-                            className={`
+                            {/* Enhance Prompt button - Magic Wand */}
+                            <button
+                                onClick={handleEnhancePrompt}
+                                disabled={!inputValue.trim() || isEnhancing || isLoading}
+                                title="Enhance prompt with AI"
+                                aria-label="Enhance prompt with AI"
+                                className={`
                                 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200
                                 ${!inputValue.trim() || isEnhancing || isLoading
-                                    ? 'opacity-40 cursor-not-allowed'
-                                    : isDark
-                                        ? 'hover:bg-purple-500/20 cursor-pointer'
-                                        : 'hover:bg-purple-50 cursor-pointer'}
+                                        ? 'opacity-40 cursor-not-allowed'
+                                        : isDark
+                                            ? 'hover:bg-purple-500/20 cursor-pointer'
+                                            : 'hover:bg-purple-50 cursor-pointer'}
                             `}
-                        >
-                            {isEnhancing ? (
-                                <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <svg
-                                    className="w-4 h-4"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    style={{
-                                        color: '#a855f7',
-                                        filter: 'drop-shadow(0 0 4px rgba(168, 85, 247, 0.4))'
-                                    }}
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M15 4l-1 1m0 0l-7 7m7-7l1-1m-8 8l-2.5 2.5a1.5 1.5 0 102.121 2.121L7 18m0 0l7-7"
-                                    />
-                                    <path strokeWidth={2} d="M17 3l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5.5-1z" />
-                                    <path strokeWidth={2} d="M21 7l.3.7.7.3-.7.3-.3.7-.3-.7-.7-.3.7-.3.3-.7z" />
-                                </svg>
-                            )}
-                        </button>
+                            >
+                                {isEnhancing ? (
+                                    <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <svg
+                                        className="w-4 h-4"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        style={{
+                                            color: '#a855f7',
+                                            filter: 'drop-shadow(0 0 4px rgba(168, 85, 247, 0.4))'
+                                        }}
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 4l-1 1m0 0l-7 7m7-7l1-1m-8 8l-2.5 2.5a1.5 1.5 0 102.121 2.121L7 18m0 0l7-7"
+                                        />
+                                        <path strokeWidth={2} d="M17 3l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5.5-1z" />
+                                        <path strokeWidth={2} d="M21 7l.3.7.7.3-.7.3-.3.7-.3-.7-.7-.3.7-.3.3-.7z" />
+                                    </svg>
+                                )}
+                            </button>
 
-                        {isLoading ? (
-                            <button
-                                onClick={handleStopGeneration}
-                                title="Stop generation"
-                                className={`
+                            {/* Voice Input Button */}
+                            {speechSupported && (
+                                <button
+                                    onClick={toggleVoiceInput}
+                                    disabled={isLoading}
+                                    title={isListening ? "Stop listening" : "Voice input"}
+                                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                                    aria-pressed={isListening}
+                                    className={`
+                                    w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 relative
+                                    ${isLoading ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                                    ${isListening
+                                            ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30'
+                                            : isDark
+                                                ? 'hover:bg-white/10 text-white/60 hover:text-white'
+                                                : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700'}
+                                `}
+                                >
+                                    {/* Pulse animation when listening */}
+                                    {isListening && (
+                                        <span className="absolute inset-0 rounded-xl animate-ping bg-red-500/50" />
+                                    )}
+                                    <svg
+                                        className="w-4 h-4 relative z-10"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                        <line x1="12" y1="19" x2="12" y2="23" />
+                                        <line x1="8" y1="23" x2="16" y2="23" />
+                                    </svg>
+                                </button>
+                            )}
+
+                            {isLoading ? (
+                                <button
+                                    onClick={handleStopGeneration}
+                                    title="Stop generation"
+                                    aria-label="Stop AI generation"
+                                    className={`
                                     w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
                                     bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30 hover:scale-105
                                 `}
-                            >
-                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                    <rect x="6" y="6" width="12" height="12" rx="2" />
-                                </svg>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => handleSendMessage()}
-                                disabled={!inputValue.trim()}
-                                className={`
+                                >
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                                    </svg>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => handleSendMessage()}
+                                    disabled={!inputValue.trim()}
+                                    aria-label="Send message"
+                                    className={`
                                     w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
                                     ${inputValue.trim()
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 hover:scale-105'
-                                        : isDark ? 'bg-white/10 text-white/40' : 'bg-gray-100 text-gray-400'}
+                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 hover:scale-105'
+                                            : isDark ? 'bg-white/10 text-white/40' : 'bg-gray-100 text-gray-400'}
                                 `}
-                            >
-                                <Send className="w-4 h-4" />
-                            </button>
+                                >
+                                    <Send className="w-4 h-4" aria-hidden="true" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Minimal Mode Indicator */}
+                        {inputMode !== 'normal' && (
+                            <div className="flex justify-center mt-2">
+                                <button
+                                    onClick={() => setInputMode('normal')}
+                                    className={`
+                                        flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all
+                                        ${isDark ? 'text-white/50 hover:text-white/70 hover:bg-white/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}
+                                    `}
+                                >
+                                    {inputMode === 'search' && '🔍 Web Search'}
+                                    {inputMode === 'research' && '📚 Deep Research'}
+                                    {inputMode === 'image' && '🎨 Image'}
+                                    {inputMode === 'fast' && '⚡ Fast'}
+                                    {inputMode === 'think' && '🧠 Think Longer'}
+                                    <X className="w-3 h-3 opacity-50" />
+                                </button>
+                            </div>
                         )}
                     </div>
-
-                    {/* Selected Mode Indicator - Only shows when a mode is selected */}
-                    {inputMode !== 'normal' && (
-                        <div className="flex justify-center mt-3">
-                            <button
-                                onClick={() => setInputMode('normal')}
-                                className={`
-                                flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border
-                                ${inputMode === 'search' ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : ''}
-                                ${inputMode === 'research' ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : ''}
-                                ${inputMode === 'image' ? 'bg-pink-500/20 border-pink-500/50 text-pink-400' : ''}
-                                ${inputMode === 'fast' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : ''}
-                                ${inputMode === 'think' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : ''}
-                            `}
-                            >
-                                {inputMode === 'search' && <><img src="/icons/websearch-icon.png" alt="" className="w-4 h-4 invert" /> Web Search mode</>}
-                                {inputMode === 'research' && <><img src="/icons/research-icon.png" alt="" className="w-4 h-4 invert" /> Research mode</>}
-                                {inputMode === 'image' && <><ImageIcon className="w-4 h-4" /> Create image</>}
-                                {inputMode === 'fast' && <><Zap className="w-4 h-4" /> Fast mode</>}
-                                {inputMode === 'think' && <><img src="/icons/think-icon.png" alt="" className="w-4 h-4 invert" /> Think Longer mode</>}
-                                <X className="w-3.5 h-3.5 ml-1 opacity-60 hover:opacity-100" />
-                            </button>
-                        </div>
-                    )}
                 </div>
-            </div>
 
-            {/* Pricing Modal */}
-            {showPricingModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className={`
+                {/* Pricing Modal */}
+                {showPricingModal && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className={`
                         max-w-md w-full mx-4 p-6 rounded-2xl
                         ${isDark ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white'}
                     `}>
-                        <div className="text-center">
-                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                                <Zap className="w-8 h-8 text-white" />
-                            </div>
-                            <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                Upgrade to Premium
-                            </h2>
-                            <p className={`text-sm mb-6 ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
-                                {pricingReason}
-                            </p>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setShowPricingModal(false)}
-                                    className={`flex-1 px-4 py-2 rounded-lg font-medium ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                >
-                                    Maybe Later
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowPricingModal(false);
-                                        window.location.href = '/pricing';
-                                    }}
-                                    className="flex-1 px-4 py-2 rounded-lg font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg"
-                                >
-                                    View Plans
-                                </button>
+                            <div className="text-center">
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                                    <Zap className="w-8 h-8 text-white" />
+                                </div>
+                                <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    Upgrade to Premium
+                                </h2>
+                                <p className={`text-sm mb-6 ${isDark ? 'text-white/60' : 'text-gray-600'}`}>
+                                    {pricingReason}
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowPricingModal(false)}
+                                        className={`flex-1 px-4 py-2 rounded-lg font-medium ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Maybe Later
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowPricingModal(false);
+                                            window.location.href = '/pricing';
+                                        }}
+                                        className="flex-1 px-4 py-2 rounded-lg font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg"
+                                    >
+                                        View Plans
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Chat Settings Modal */}
-            {showChatSettings && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className={`
+                {/* Chat Settings Modal */}
+                {showChatSettings && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className={`
                         max-w-md w-full mx-4 p-6 rounded-2xl
                         ${isDark ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white'}
                     `}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                                    <Settings className="w-5 h-5 text-white" />
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                                        <Settings className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                            Chat Settings
+                                        </h2>
+                                        <p className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                                            Customize this conversation
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                        Chat Settings
-                                    </h2>
-                                    <p className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                                        Customize this conversation
-                                    </p>
-                                </div>
+                                <button
+                                    onClick={() => setShowChatSettings(false)}
+                                    className={`p-2 rounded-lg ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-500'}`}
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setShowChatSettings(false)}
-                                className={`p-2 rounded-lg ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-500'}`}
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
 
-                        {/* Context & Memory */}
-                        <div className="mb-5">
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
-                                Context & Memory
-                            </label>
-                            <textarea
-                                value={chatSettings.contextMemory}
-                                onChange={(e) => setChatSettings(prev => ({ ...prev, contextMemory: e.target.value }))}
-                                placeholder="e.g., I am a software developer working on a React project..."
-                                className={`w-full px-3 py-2 rounded-xl border text-sm resize-none h-20
+                            {/* Context & Memory */}
+                            <div className="mb-5">
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
+                                    Context & Memory
+                                </label>
+                                <textarea
+                                    value={chatSettings.contextMemory}
+                                    onChange={(e) => setChatSettings(prev => ({ ...prev, contextMemory: e.target.value }))}
+                                    placeholder="e.g., I am a software developer working on a React project..."
+                                    className={`w-full px-3 py-2 rounded-xl border text-sm resize-none h-20
                                     ${isDark
-                                        ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
-                                        : 'bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400'}`}
-                            />
-                            <p className={`text-xs mt-1.5 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
-                                This will be used as context in every message
-                            </p>
-                        </div>
-
-                        {/* Response Style */}
-                        <div className="mb-5">
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
-                                AI Response Style
-                            </label>
-                            <select
-                                value={chatSettings.responseStyle}
-                                onChange={(e) => setChatSettings(prev => ({ ...prev, responseStyle: e.target.value as any }))}
-                                className={`w-full px-3 py-2 rounded-xl border text-sm
-                                    ${isDark
-                                        ? 'bg-white/5 border-white/10 text-white'
-                                        : 'bg-gray-50 border-gray-200 text-gray-900'}`}
-                            >
-                                <option value="concise">⚡ Concise - Short and direct</option>
-                                <option value="balanced">⚖️ Balanced - Thorough but focused</option>
-                                <option value="detailed">📚 Detailed - Comprehensive explanations</option>
-                            </select>
-                        </div>
-
-                        {/* Conversation Pattern */}
-                        <div className="mb-6">
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
-                                Future Conversation Style
-                            </label>
-                            <textarea
-                                value={chatSettings.conversationPattern}
-                                onChange={(e) => setChatSettings(prev => ({ ...prev, conversationPattern: e.target.value }))}
-                                placeholder="e.g., Always use bullet points, be formal, include code examples..."
-                                className={`w-full px-3 py-2 rounded-xl border text-sm resize-none h-16
-                                    ${isDark
-                                        ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
-                                        : 'bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400'}`}
-                            />
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowChatSettings(false)}
-                                className={`flex-1 px-4 py-2 rounded-xl font-medium text-sm
-                                    ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => setShowChatSettings(false)}
-                                className="flex-1 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg"
-                            >
-                                Save Settings
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Share Modal */}
-            {showShareModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className={`
-                        max-w-md w-full mx-4 p-6 rounded-2xl
-                        ${isDark ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white'}
-                    `}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-                                    <Share2 className="w-5 h-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                        Share Chat
-                                    </h2>
-                                    <p className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
-                                        Share this conversation
-                                    </p>
-                                </div>
+                                            ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
+                                            : 'bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400'}`}
+                                />
+                                <p className={`text-xs mt-1.5 ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                                    This will be used as context in every message
+                                </p>
                             </div>
-                            <button
-                                onClick={() => setShowShareModal(false)}
-                                className={`p-2 rounded-lg ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-500'}`}
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
 
-                        {/* Share Link */}
-                        <div className="mb-5">
-                            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
-                                Share Link
-                            </label>
-                            <div className="flex gap-2">
-                                <input
-                                    readOnly
-                                    value={`${window.location.origin}/chat/${currentProjectId || 'new'}`}
-                                    className={`flex-1 px-3 py-2 rounded-xl border text-sm
-                                        ${isDark
+                            {/* Response Style */}
+                            <div className="mb-5">
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
+                                    AI Response Style
+                                </label>
+                                <select
+                                    value={chatSettings.responseStyle}
+                                    onChange={(e) => setChatSettings(prev => ({ ...prev, responseStyle: e.target.value as any }))}
+                                    className={`w-full px-3 py-2 rounded-xl border text-sm
+                                    ${isDark
                                             ? 'bg-white/5 border-white/10 text-white'
                                             : 'bg-gray-50 border-gray-200 text-gray-900'}`}
-                                />
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(`${window.location.origin}/chat/${currentProjectId || 'new'}`);
-                                        showToast('success', 'Link copied!');
-                                    }}
-                                    className="px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg"
                                 >
-                                    Copy
+                                    <option value="concise">⚡ Concise - Short and direct</option>
+                                    <option value="balanced">⚖️ Balanced - Thorough but focused</option>
+                                    <option value="detailed">📚 Detailed - Comprehensive explanations</option>
+                                </select>
+                            </div>
+
+                            {/* Conversation Pattern */}
+                            <div className="mb-6">
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
+                                    Future Conversation Style
+                                </label>
+                                <textarea
+                                    value={chatSettings.conversationPattern}
+                                    onChange={(e) => setChatSettings(prev => ({ ...prev, conversationPattern: e.target.value }))}
+                                    placeholder="e.g., Always use bullet points, be formal, include code examples..."
+                                    className={`w-full px-3 py-2 rounded-xl border text-sm resize-none h-16
+                                    ${isDark
+                                            ? 'bg-white/5 border-white/10 text-white placeholder:text-white/40'
+                                            : 'bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400'}`}
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowChatSettings(false)}
+                                    className={`flex-1 px-4 py-2 rounded-xl font-medium text-sm
+                                    ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => setShowChatSettings(false)}
+                                    className="flex-1 px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg"
+                                >
+                                    Save Settings
                                 </button>
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        {/* Actions */}
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setShowShareModal(false)}
-                                className={`flex-1 px-4 py-2 rounded-xl font-medium text-sm
+                {/* Share Modal */}
+                {showShareModal && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className={`
+                        max-w-md w-full mx-4 p-6 rounded-2xl
+                        ${isDark ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white'}
+                    `}>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                                        <Share2 className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                            Share Chat
+                                        </h2>
+                                        <p className={`text-xs ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+                                            Share this conversation
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className={`p-2 rounded-lg ${isDark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-500'}`}
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Share Link */}
+                            <div className="mb-5">
+                                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-700'}`}>
+                                    Share Link
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        readOnly
+                                        value={`${window.location.origin}/chat/${currentProjectId || 'new'}`}
+                                        className={`flex-1 px-3 py-2 rounded-xl border text-sm
+                                        ${isDark
+                                                ? 'bg-white/5 border-white/10 text-white'
+                                                : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`${window.location.origin}/chat/${currentProjectId || 'new'}`);
+                                            showToast('success', 'Link copied!');
+                                        }}
+                                        className="px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className={`flex-1 px-4 py-2 rounded-xl font-medium text-sm
                                     ${isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                            >
-                                Close
-                            </button>
+                                >
+                                    Close
+                                </button>
+                            </div>
                         </div>
                     </div>
+                )}
+            </div>
+
+            {/* Studio Split-View Panel */}
+            {activeStudio === 'design' && (
+                <div className="w-1/2 h-full">
+                    <DesignStudioCanvas
+                        isDark={isDark}
+                        isOpen={true}
+                        onClose={() => setActiveStudio(null)}
+                        variations={designVariations}
+                        isGenerating={studioGenerating}
+                        prompt={studioPrompt}
+                        onDownloadAll={() => {
+                            // Download all variations
+                            designVariations.forEach(v => {
+                                const link = document.createElement('a');
+                                link.href = v.url;
+                                link.download = `${v.label.toLowerCase().replace(/\s+/g, '-')}.png`;
+                                link.click();
+                            });
+                        }}
+                    />
+                </div>
+            )}
+
+            {activeStudio === 'ppt' && (
+                <div className="w-1/2 h-full">
+                    <PPTStudioCanvas
+                        isDark={isDark}
+                        isOpen={true}
+                        onClose={() => setActiveStudio(null)}
+                        slides={pptSlides}
+                        isGenerating={studioGenerating}
+                        prompt={studioPrompt}
+                    />
                 </div>
             )}
         </div>
@@ -3441,3 +3865,4 @@ ${interpretation.enhancedPrompt}
 };
 
 export default SuperKroniqChat;
+

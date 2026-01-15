@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Bug, Eye, EyeOff, Check, X, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Check, X, ArrowRight } from 'lucide-react';
 import { PromoService } from '../../lib/promoService';
 import PromoBanner from '../Promo/PromoBanner';
 import PromoSuccessModal from '../Promo/PromoSuccessModal';
@@ -8,6 +9,8 @@ import OfferExpiredModal from '../Promo/OfferExpiredModal';
 import { trackSignupPageView, trackSignupComplete, trackEvent } from '../../lib/analyticsService';
 
 export const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +24,7 @@ export const LoginPage: React.FC = () => {
   const [showPromoSuccess, setShowPromoSuccess] = useState(false);
   const [promoTokensAwarded, setPromoTokensAwarded] = useState(0);
   const [showOfferExpired, setShowOfferExpired] = useState(false);
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const { signIn, signUp, signInWithGoogle, currentUser } = useAuth();
 
   const getPasswordStrength = () => {
@@ -132,19 +136,36 @@ export const LoginPage: React.FC = () => {
       }
 
       clearTimeout(timeoutId);
-      setTimeout(() => setLoading(false), 1000);
+
+      // On successful login, redirect to app (or returnTo URL)
+      if (isLogin) {
+        const returnTo = searchParams.get('returnTo') || '/app';
+        navigate(returnTo, { replace: true });
+      }
+
+      setLoading(false);
     } catch (err: any) {
       clearTimeout(timeoutId);
       console.error('Auth error:', err);
+
+      // Check if email confirmation is required
+      if (err.message === 'CONFIRMATION_REQUIRED' || err.requiresConfirmation) {
+        setShowConfirmationMessage(true);
+        setLoading(false);
+        return;
+      }
+
       const errorMessage = err.message || 'Authentication failed';
       if (errorMessage.includes('Invalid login credentials')) {
         setError('Invalid email or password.');
-      } else if (errorMessage.includes('email-already-in-use')) {
+      } else if (errorMessage.includes('email-already-in-use') || errorMessage.includes('already registered')) {
         setError('This email is already registered. Please sign in instead.');
       } else if (errorMessage.includes('user-not-found')) {
         setError('No account found with this email. Please sign up first.');
       } else if (errorMessage.includes('wrong-password') || errorMessage.includes('invalid-credential')) {
         setError('Invalid email or password. Please try again.');
+      } else if (errorMessage.includes('Email not confirmed')) {
+        setError('Please confirm your email before signing in. Check your inbox.');
       } else {
         setError(errorMessage);
       }
@@ -253,6 +274,31 @@ export const LoginPage: React.FC = () => {
 
         {/* Promo Banner */}
         {!isLogin && promoCode && <PromoBanner campaignCode={promoCode} />}
+
+        {/* Email Confirmation Success Message */}
+        {showConfirmationMessage && (
+          <div className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-500/10 border border-teal-500/30 text-center animate-fade-in-up">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-teal-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Check Your Email! 📧</h3>
+            <p className="text-white/70 text-sm mb-4">
+              We've sent a confirmation link to <strong className="text-teal-400">{email}</strong>.
+              <br />Click the link in your email to activate your account.
+            </p>
+            <button
+              onClick={() => {
+                setShowConfirmationMessage(false);
+                setIsLogin(true);
+              }}
+              className="text-teal-400 hover:text-teal-300 text-sm font-medium underline"
+            >
+              Already confirmed? Sign in here
+            </button>
+          </div>
+        )}
 
         {/* Google Sign In - Primary */}
         <button
