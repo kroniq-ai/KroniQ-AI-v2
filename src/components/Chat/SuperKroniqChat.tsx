@@ -698,50 +698,6 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
         setShowPlusMenu(false);
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        const newAttachments: { file: File; preview?: string; type: 'image' | 'document' | 'audio' | 'video' }[] = [];
-
-        Array.from(files).forEach(file => {
-            let type: 'image' | 'document' | 'audio' | 'video' = 'document';
-            if (file.type.startsWith('image/')) type = 'image';
-            else if (file.type.startsWith('audio/')) type = 'audio';
-            else if (file.type.startsWith('video/')) type = 'video';
-
-            const attachment: { file: File; preview?: string; type: 'image' | 'document' | 'audio' | 'video' } = { file, type };
-
-            // Create preview for images
-            if (type === 'image') {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    setAttachments(prev =>
-                        prev.map(a =>
-                            a.file === file ? { ...a, preview: ev.target?.result as string } : a
-                        )
-                    );
-                };
-                reader.readAsDataURL(file);
-            }
-
-            newAttachments.push(attachment);
-        });
-
-        setAttachments(prev => [...prev, ...newAttachments]);
-
-        // Reset file input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-
-        showToast('success', `${files.length} file(s) attached`);
-    };
-
-    const removeAttachment = (index: number) => {
-        setAttachments(prev => prev.filter((_, i) => i !== index));
-    };
-
     // ===== STOP GENERATION HANDLER =====
 
     const handleStopGeneration = () => {
@@ -1129,7 +1085,7 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
         }
 
         try {
-            let response: string;
+            let response: string = '';
             let mediaUrl: string | undefined;
             let mediaType: 'image' | 'video' | 'ppt' | undefined;
             let pptStructure: any | undefined;
@@ -2371,11 +2327,6 @@ ${interpretation.enhancedPrompt}
 
     const handleWebSearch = () => {
         setInputValue('[Search] ');
-        setShowPlusMenu(false);
-    };
-
-    const handleAttachFiles = () => {
-        fileInputRef.current?.click();
         setShowPlusMenu(false);
     };
 

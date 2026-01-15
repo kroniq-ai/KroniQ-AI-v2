@@ -1,0 +1,122 @@
+﻿[36mvite v5.4.20 [32mbuilding for production...[36m[39m
+transforming...
+node.exe : 
+[baseline-browser-mapping] The data 
+in this module is over two months 
+old.  To ensure accurate Baseline 
+data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpe 
+   cified: ([baseline-brows...ping@  
+  latest -D`:String) [], RemoteExc   
+ eption
+    + FullyQualifiedErrorId : Native 
+   CommandError
+ 
+[32mΓ£ô[39m 1058 modules transformed.
+[31mx[39m Build failed in 2.49s
+[31merror during build:
+[31m[vite:esbuild] Transform failed 
+with 3 errors:
+C:/Users/atire/Downloads/Desktop/Kron
+iq Ai/Development/Code 
+Project/KroniQ v1/src/components/Chat
+/SuperKroniqChat.tsx:2293:10: ERROR: 
+The symbol "handleFileSelect" has 
+already been declared
+C:/Users/atire/Downloads/Desktop/Kron
+iq Ai/Development/Code 
+Project/KroniQ v1/src/components/Chat
+/SuperKroniqChat.tsx:2332:10: ERROR: 
+The symbol "removeAttachment" has 
+already been declared
+C:/Users/atire/Downloads/Desktop/Kron
+iq Ai/Development/Code 
+Project/KroniQ v1/src/components/Chat
+/SuperKroniqChat.tsx:2377:10: ERROR: 
+The symbol "handleAttachFiles" has 
+already been declared[31m
+file: [36mC:/Users/atire/Downloads/D
+esktop/Kroniq Ai/Development/Code 
+Project/KroniQ v1/src/components/Chat
+/SuperKroniqChat.tsx:2293:10[31m
+[33m
+[33mThe symbol "handleFileSelect" 
+has already been declared[33m
+2291|      // ===== FILE ATTACHMENT 
+HANDLERS =====
+2292|  
+2293|      const handleFileSelect = 
+async (e: 
+React.ChangeEvent<HTMLInputElement>) 
+=> {
+   |            ^
+2294|          const files = 
+e.target.files;
+2295|          if (!files || 
+files.length === 0) return;
+
+[33mThe symbol "removeAttachment" 
+has already been declared[33m
+2330|      };
+2331|  
+2332|      const removeAttachment = 
+(index: number) => {
+   |            ^
+2333|          setAttachments(prev 
+=> prev.filter((_, i) => i !== 
+index));
+2334|      };
+
+[33mThe symbol "handleAttachFiles" 
+has already been declared[33m
+2375|      };
+2376|  
+2377|      const handleAttachFiles = 
+() => {
+   |            ^
+2378|          
+fileInputRef.current?.click();
+2379|          
+setShowPlusMenu(false);
+[31m
+    at failureErrorWithLog (C:\Users\
+atire\Downloads\Desktop\Kroniq 
+Ai\Development\Code Project\KroniQ v1
+\node_modules\esbuild\lib\main.js:147
+2:15)
+    at C:\Users\atire\Downloads\Deskt
+op\Kroniq Ai\Development\Code 
+Project\KroniQ v1\node_modules\esbuil
+d\lib\main.js:755:50
+    at responseCallbacks.<computed> (
+C:\Users\atire\Downloads\Desktop\Kron
+iq Ai\Development\Code 
+Project\KroniQ v1\node_modules\esbuil
+d\lib\main.js:622:9)
+    at handleIncomingPacket (C:\Users
+\atire\Downloads\Desktop\Kroniq 
+Ai\Development\Code Project\KroniQ v1
+\node_modules\esbuild\lib\main.js:677
+:12)
+    at Socket.readFromStdout (C:\User
+s\atire\Downloads\Desktop\Kroniq 
+Ai\Development\Code Project\KroniQ v1
+\node_modules\esbuild\lib\main.js:600
+:7)
+    at Socket.emit 
+(node:events:519:28)
+    at addChunk (node:internal/stream
+s/readable:561:12)
+    at readableAddChunkPushByteMode (
+node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/s
+treams/readable:392:5)
+    at Pipe.onStreamRead (node:intern
+al/stream_base_commons:189:23)[39m
