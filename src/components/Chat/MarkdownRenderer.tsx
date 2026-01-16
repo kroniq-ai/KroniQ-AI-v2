@@ -252,13 +252,18 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isD
       // Ordered lists - but check if it's actually a section header first
       const orderedListMatch = line.match(/^(\d+)\.\s+(.+)/);
       if (orderedListMatch) {
-        const itemContent = orderedListMatch[2];
-        // Detect if this is a section header (ends with colon or is short title-like)
-        const isSectionHeader = itemContent.match(/^[A-Z][^.!?]{0,50}:?\s*$/) ||
-          itemContent.match(/^[A-Z][^.!?]{0,40}$/) ||
-          itemContent.endsWith(':');
+        let itemContent = orderedListMatch[2];
+        // Strip ** from content (e.g., "**Types**" -> "Types")
+        const strippedContent = itemContent.replace(/^\*\*|\*\*$/g, '').replace(/\*\*/g, '').trim();
 
-        if (isSectionHeader && itemContent.length < 60) {
+        // Detect if this is a section header (ends with colon, is short title-like, or wrapped in **)
+        const wasWrappedInBold = itemContent.startsWith('**') && itemContent.endsWith('**');
+        const isSectionHeader = wasWrappedInBold ||
+          strippedContent.match(/^[A-Z][^.!?]{0,50}:?\s*$/) ||
+          strippedContent.match(/^[A-Z][^.!?]{0,40}$/) ||
+          strippedContent.endsWith(':');
+
+        if (isSectionHeader && strippedContent.length < 60) {
           // Render as H3 subsection
           elements.push(
             <h3
@@ -267,14 +272,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isD
               style={{ fontFamily: "'Inter', sans-serif" }}
             >
               <span className={`${colors.accent}`}>{orderedListMatch[1]}.</span>
-              {itemContent.replace(/:$/, '')}
+              {strippedContent.replace(/:$/, '')}
             </h3>
           );
           continue;
         } else {
           // Regular ordered list item
           flushList();
-          currentOrderedList.push(itemContent);
+          currentOrderedList.push(strippedContent);
           continue;
         }
       } else {
@@ -322,16 +327,19 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isD
       }
 
       // Numbered sections like "1) Definition & Origin" or "2) Key Physics" - treat as H2
-      const numberedSectionMatch = line.match(/^(\d+)\)\s*(.+)/);
+      // Also handles "2. **Parts of a Black Hole**" format
+      const numberedSectionMatch = line.match(/^(\d+)[\.\)]\s*(.+)/);
       if (numberedSectionMatch) {
+        // Strip ** from section titles (e.g., "**Parts of a Black Hole**" -> "Parts of a Black Hole")
+        let sectionTitle = numberedSectionMatch[2].replace(/^\*\*|\*\*$/g, '').replace(/\*\*/g, '');
         elements.push(
           <div key={`numbered-h2-${elements.length}`} className="mt-10 mb-4">
             <h2
               className={`text-2xl md:text-3xl font-bold ${colors.h2} leading-tight tracking-tight flex items-baseline gap-3`}
               style={{ fontFamily: "'Inter', sans-serif" }}
             >
-              <span className={`${colors.accent} text-xl`}>{numberedSectionMatch[1]})</span>
-              {numberedSectionMatch[2]}
+              <span className={`${colors.accent} text-xl`}>{numberedSectionMatch[1]}.</span>
+              {sectionTitle}
             </h2>
             <div className={`mt-2 h-1 w-16 bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full`} />
           </div>
