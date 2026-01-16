@@ -22,7 +22,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { getOpenRouterResponseWithUsage } from '../../lib/openRouterService';
-import { getMessages, createProject, addMessage } from '../../lib/chatService';
+import { getMessages, createProject, addMessage, renameProject } from '../../lib/chatService';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { PPTPreview } from './PPTPreview';
 import DesignStudioCanvas from './DesignStudioCanvas';
@@ -1861,9 +1861,26 @@ ${interpretation.enhancedPrompt}
                         mediaUrl,
                         mediaType
                     });
+                    console.log('✅ [Chat] Saved AI response to database, projId:', projId);
+
+                    // Generate AI chat title after first message (only if title is default)
+                    if (chatTitle === 'New Chat' && userMessage) {
+                        try {
+                            const generatedTitle = await generateChatName(userMessage);
+                            if (generatedTitle && generatedTitle !== userMessage.slice(0, 40)) {
+                                await renameProject(projId, generatedTitle);
+                                setChatTitle(generatedTitle);
+                                console.log('✅ [Chat] Auto-generated title:', generatedTitle);
+                            }
+                        } catch (titleError) {
+                            console.warn('Chat title generation failed:', titleError);
+                        }
+                    }
                 } catch (error) {
                     console.error('Failed to save assistant message:', error);
                 }
+            } else {
+                console.warn('⚠️ [Chat] No projId - AI response NOT saved to database!');
             }
 
         } catch (error: any) {
@@ -1890,16 +1907,43 @@ ${interpretation.enhancedPrompt}
                         }
                         : msg
                 ));
+
+                // Save retry response to database (was missing - causing persistence bug!)
+                if (projId) {
+                    try {
+                        await addMessage(projId, 'assistant', retryResponse.content, undefined, undefined, {
+                            model: 'openai/gpt-4o',
+                            taskType: interpretation.intent,
+                            assumptions: interpretation.assumptions,
+                            wasRetry: true
+                        });
+                        console.log('✅ [Chat] Saved retry response to database');
+                    } catch (saveError) {
+                        console.error('Failed to save retry message:', saveError);
+                    }
+                }
             } catch (retryError) {
+                const fallbackContent = "I couldn't complete this request. Please try again.";
                 setMessages(prev => prev.map(msg =>
                     msg.id === loadingId
                         ? {
                             ...msg,
-                            content: "I couldn't complete this request. Please try again.",
+                            content: fallbackContent,
                             isLoading: false
                         }
                         : msg
                 ));
+
+                // Save fallback message to database too
+                if (projId) {
+                    try {
+                        await addMessage(projId, 'assistant', fallbackContent, undefined, undefined, {
+                            isError: true
+                        });
+                    } catch (saveError) {
+                        console.error('Failed to save fallback message:', saveError);
+                    }
+                }
             }
         } finally {
             setIsLoading(false);
@@ -2623,57 +2667,48 @@ ${interpretation.enhancedPrompt}
 
                                             {/* Content */}
                                             {message.isLoading ? (
-                                                <div className="space-y-3 py-2">
-                                                    {/* Status indicator with spinning icon */}
+                                                <div
+                                                    className="space-y-4 py-3 animate-in fade-in slide-in-from-bottom-2 duration-500"
+                                                    style={{ animationFillMode: 'forwards' }}
+                                                >
+                                                    {/* Minimalist status indicator */}
                                                     <div className="flex items-center gap-3">
-                                                        <div className="relative">
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDark ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20' : 'bg-gradient-to-br from-emerald-100 to-teal-100'}`}>
-                                                                <svg
-                                                                    className={`w-4 h-4 animate-spin ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}
-                                                                    viewBox="0 0 24 24"
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="2"
-                                                                >
-                                                                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
-                                                                </svg>
-                                                            </div>
-                                                            {/* Pulse ring */}
-                                                            <div className={`absolute inset-0 rounded-full animate-ping ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-400/20'}`} style={{ animationDuration: '2s' }} />
+                                                        {/* Simple pulsing dot */}
+                                                        <div className="relative flex items-center justify-center">
+                                                            <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'}`}
+                                                                style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
+                                                            />
+                                                            <div className={`absolute w-4 h-4 rounded-full ${isDark ? 'bg-emerald-400/20' : 'bg-emerald-500/20'}`}
+                                                                style={{ animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}
+                                                            />
                                                         </div>
-                                                        <div className="flex flex-col">
-                                                            <span
-                                                                className="text-sm font-semibold bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent"
-                                                                style={{ backgroundSize: '200% 100%', animation: 'shimmer 2s infinite' }}
-                                                            >
-                                                                {STATUS_MESSAGES[currentStatus] || message.statusHistory?.slice(-1)[0] || 'Processing...'}
-                                                            </span>
-                                                            <span className={`text-xs ${isDark ? 'text-white/40' : 'text-gray-400'}`}>
-                                                                KroniQ AI is working on your request
-                                                            </span>
-                                                        </div>
+                                                        <span className={`text-sm font-medium ${isDark ? 'text-white/70' : 'text-gray-600'}`}
+                                                            style={{ animation: 'fadeInUp 0.5s ease-out forwards' }}
+                                                        >
+                                                            {STATUS_MESSAGES[currentStatus] || message.statusHistory?.slice(-1)[0] || 'Thinking...'}
+                                                        </span>
                                                     </div>
 
-                                                    {/* Skeleton loading bars */}
-                                                    <div className="space-y-2">
-                                                        <div className={`h-4 rounded-lg overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                                                    {/* Minimalist skeleton bars with wave animation */}
+                                                    <div className="space-y-2.5 pl-5">
+                                                        {[95, 80, 65].map((width, i) => (
                                                             <div
-                                                                className="h-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent animate-shimmer"
-                                                                style={{ width: '90%', animation: 'shimmer 1.5s infinite' }}
-                                                            />
-                                                        </div>
-                                                        <div className={`h-4 rounded-lg overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
-                                                            <div
-                                                                className="h-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
-                                                                style={{ width: '75%', animation: 'shimmer 1.5s infinite 0.2s' }}
-                                                            />
-                                                        </div>
-                                                        <div className={`h-4 rounded-lg overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
-                                                            <div
-                                                                className="h-full bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
-                                                                style={{ width: '60%', animation: 'shimmer 1.5s infinite 0.4s' }}
-                                                            />
-                                                        </div>
+                                                                key={i}
+                                                                className={`h-3 rounded-full ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}
+                                                                style={{
+                                                                    width: `${width}%`,
+                                                                    animation: `skeletonWave 1.8s ease-in-out ${i * 0.15}s infinite`,
+                                                                    opacity: 0,
+                                                                    animationFillMode: 'forwards',
+                                                                    animationDelay: `${i * 0.1}s`
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    className={`h-full rounded-full ${isDark ? 'bg-gradient-to-r from-transparent via-white/[0.06] to-transparent' : 'bg-gradient-to-r from-transparent via-gray-200 to-transparent'}`}
+                                                                    style={{ animation: 'shimmer 2s infinite' }}
+                                                                />
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             ) : (
@@ -2838,11 +2873,11 @@ ${interpretation.enhancedPrompt}
                                                                 }
                                                             }}
                                                             className={`
-                                                            group/btn relative p-2 rounded-lg transition-all duration-200
-                                                            ${isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                            group/btn relative p-1.5 rounded-md transition-all duration-200
+                                                            ${isDark ? 'text-white/40 hover:bg-white/[0.06] hover:text-white/70' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}
                                                         `}
                                                         >
-                                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                                                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                                                             </svg>
@@ -2851,7 +2886,7 @@ ${interpretation.enhancedPrompt}
                                                             </span>
                                                         </button>
 
-                                                        {/* Thumbs Up */}
+                                                        {/* Thumbs Up - Refined */}
                                                         <button
                                                             onClick={() => {
                                                                 setMessages(prev => prev.map(m =>
@@ -2862,19 +2897,19 @@ ${interpretation.enhancedPrompt}
                                                                 showToast('success', message.feedback === 'liked' ? 'Feedback removed' : 'Thanks for the feedback! 👍');
                                                             }}
                                                             className={`
-                                                            group/btn relative p-2 rounded-lg transition-all duration-200
+                                                            group/btn relative p-1.5 rounded-md transition-all duration-200
                                                             ${message.feedback === 'liked'
-                                                                    ? 'bg-emerald-500/20 text-emerald-500'
-                                                                    : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                                    ? 'bg-emerald-500/10 text-emerald-500'
+                                                                    : isDark ? 'text-white/40 hover:bg-white/[0.06] hover:text-white/70' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}
                                                         `}
                                                         >
-                                                            <ThumbsUp className="w-4 h-4" />
+                                                            <ThumbsUp className="w-3.5 h-3.5" strokeWidth={1.5} />
                                                             <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                                                                 Good
                                                             </span>
                                                         </button>
 
-                                                        {/* Thumbs Down */}
+                                                        {/* Thumbs Down - Refined */}
                                                         <button
                                                             onClick={() => {
                                                                 setMessages(prev => prev.map(m =>
@@ -2885,13 +2920,13 @@ ${interpretation.enhancedPrompt}
                                                                 showToast('info', message.feedback === 'disliked' ? 'Feedback removed' : 'Thanks for the feedback');
                                                             }}
                                                             className={`
-                                                            group/btn relative p-2 rounded-lg transition-all duration-200
+                                                            group/btn relative p-1.5 rounded-md transition-all duration-200
                                                             ${message.feedback === 'disliked'
-                                                                    ? 'bg-red-500/20 text-red-500'
-                                                                    : isDark ? 'text-white/50 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}
+                                                                    ? 'bg-red-500/10 text-red-500'
+                                                                    : isDark ? 'text-white/40 hover:bg-white/[0.06] hover:text-white/70' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}
                                                         `}
                                                         >
-                                                            <ThumbsDown className="w-4 h-4" />
+                                                            <ThumbsDown className="w-3.5 h-3.5" strokeWidth={1.5} />
                                                             <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/btn:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                                                                 Bad
                                                             </span>
@@ -3244,28 +3279,35 @@ ${interpretation.enhancedPrompt}
                     </div>
                 </div>
 
-                {/* Input Area - Seamless Minimal Design */}
+                {/* Input Area - Ultra Minimal Pill Design */}
                 <div className="px-4 py-4 pb-6">
-                    <div className="mx-auto" style={{ maxWidth: 'min(768px, calc(100% - 8px))' }}>
-                        {/* Input Box - Floating with subtle shadow */}
+                    <div className="mx-auto" style={{ maxWidth: 'min(720px, calc(100% - 16px))' }}>
+                        {/* Input Box - Pill shaped with smooth subtle styling */}
                         <div className={`
-                            relative flex items-end gap-2 min-h-[52px] py-2.5 px-3 rounded-2xl transition-all duration-300
+                            relative flex items-end gap-2 min-h-[48px] py-2 px-4 rounded-full transition-all duration-500 ease-out
                             ${isDark
-                                ? 'bg-white/[0.03] border border-white/10 focus-within:border-white/20 focus-within:bg-white/[0.05]'
-                                : 'bg-white border border-gray-200 focus-within:border-gray-300 shadow-sm focus-within:shadow-md'}
-                        `}>
+                                ? 'bg-white/[0.04] hover:bg-white/[0.06] focus-within:bg-white/[0.07] border border-white/[0.08] focus-within:border-white/15'
+                                : 'bg-gray-50 hover:bg-gray-100/80 focus-within:bg-white border border-gray-200/60 focus-within:border-gray-300/80 shadow-sm focus-within:shadow-lg'}
+                            backdrop-blur-xl
+                        `}
+                            style={{
+                                boxShadow: isDark
+                                    ? '0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)'
+                                    : '0 2px 12px rgba(0,0,0,0.04)'
+                            }}
+                        >
                             {/* Plus Button with Dropdown */}
                             <div className="relative">
                                 <button
                                     onClick={() => setShowPlusMenu(!showPlusMenu)}
                                     className={`
-                                    w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200
+                                    w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ease-out
                                     ${showPlusMenu
-                                            ? 'bg-emerald-500/20 text-emerald-500'
-                                            : isDark ? 'text-white/50 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}
+                                            ? 'bg-emerald-500/20 text-emerald-400 scale-110'
+                                            : isDark ? 'text-white/40 hover:text-white/70 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}
                                 `}
                                 >
-                                    <Plus className={`w-5 h-5 transition-transform duration-200 ${showPlusMenu ? 'rotate-45' : ''}`} />
+                                    <Plus className={`w-4 h-4 transition-transform duration-300 ${showPlusMenu ? 'rotate-45' : ''}`} />
                                 </button>
 
                                 {/* Premium Dropdown Menu */}
@@ -3516,12 +3558,12 @@ ${interpretation.enhancedPrompt}
                                     title="Stop generation"
                                     aria-label="Stop AI generation"
                                     className={`
-                                    w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
-                                    bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30 hover:scale-105
+                                    w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ease-out
+                                    bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/25 hover:scale-110 hover:shadow-xl
                                 `}
                                 >
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <rect x="6" y="6" width="12" height="12" rx="3" />
                                     </svg>
                                 </button>
                             ) : (
@@ -3530,13 +3572,13 @@ ${interpretation.enhancedPrompt}
                                     disabled={!inputValue.trim()}
                                     aria-label="Send message"
                                     className={`
-                                    w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300
+                                    w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ease-out
                                     ${inputValue.trim()
-                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30 hover:scale-105'
-                                            : isDark ? 'bg-white/10 text-white/40' : 'bg-gray-100 text-gray-400'}
+                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-110 hover:shadow-xl'
+                                            : isDark ? 'bg-white/[0.08] text-white/30' : 'bg-gray-100 text-gray-400'}
                                 `}
                                 >
-                                    <Send className="w-4 h-4" aria-hidden="true" />
+                                    <Send className="w-3.5 h-3.5" aria-hidden="true" />
                                 </button>
                             )}
                         </div>

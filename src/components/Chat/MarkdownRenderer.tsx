@@ -30,52 +30,52 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isD
     let codeContent = '';
     let codeLanguage = '';
 
-    // Premium color scheme
+    // Minimalist color scheme - Apple/Google inspired
     const colors = isDark ? {
-      h1: 'text-white',
-      h2: 'text-white',
-      h3: 'text-white/95',
-      h4: 'text-white/90',
-      text: 'text-white/75',
-      muted: 'text-white/60',
-      accent: 'text-teal-400',
-      accentHover: 'hover:text-teal-300',
-      link: 'text-teal-400 hover:text-teal-300',
-      linkBg: 'bg-teal-500/10 hover:bg-teal-500/20',
-      codeBg: 'bg-white/5',
-      codeText: 'text-teal-300',
-      blockquoteBorder: 'border-teal-500/40',
-      blockquoteBg: 'bg-teal-500/5',
-      tableBorder: 'border-white/10',
-      tableHeaderBg: 'bg-white/5',
-      strong: 'text-white font-semibold',
+      h1: 'text-white/95',
+      h2: 'text-white/90',
+      h3: 'text-white/85',
+      h4: 'text-white/80',
+      text: 'text-white/70',
+      muted: 'text-white/50',
+      accent: 'text-emerald-400/80',
+      accentHover: 'hover:text-emerald-300',
+      link: 'text-emerald-400/90 hover:text-emerald-300',
+      linkBg: 'bg-emerald-500/[0.08] hover:bg-emerald-500/15',
+      codeBg: 'bg-white/[0.04]',
+      codeText: 'text-emerald-300/90',
+      blockquoteBorder: 'border-white/10',
+      blockquoteBg: 'bg-white/[0.02]',
+      tableBorder: 'border-white/[0.06]',
+      tableHeaderBg: 'bg-white/[0.03]',
+      strong: 'text-white/90 font-medium',
     } : {
       h1: 'text-gray-900',
-      h2: 'text-gray-900',
-      h3: 'text-gray-800',
-      h4: 'text-gray-700',
+      h2: 'text-gray-800',
+      h3: 'text-gray-700',
+      h4: 'text-gray-600',
       text: 'text-gray-600',
-      muted: 'text-gray-500',
-      accent: 'text-teal-600',
-      accentHover: 'hover:text-teal-700',
-      link: 'text-teal-600 hover:text-teal-700',
-      linkBg: 'bg-teal-50 hover:bg-teal-100',
-      codeBg: 'bg-gray-100',
-      codeText: 'text-teal-700',
-      blockquoteBorder: 'border-teal-400',
-      blockquoteBg: 'bg-teal-50',
-      tableBorder: 'border-gray-200',
+      muted: 'text-gray-400',
+      accent: 'text-emerald-600/80',
+      accentHover: 'hover:text-emerald-700',
+      link: 'text-emerald-600 hover:text-emerald-700',
+      linkBg: 'bg-emerald-50/80 hover:bg-emerald-100',
+      codeBg: 'bg-gray-50',
+      codeText: 'text-emerald-700/80',
+      blockquoteBorder: 'border-gray-200',
+      blockquoteBg: 'bg-gray-50',
+      tableBorder: 'border-gray-100',
       tableHeaderBg: 'bg-gray-50',
-      strong: 'text-gray-900 font-semibold',
+      strong: 'text-gray-800 font-medium',
     };
 
     const flushOrderedList = () => {
       if (currentOrderedList.length > 0) {
         elements.push(
-          <ol key={`ol-${elements.length}`} className="my-4 ml-5 space-y-2">
+          <ol key={`ol-${elements.length}`} className="my-3 ml-4 space-y-1.5">
             {currentOrderedList.map((item, i) => (
-              <li key={i} className={`${colors.text} text-sm leading-relaxed flex`}>
-                <span className={`${colors.accent} font-medium mr-3 flex-shrink-0`}>{i + 1}.</span>
+              <li key={i} className={`${colors.text} text-[15px] leading-relaxed flex`}>
+                <span className={`${colors.muted} text-sm mr-2.5 flex-shrink-0 tabular-nums`}>{i + 1}.</span>
                 <span dangerouslySetInnerHTML={{ __html: parseInline(item) }} />
               </li>
             ))}
@@ -88,11 +88,11 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isD
     const flushList = () => {
       if (currentList.length > 0) {
         elements.push(
-          <ul key={`list-${elements.length}`} className="my-4 ml-5 space-y-2">
+          <ul key={`list-${elements.length}`} className="my-3 ml-4 space-y-1.5">
             {currentList.map((item, i) => (
-              <li key={i} className={`${colors.text} text-sm leading-relaxed flex items-start`}>
-                <span className={`${colors.accent} mr-3 mt-1.5 flex-shrink-0`}>
-                  <svg className="w-1.5 h-1.5" fill="currentColor" viewBox="0 0 8 8">
+              <li key={i} className={`${colors.text} text-[15px] leading-relaxed flex items-start`}>
+                <span className={`${colors.muted} mr-2.5 mt-2 flex-shrink-0`}>
+                  <svg className="w-1 h-1" fill="currentColor" viewBox="0 0 8 8">
                     <circle cx="4" cy="4" r="4" />
                   </svg>
                 </span>
@@ -183,8 +183,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isD
                     // Visual feedback handled by parent component
                   }}
                   className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1.5 ${isDark
-                      ? 'text-white/60 hover:text-white hover:bg-white/10'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                    ? 'text-white/60 hover:text-white hover:bg-white/10'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
                     }`}
                   title="Copy code"
                 >

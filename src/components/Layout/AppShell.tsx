@@ -2087,176 +2087,100 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                         <ProjectsSection isDark={isDark} onOpenProject={onOpenProject} />
                     </nav>
                 </div>
-
                 {/* Bottom section - Fixed at bottom */}
-                <div className="flex-shrink-0 p-3 space-y-2">
-                    {/* ✨ Premium Token Widget with Glow Effects */}
+                <div className="flex-shrink-0 p-3 space-y-3">
+                    {/* Minimalist Plan & Tokens Widget - Apple-style */}
                     <div
-                        className="group relative p-4 rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden"
+                        className={`p-4 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.01] ${isDark
+                            ? 'bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05]'
+                            : 'bg-gray-50 border border-gray-100 hover:bg-gray-100'}`}
                         onClick={() => setShowPricingPopup(true)}
                         title="Click to view plans"
-                        style={{
-                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 184, 166, 0.04) 50%, rgba(6, 78, 59, 0.06) 100%)',
-                            border: '1px solid rgba(16, 185, 129, 0.25)',
-                            boxShadow: '0 0 20px rgba(16, 185, 129, 0.1), inset 0 1px 0 rgba(255,255,255,0.05)'
-                        }}
                     >
-                        {/* Animated glow background */}
-                        <div
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-                            style={{
-                                background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.15) 0%, transparent 70%)',
-                                animation: 'pulse 3s ease-in-out infinite'
-                            }}
-                        />
-
-                        {/* Shimmer effect on hover */}
-                        <div
-                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                            style={{
-                                background: 'linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%)',
-                                animation: 'shimmer 2s ease-in-out infinite'
-                            }}
-                        />
-
-                        {/* Header - Tier with Logo */}
-                        <div className="relative flex items-center gap-3 mb-4">
-                            {/* Tier Logo */}
-                            <div
-                                className="relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 overflow-hidden"
-                                style={{
-                                    background: userTier === 'PREMIUM'
-                                        ? 'linear-gradient(135deg, #F59E0B 0%, #10b981 100%)'
-                                        : 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
-                                    boxShadow: userTier === 'PREMIUM'
-                                        ? '0 0 25px rgba(245, 158, 11, 0.4), 0 0 40px rgba(16, 185, 129, 0.2)'
-                                        : '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255,255,255,0.2)'
-                                }}
-                            >
-                                {/* Inner glow ring */}
-                                <div className="absolute inset-0 rounded-xl" style={{
-                                    background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 60%)'
-                                }} />
-                                {/* Tier Logo Image */}
-                                <img
-                                    src={
-                                        userTier === 'FREE' ? '/icons/free-tier-logo.svg' :
-                                            userTier === 'STARTER' ? '/icons/starter-tier-logo.svg' :
-                                                userTier === 'PRO' ? '/icons/pro-tier-logo.svg' :
-                                                    '/icons/premium-tier-logo.svg'
-                                    }
-                                    alt={`${userTier} tier`}
-                                    className="w-6 h-6 object-contain relative z-10 drop-shadow-lg"
-                                />
-                                {/* Pulsing glow */}
-                                <div
-                                    className="absolute inset-0 rounded-xl"
-                                    style={{
-                                        boxShadow: userTier === 'PREMIUM'
-                                            ? '0 0 15px rgba(245, 158, 11, 0.6)'
-                                            : '0 0 15px rgba(16, 185, 129, 0.6)',
-                                        animation: 'pulse-glow 2s ease-in-out infinite'
-                                    }}
-                                />
+                        {/* Plan Header */}
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2.5">
+                                {/* Simple tier indicator */}
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${userTier === 'PREMIUM'
+                                        ? 'bg-amber-500/10 text-amber-500'
+                                        : 'bg-emerald-500/10 text-emerald-500'
+                                    }`}>
+                                    <img
+                                        src={
+                                            userTier === 'FREE' ? '/icons/free-tier-logo.svg' :
+                                                userTier === 'STARTER' ? '/icons/starter-tier-logo.svg' :
+                                                    userTier === 'PRO' ? '/icons/pro-tier-logo.svg' :
+                                                        '/icons/premium-tier-logo.svg'
+                                        }
+                                        alt={`${userTier} tier`}
+                                        className="w-4 h-4 object-contain"
+                                    />
+                                </div>
+                                <div>
+                                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                        {userTier === 'FREE' ? 'Free' : userTier === 'STARTER' ? 'Starter' : userTier === 'PRO' ? 'Pro' : 'Premium'}
+                                    </span>
+                                    <p className={`text-[11px] ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                                        Current plan
+                                    </p>
+                                </div>
                             </div>
-
-                            <div className="flex-1">
-                                <span className={`text-sm font-bold tracking-wide flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                    {userTier === 'FREE' ? 'Free' : userTier === 'STARTER' ? 'Starter' : userTier === 'PRO' ? 'Pro' : 'Premium'}
-                                    {userTier === 'PREMIUM' && (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                            ✨
-                                        </span>
-                                    )}
-                                </span>
-                                <p className={`text-[11px] ${isDark ? 'text-emerald-400/70 group-hover:text-emerald-400' : 'text-emerald-600 group-hover:text-emerald-700'} transition-colors flex items-center gap-1 mt-0.5`}>
-                                    Upgrade
-                                    <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                    </svg>
-                                </p>
-                            </div>
+                            <svg className={`w-4 h-4 ${isDark ? 'text-white/30' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                            </svg>
                         </div>
 
-                        {/* Token Display - Premium Glassmorphism */}
-                        <div
-                            className="relative rounded-xl p-4 transition-all duration-300 group-hover:scale-[1.02]"
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(0,0,0,0.4) 0%, rgba(16, 185, 129, 0.05) 100%)',
-                                border: '1px solid rgba(16, 185, 129, 0.15)',
-                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
-                            }}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    {/* Animated coin icon */}
-                                    <div className="relative">
-                                        <Coins className="w-5 h-5 text-emerald-400" style={{ filter: 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.5))' }} />
-                                        <div className="absolute inset-0 animate-ping opacity-20">
-                                            <Coins className="w-5 h-5 text-emerald-400" />
-                                        </div>
-                                    </div>
-                                    <span className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-white/50' : 'text-gray-600'}`}>Tokens</span>
-                                </div>
-                                <div className="text-right">
-                                    <span
-                                        className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent"
-                                        style={{ textShadow: '0 0 30px rgba(16, 185, 129, 0.3)' }}
-                                    >
-                                        {tokensRemaining !== null
-                                            ? (tokensRemaining >= 1000 ? `${Math.round(tokensRemaining / 1000)}K` : tokensRemaining)
-                                            : '—'}
-                                    </span>
-                                </div>
-                            </div>
+                        {/* Token Display - Clean and simple */}
+                        <div className={`flex items-center justify-between py-2.5 px-3 rounded-lg ${isDark ? 'bg-white/[0.02]' : 'bg-white'}`}>
+                            <span className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Tokens</span>
+                            <span className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {tokensRemaining !== null
+                                    ? (tokensRemaining >= 1000 ? `${Math.round(tokensRemaining / 1000)}K` : tokensRemaining)
+                                    : '—'}
+                            </span>
+                        </div>
 
-                            {/* Subtle progress bar showing usage */}
-                            <div className={`mt-3 h-1 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-200'}`}>
-                                <div
-                                    className="h-full rounded-full transition-all duration-1000"
-                                    style={{
-                                        width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%',
-                                        background: 'linear-gradient(90deg, #10b981 0%, #14b8a6 50%, #06b6d4 100%)',
-                                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)'
-                                    }}
-                                />
-                            </div>
+                        {/* Minimal progress bar */}
+                        <div className={`mt-2.5 h-1 rounded-full overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-gray-200'}`}>
+                            <div
+                                className={`h-full rounded-full transition-all duration-500 ${userTier === 'PREMIUM' ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                style={{
+                                    width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%'
+                                }}
+                            />
                         </div>
                     </div>
 
-                    {/* Premium Upgrade button - Changes based on tier */}
+                    {/* Minimalist Upgrade button */}
                     <button
                         onClick={() => {
                             if (userTier === 'FREE') {
                                 setShowPricingPopup(true);
                             } else {
-                                // Import and call openBillingPortal
                                 import('../../lib/stripeService').then(({ openBillingPortal }) => {
                                     openBillingPortal();
                                 });
                             }
                         }}
-                        className={`
-                            w-full group
-                            ${userTier === 'FREE'
-                                ? 'btn-premium-gradient'
-                                : 'flex items-center justify-center gap-2.5 px-5 py-3 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-gray-600 to-gray-500 shadow-lg hover:from-gray-500 hover:to-gray-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300'
-                            }
-                        `}>
+                        className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${userTier === 'FREE'
+                                ? isDark
+                                    ? 'bg-white text-black hover:bg-white/90'
+                                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                                : isDark
+                                    ? 'bg-white/[0.05] text-white/70 hover:bg-white/[0.08] border border-white/[0.06]'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                            }`}
+                    >
                         {userTier === 'FREE' ? (
                             <>
-                                Get Started Now
-                                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                Upgrade
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                 </svg>
                             </>
                         ) : (
                             <>
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                Manage Subscription
+                                Manage Plan
                             </>
                         )}
                     </button>

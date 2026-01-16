@@ -105,3 +105,57 @@ export async function analyzeImageWithGemini(
 export function isGeminiVisionConfigured(): boolean {
     return !!GEMINI_API_KEY;
 }
+
+/**
+ * Generate a concise, descriptive chat title based on the conversation
+ * Uses Gemini to understand the context and create a short title
+ */
+export async function generateChatTitle(
+    userMessage: string,
+    aiResponse?: string
+): Promise<string> {
+    if (!GEMINI_API_KEY) {
+        // Fallback to truncated message if no API key
+        return userMessage.slice(0, 40) + (userMessage.length > 40 ? '...' : '');
+    }
+
+    try {
+        const prompt = `Generate a very short, concise title (max 5 words) for this conversation. 
+The title should capture the main topic or intent.
+Return ONLY the title, no quotes, no explanation.
+
+User's message: "${userMessage.slice(0, 500)}"
+${aiResponse ? `AI's response preview: "${aiResponse.slice(0, 200)}"` : ''}
+
+Title:`;
+
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 20
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Gemini title generation failed');
+        }
+
+        const data = await response.json();
+        const title = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+        if (title && title.length > 0 && title.length <= 60) {
+            return title;
+        }
+
+        // Fallback to truncated message
+        return userMessage.slice(0, 40) + (userMessage.length > 40 ? '...' : '');
+    } catch (error) {
+        logger.warn('Chat title generation failed, using fallback', error);
+        return userMessage.slice(0, 40) + (userMessage.length > 40 ? '...' : '');
+    }
+}

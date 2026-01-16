@@ -1545,6 +1545,24 @@ textarea:focus {
   }
 }
 
+/* Skeleton wave animation for loading states - minimalist wave effect */
+@keyframes skeletonWave {
+  0% {
+    opacity: 0.3;
+    transform: translateX(-5px);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0.3;
+    transform: translateX(-5px);
+  }
+}
+
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
