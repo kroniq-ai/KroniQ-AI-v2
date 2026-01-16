@@ -1883,34 +1883,68 @@ Return ONLY the enhanced prompt, nothing else. Do not include explanations or pr
 
 /**
  * Generate a concise chat name based on the user's first message
- * Uses DeepSeek to create a meaningful 2-5 word title
+ * Uses Gemini 2.0 Flash (free) to create a meaningful 2-5 word title
  */
 export async function generateChatName(firstMessage: string): Promise<string> {
     log('info', `Generating chat name for: "${firstMessage.substring(0, 50)}..."`);
+
+    // For very short messages, just capitalize them
+    if (firstMessage.length <= 15) {
+        // Capitalize first letter of each word
+        const capitalized = firstMessage.split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        return capitalized || 'New Chat';
+    }
 
     const nameRequest = `Generate a very short, concise title for a chat conversation that starts with this message:
 "${firstMessage}"
 
 Rules:
-- Maximum 5 words, ideally 2 - 4 words
-    - Be descriptive but brief
-        - No quotes, no punctuation at the end
-            - Title case (capitalize important words)
+- Maximum 5 words, ideally 2-4 words
+- Be descriptive but brief
+- No quotes, no punctuation at the end
+- Title case (capitalize important words)
 - Focus on the main topic or action
 
 Examples:
 - "Help me write a business plan" → "Business Plan Help"
-    - "What is machine learning?" → "Machine Learning Basics"
-        - "Create a logo for my startup" → "Startup Logo Design"
-            - "Explain quantum physics" → "Quantum Physics Explained"
-                - "Write code for a todo app" → "Todo App Code"
+- "What is machine learning?" → "Machine Learning Basics"
+- "Create a logo for my startup" → "Startup Logo Design"
+- "Explain quantum physics" → "Quantum Physics Explained"
+- "Write code for a todo app" → "Todo App Code"
 
-Return ONLY the title, nothing else: `;
+Return ONLY the title, nothing else:`;
 
     try {
-        const result = await callGeminiOrchestrator([
-            { role: 'user', content: nameRequest }
-        ], false);
+        const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '';
+        if (!apiKey) {
+            log('warning', 'No API key for chat name generation');
+            return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+        }
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://kroniq.ai',
+                'X-Title': 'KroniQ AI Platform',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: ORCHESTRATOR_MODEL, // google/gemini-2.0-flash-exp:free
+                messages: [{ role: 'user', content: nameRequest }],
+                max_tokens: 50,
+            }),
+        });
+
+        if (!response.ok) {
+            log('error', `Chat name API error: ${response.status}`);
+            return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+        }
+
+        const data = await response.json();
+        const result = data.choices?.[0]?.message?.content;
 
         if (result && result.trim()) {
             // Clean up the result
