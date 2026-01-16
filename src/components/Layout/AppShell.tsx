@@ -2089,22 +2089,37 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                 </div>
                 {/* Bottom section - Fixed at bottom */}
                 <div className="flex-shrink-0 p-3 space-y-3">
-                    {/* Minimalist Plan & Tokens Widget - Apple-style */}
+                    {/* Premium Plan & Tokens Widget */}
                     <div
-                        className={`p-4 rounded-xl cursor-pointer transition-all duration-200 hover:scale-[1.01] ${isDark
-                            ? 'bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.05]'
-                            : 'bg-gray-50 border border-gray-100 hover:bg-gray-100'}`}
+                        className={`group relative overflow-hidden p-4 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] ${isDark
+                            ? 'bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.08] hover:border-white/[0.12] hover:shadow-lg hover:shadow-emerald-500/[0.05]'
+                            : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200/80 hover:border-gray-300 hover:shadow-lg'}`}
                         onClick={() => setShowPricingPopup(true)}
                         title="Click to view plans"
                     >
+                        {/* Subtle animated gradient overlay on hover */}
+                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${isDark
+                            ? 'bg-gradient-to-br from-emerald-500/[0.03] via-transparent to-teal-500/[0.03]'
+                            : 'bg-gradient-to-br from-emerald-50/50 via-transparent to-teal-50/50'
+                            }`} />
+
                         {/* Plan Header */}
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2.5">
-                                {/* Simple tier indicator */}
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${userTier === 'PREMIUM'
-                                        ? 'bg-amber-500/10 text-amber-500'
-                                        : 'bg-emerald-500/10 text-emerald-500'
+                        <div className="relative flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                {/* Premium tier badge with gradient */}
+                                <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${userTier === 'PREMIUM'
+                                    ? 'bg-gradient-to-br from-amber-500/20 to-orange-500/20'
+                                    : userTier === 'PRO'
+                                        ? 'bg-gradient-to-br from-purple-500/20 to-indigo-500/20'
+                                        : 'bg-gradient-to-br from-emerald-500/15 to-teal-500/15'
                                     }`}>
+                                    {/* Glow effect */}
+                                    <div className={`absolute inset-0 rounded-xl blur-md opacity-50 ${userTier === 'PREMIUM'
+                                        ? 'bg-amber-500/30'
+                                        : userTier === 'PRO'
+                                            ? 'bg-purple-500/30'
+                                            : 'bg-emerald-500/30'
+                                        }`} />
                                     <img
                                         src={
                                             userTier === 'FREE' ? '/icons/free-tier-logo.svg' :
@@ -2113,37 +2128,52 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                                                         '/icons/premium-tier-logo.svg'
                                         }
                                         alt={`${userTier} tier`}
-                                        className="w-4 h-4 object-contain"
+                                        className="relative w-5 h-5 object-contain"
                                     />
                                 </div>
                                 <div>
-                                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    <span className={`text-sm font-semibold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                         {userTier === 'FREE' ? 'Free' : userTier === 'STARTER' ? 'Starter' : userTier === 'PRO' ? 'Pro' : 'Premium'}
                                     </span>
-                                    <p className={`text-[11px] ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
+                                    <p className={`text-[11px] font-medium ${isDark ? 'text-white/40' : 'text-gray-500'}`}>
                                         Current plan
                                     </p>
                                 </div>
                             </div>
-                            <svg className={`w-4 h-4 ${isDark ? 'text-white/30' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                            <svg className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 ${isDark ? 'text-white/25' : 'text-gray-300'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                         </div>
 
-                        {/* Token Display - Clean and simple */}
-                        <div className={`flex items-center justify-between py-2.5 px-3 rounded-lg ${isDark ? 'bg-white/[0.02]' : 'bg-white'}`}>
-                            <span className={`text-xs font-medium ${isDark ? 'text-white/50' : 'text-gray-500'}`}>Tokens</span>
-                            <span className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {/* Token Display - Premium card */}
+                        <div className={`relative flex items-center justify-between py-3 px-3.5 rounded-xl ${isDark
+                            ? 'bg-gradient-to-r from-white/[0.03] to-transparent'
+                            : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100'}`}>
+                            <span className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-white/40' : 'text-gray-400'}`}>Tokens</span>
+                            <span className={`text-xl font-bold tabular-nums ${userTier === 'PREMIUM'
+                                ? 'bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent'
+                                : isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {tokensRemaining !== null
-                                    ? (tokensRemaining >= 1000 ? `${Math.round(tokensRemaining / 1000)}K` : tokensRemaining)
+                                    ? (tokensRemaining >= 1000 ? `${Math.round(tokensRemaining / 1000)}K` : tokensRemaining.toLocaleString())
                                     : '—'}
                             </span>
                         </div>
 
-                        {/* Minimal progress bar */}
-                        <div className={`mt-2.5 h-1 rounded-full overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-gray-200'}`}>
+                        {/* Premium progress bar with glow */}
+                        <div className={`relative mt-3 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
+                            {/* Glow effect behind progress */}
                             <div
-                                className={`h-full rounded-full transition-all duration-500 ${userTier === 'PREMIUM' ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                className={`absolute h-4 -top-1 rounded-full blur-md ${userTier === 'PREMIUM' ? 'bg-amber-500/50' : 'bg-emerald-500/50'}`}
+                                style={{
+                                    width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%'
+                                }}
+                            />
+                            {/* Actual progress bar */}
+                            <div
+                                className={`relative h-full rounded-full transition-all duration-700 ease-out ${userTier === 'PREMIUM'
+                                    ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                                    : 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                                    }`}
                                 style={{
                                     width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%'
                                 }}
@@ -2151,7 +2181,7 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                         </div>
                     </div>
 
-                    {/* Minimalist Upgrade button */}
+                    {/* Premium Upgrade button */}
                     <button
                         onClick={() => {
                             if (userTier === 'FREE') {
@@ -2162,26 +2192,26 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                                 });
                             }
                         }}
-                        className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${userTier === 'FREE'
-                                ? isDark
-                                    ? 'bg-white text-black hover:bg-white/90'
-                                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                                : isDark
-                                    ? 'bg-white/[0.05] text-white/70 hover:bg-white/[0.08] border border-white/[0.06]'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                        className={`group relative w-full py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden ${userTier === 'FREE'
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:shadow-lg hover:shadow-emerald-500/25 hover:scale-[1.02]'
+                            : isDark
+                                ? 'bg-white/[0.05] text-white/70 hover:bg-white/[0.08] border border-white/[0.08]'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                             }`}
                     >
+                        {/* Animated shine effect for FREE tier */}
+                        {userTier === 'FREE' && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                        )}
                         {userTier === 'FREE' ? (
                             <>
-                                Upgrade
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span className="relative">Upgrade</span>
+                                <svg className="relative w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                 </svg>
                             </>
                         ) : (
-                            <>
-                                Manage Plan
-                            </>
+                            <span>Manage Plan</span>
                         )}
                     </button>
 
