@@ -280,6 +280,7 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
     const [isEnhancing, setIsEnhancing] = useState(false); // Enhance prompt state
     const [chatTitle, setChatTitle] = useState('New Chat');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(false); // Prevents Welcome screen flash
 
     // Orchestration state
     const [currentStatus, setCurrentStatus] = useState<StatusPhase>('idle');
@@ -445,6 +446,16 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
                 loadMessagesFromProject(initialProjectId);
                 loadContext(initialProjectId);
             }
+        } else {
+            // New chat - briefly set initializing to prevent Welcome screen flash
+            setIsInitializing(true);
+            setMessages([]);
+            setChatTitle('New Chat');
+            setCurrentProjectId(undefined);
+            hasLoadedProjectRef.current = null;
+            // Clear initializing after a brief moment
+            const timer = setTimeout(() => setIsInitializing(false), 50);
+            return () => clearTimeout(timer);
         }
     }, [initialProjectId]);
 
@@ -1866,8 +1877,8 @@ ${interpretation.enhancedPrompt}
                     // Generate AI chat title after first message (only if title is default)
                     if (chatTitle === 'New Chat' && userMessage) {
                         try {
-                            const generatedTitle = await generateChatName(userMessage);
-                            if (generatedTitle && generatedTitle !== userMessage.slice(0, 40)) {
+                            const generatedTitle = await generateChatName(userMessage.content);
+                            if (generatedTitle && generatedTitle !== userMessage.content.slice(0, 40)) {
                                 await renameProject(projId, generatedTitle);
                                 setChatTitle(generatedTitle);
                                 console.log('✅ [Chat] Auto-generated title:', generatedTitle);
@@ -2489,8 +2500,8 @@ ${interpretation.enhancedPrompt}
                 ${isDark ? 'bg-[#0a0a0a]' : 'bg-gradient-to-b from-teal-50/30 to-white'}
             `}>
                     <div className="max-w-3xl mx-auto space-y-6">
-                        {/* Welcome Screen - Show when no messages */}
-                        {messages.length === 0 && (
+                        {/* Welcome Screen - Show when no messages and not initializing */}
+                        {messages.length === 0 && !isInitializing && (
                             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
                                 {/* Logo & Title */}
                                 <div className="relative mb-6">

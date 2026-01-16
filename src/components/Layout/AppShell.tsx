@@ -1651,13 +1651,19 @@ const ProjectsSection: React.FC<{ isDark: boolean; onOpenProject?: (projectId: s
                 </div>
             </div>
 
-            {/* Delete Confirmation Modal */}
-            {deletingProjectId && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/20 backdrop-blur-md">
-                    <div className={`
-                        w-full max-w-sm rounded-3xl p-6 backdrop-blur-2xl shadow-2xl border text-center
-                        ${isDark ? 'bg-white/10 border-white/20' : 'bg-white/70 border-white/50'}
-                    `}>
+            {/* Delete Confirmation Modal - rendered via portal for full-screen overlay */}
+            {deletingProjectId && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setDeletingProjectId(null)}>
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    {/* Modal */}
+                    <div
+                        className={`
+                            relative w-full max-w-sm rounded-3xl p-6 shadow-2xl border text-center
+                            ${isDark ? 'bg-[#1a1d21] border-white/10' : 'bg-white border-gray-200'}
+                        `}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
                             <TrashIcon className="w-6 h-6 text-red-500" />
                         </div>
@@ -1676,16 +1682,23 @@ const ProjectsSection: React.FC<{ isDark: boolean; onOpenProject?: (projectId: s
                             >Delete</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {/* Bulk Delete Confirmation Modal */}
-            {showBulkDeleteConfirm && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/20 backdrop-blur-md">
-                    <div className={`
-                        w-full max-w-sm rounded-3xl p-6 backdrop-blur-2xl shadow-2xl border text-center
-                        ${isDark ? 'bg-white/10 border-white/20' : 'bg-white/70 border-white/50'}
-                    `}>
+            {/* Bulk Delete Confirmation Modal - rendered via portal for full-screen overlay */}
+            {showBulkDeleteConfirm && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setShowBulkDeleteConfirm(false)}>
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    {/* Modal */}
+                    <div
+                        className={`
+                            relative w-full max-w-sm rounded-3xl p-6 shadow-2xl border text-center
+                            ${isDark ? 'bg-[#1a1d21] border-white/10' : 'bg-white border-gray-200'}
+                        `}
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
                             <TrashIcon className="w-6 h-6 text-red-500" />
                         </div>
@@ -1706,7 +1719,8 @@ const ProjectsSection: React.FC<{ isDark: boolean; onOpenProject?: (projectId: s
                             >Delete All</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Edit Project Modal - Enhanced with AI Preferences */}
