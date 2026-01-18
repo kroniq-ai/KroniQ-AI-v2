@@ -2423,9 +2423,9 @@ ${interpretation.enhancedPrompt}
                 flex flex-col h-full relative transition-all duration-300
                 ${activeStudio ? 'w-1/2' : 'w-full'}
             `}>
-                {/* Header - Modern ChatGPT-Style Design */}
+                {/* Header - Ultra-Clean Premium Design */}
                 <div className={`
-                    flex items-center justify-between px-4 py-3
+                    flex items-center justify-between px-4 py-2
                     ${isDark ? 'bg-transparent' : 'bg-white/50'}
                 `}>
                     {/* Left - Editable Chat Title */}
@@ -2455,43 +2455,43 @@ ${interpretation.enhancedPrompt}
                             <button
                                 onClick={() => setIsEditingTitle(true)}
                                 className={`
-                                    text-base font-semibold flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all group
-                                    ${isDark ? 'text-white hover:bg-white/5' : 'text-gray-800 hover:bg-gray-50'}
+                                    text-sm font-medium flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all group
+                                    ${isDark ? 'text-white/90 hover:bg-white/5' : 'text-gray-800 hover:bg-gray-50'}
                                 `}
                             >
                                 {chatTitle}
-                                <ChevronDown className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                <ChevronDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
                             </button>
                         )}
                     </div>
 
-                    {/* Right - Pill-Style Action Buttons */}
-                    <div className="flex items-center gap-2">
-                        {/* Share Button - Pill with text */}
+                    {/* Right - Ghost-Style Action Buttons */}
+                    <div className="flex items-center gap-1">
+                        {/* Share Button - Ghost style */}
                         <button
                             onClick={() => setShowShareModal(true)}
                             className={`
-                                flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium
+                                flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium
                                 ${isDark
-                                    ? 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
-                                    : 'text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200'}
+                                    ? 'text-white/50 hover:text-white/90 hover:bg-white/5'
+                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}
                             `}
                         >
-                            <Share2 className="w-4 h-4" />
+                            <Share2 className="w-3.5 h-3.5" />
                             <span>Share</span>
                         </button>
 
-                        {/* Settings Button - Pill with text */}
+                        {/* Settings Button - Ghost style */}
                         <button
                             onClick={() => setShowChatSettings(true)}
                             className={`
-                                flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium
+                                flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium
                                 ${isDark
-                                    ? 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
-                                    : 'text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200'}
+                                    ? 'text-white/50 hover:text-white/90 hover:bg-white/5'
+                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}
                             `}
                         >
-                            <Settings className="w-4 h-4" />
+                            <Settings className="w-3.5 h-3.5" />
                             <span>Settings</span>
                         </button>
                     </div>

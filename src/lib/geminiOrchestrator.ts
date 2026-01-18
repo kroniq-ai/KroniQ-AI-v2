@@ -1895,9 +1895,9 @@ export async function generateChatName(firstMessage: string): Promise<string> {
         return 'New Chat';
     }
 
-    // For single character or very minimal messages, use a default contextual name
-    if (firstMessage.trim().length <= 2) {
-        console.log('🏷️ [generateChatName] Very short message - using default');
+    // For single character messages only, use a default
+    if (firstMessage.trim().length <= 1) {
+        console.log('🏷️ [generateChatName] Single char message - using default');
         return 'Quick Chat';
     }
 
@@ -1905,13 +1905,20 @@ export async function generateChatName(firstMessage: string): Promise<string> {
 "${firstMessage}"
 
 Rules:
-- Maximum 5 words, ideally 2-4 words
+- Maximum 4 words, ideally 2-3 words
 - Be descriptive but brief
 - No quotes, no punctuation at the end
 - Title case (capitalize important words)
-- Focus on the main topic or action
+- Focus on the main topic, intent, or context
+- For greetings, use friendly descriptive titles
 
 Examples:
+- "hey" → "Friendly Chat"
+- "hello" → "Hello There"
+- "hi" → "Quick Hello"
+- "hi there" → "Casual Greeting"
+- "what's up" → "Casual Check-In"
+- "good morning" → "Morning Chat"
 - "Help me write a business plan" → "Business Plan Help"
 - "What is machine learning?" → "Machine Learning Basics"
 - "Create a logo for my startup" → "Startup Logo Design"
@@ -1981,14 +1988,34 @@ Return ONLY the title, nothing else:`;
             }
         }
 
-        // Fallback: truncate original message
-        console.log('🏷️ [generateChatName] ⚠️ Empty result - using fallback');
-        log('warning', 'Name generation returned empty, using truncated message');
+        // Fallback: For short messages, use context-aware defaults rather than raw message
+        console.log('🏷️ [generateChatName] ⚠️ Empty result - using smart fallback');
+        log('warning', 'Name generation returned empty, using smart fallback');
+
+        // Smart fallback based on message content
+        const msg = firstMessage.toLowerCase().trim();
+        if (['hey', 'hi', 'hello', 'yo', 'sup'].some(g => msg.startsWith(g))) {
+            return 'Friendly Chat';
+        }
+        if (msg.includes('morning') || msg.includes('evening') || msg.includes('night')) {
+            return 'Greeting Chat';
+        }
+        if (firstMessage.length <= 10) {
+            return 'Quick Chat';
+        }
         return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
     } catch (error) {
         console.log('🏷️ [generateChatName] ❌ Exception:', error);
         log('error', `Chat name generation failed: ${error}`);
-        // Fallback: truncate original message
+
+        // Smart fallback for errors too
+        const msg = firstMessage.toLowerCase().trim();
+        if (['hey', 'hi', 'hello', 'yo', 'sup'].some(g => msg.startsWith(g))) {
+            return 'Friendly Chat';
+        }
+        if (firstMessage.length <= 10) {
+            return 'Quick Chat';
+        }
         return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
     }
 }
