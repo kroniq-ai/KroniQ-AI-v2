@@ -12,17 +12,17 @@
  * - Failure fallback with "Refining response..." messaging
  */
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-    Download, ThumbsUp, ThumbsDown, Send, Plus, Loader2, Zap, Trash2,
+    Download, ThumbsUp, ThumbsDown, Send, Plus, Zap, Trash2,
     Image as ImageIcon, Video, FileText, MessageSquare, ChevronDown,
-    Sparkles, Globe, Pencil, Check, X, Settings, RotateCcw, Minus, Paperclip, Lightbulb, Share2, PlusCircle
+    Sparkles, Pencil, Check, X, Settings, RotateCcw, Minus, Lightbulb, Share2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { getOpenRouterResponseWithUsage } from '../../lib/openRouterService';
-import { getMessages, createProject, addMessage, renameProject } from '../../lib/chatService';
+import { getMessages, createProject, addMessage } from '../../lib/chatService';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { PPTPreview } from './PPTPreview';
 import DesignStudioCanvas from './DesignStudioCanvas';
@@ -56,7 +56,6 @@ import { getUserMemory, processMessageForMemory, buildMemoryContext } from '../.
 import { quickEnhance as enhanceForModel } from '../../lib/promptEnhancerService';
 import {
     GenerationTask,
-    createAndProcessTask,
     subscribeToTaskUpdates,
     resumePendingTasks,
     getCompletedTasks,
@@ -408,6 +407,7 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasInitializedRef = useRef(false);
     const hasLoadedProjectRef = useRef<string | null>(null);
+    const newlyCreatedProjectRef = useRef<string | null>(null); // Track newly created projects to skip loadCompletedTasks
 
     // ===== EFFECTS =====
 
@@ -453,6 +453,7 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
             setChatTitle('New Chat');
             setCurrentProjectId(undefined);
             hasLoadedProjectRef.current = null;
+            setAttachments([]); // Clear any pending attachments
             // Clear initializing after a brief moment
             const timer = setTimeout(() => setIsInitializing(false), 50);
             return () => clearTimeout(timer);
@@ -564,6 +565,13 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
     useEffect(() => {
         const loadCompletedGenerations = async () => {
             if (!currentProjectId) return;
+
+            // Skip loading for newly created projects (they have no completed tasks yet)
+            if (newlyCreatedProjectRef.current === currentProjectId) {
+                console.log('📂 [Generations] Skipping load for newly created project');
+                newlyCreatedProjectRef.current = null; // Clear the flag
+                return;
+            }
 
             try {
                 // Get tasks completed in last 24 hours for this project
@@ -896,9 +904,14 @@ export const SuperKroniqChat: React.FC<SuperKroniqChatProps> = ({
             try {
                 // Generate AI-powered chat name (runs in parallel with intent interpretation)
                 const chatName = await generateChatName(text);
+                console.log('🏷️ [Chat] Generated title:', chatName);
                 const project = await createProject(chatName, 'chat');
                 projId = project.id;
+
+                // Mark this as a newly created project to skip loadCompletedTasks
+                newlyCreatedProjectRef.current = projId;
                 setCurrentProjectId(projId);
+                setChatTitle(chatName); // Update the UI title immediately
 
                 // Update navigation to this project (updates URL for refresh persistence)
                 setActiveProject(project);
@@ -1873,20 +1886,7 @@ ${interpretation.enhancedPrompt}
                         mediaType
                     });
                     console.log('✅ [Chat] Saved AI response to database, projId:', projId);
-
-                    // Generate AI chat title after first message (only if title is default)
-                    if (chatTitle === 'New Chat' && userMessage) {
-                        try {
-                            const generatedTitle = await generateChatName(userMessage.content);
-                            if (generatedTitle && generatedTitle !== userMessage.content.slice(0, 40)) {
-                                await renameProject(projId, generatedTitle);
-                                setChatTitle(generatedTitle);
-                                console.log('✅ [Chat] Auto-generated title:', generatedTitle);
-                            }
-                        } catch (titleError) {
-                            console.warn('Chat title generation failed:', titleError);
-                        }
-                    }
+                    // Note: Chat title is generated at project creation time (line ~907)
                 } catch (error) {
                     console.error('Failed to save assistant message:', error);
                 }
@@ -2423,7 +2423,7 @@ ${interpretation.enhancedPrompt}
                 flex flex-col h-full relative transition-all duration-300
                 ${activeStudio ? 'w-1/2' : 'w-full'}
             `}>
-                {/* Header - Minimal Design */}
+                {/* Header - Modern ChatGPT-Style Design */}
                 <div className={`
                     flex items-center justify-between px-4 py-3
                     ${isDark ? 'bg-transparent' : 'bg-white/50'}
@@ -2442,7 +2442,7 @@ ${interpretation.enhancedPrompt}
                                     }}
                                     onBlur={() => setIsEditingTitle(false)}
                                     className={`
-                                        px-3 py-1.5 rounded-lg text-sm font-medium min-w-[150px] max-w-[250px]
+                                        px-3 py-1.5 rounded-lg text-sm font-medium min-w-[150px] max-w-[300px]
                                         ${isDark
                                             ? 'bg-white/5 text-white border border-white/10 focus:border-emerald-500/50'
                                             : 'bg-gray-50 text-gray-900 border border-gray-200 focus:border-emerald-500'}
@@ -2455,37 +2455,44 @@ ${interpretation.enhancedPrompt}
                             <button
                                 onClick={() => setIsEditingTitle(true)}
                                 className={`
-                                    text-sm font-medium flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all group
-                                    ${isDark ? 'text-white/80 hover:text-white hover:bg-white/5' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}
+                                    text-base font-semibold flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all group
+                                    ${isDark ? 'text-white hover:bg-white/5' : 'text-gray-800 hover:bg-gray-50'}
                                 `}
                             >
                                 {chatTitle}
-                                <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                                <ChevronDown className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
                             </button>
                         )}
                     </div>
 
-                    {/* Right - Minimal Action Buttons */}
-                    <div className="flex items-center gap-0.5">
+                    {/* Right - Pill-Style Action Buttons */}
+                    <div className="flex items-center gap-2">
+                        {/* Share Button - Pill with text */}
                         <button
                             onClick={() => setShowShareModal(true)}
-                            className={`p-2 rounded-lg transition-all ${isDark
-                                ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                                }`}
-                            title="Share"
+                            className={`
+                                flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium
+                                ${isDark
+                                    ? 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                                    : 'text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200'}
+                            `}
                         >
                             <Share2 className="w-4 h-4" />
+                            <span>Share</span>
                         </button>
+
+                        {/* Settings Button - Pill with text */}
                         <button
                             onClick={() => setShowChatSettings(true)}
-                            className={`p-2 rounded-lg transition-all ${isDark
-                                ? 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                                }`}
-                            title="Settings"
+                            className={`
+                                flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-medium
+                                ${isDark
+                                    ? 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                                    : 'text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200'}
+                            `}
                         >
                             <Settings className="w-4 h-4" />
+                            <span>Settings</span>
                         </button>
                     </div>
                 </div>
@@ -3290,22 +3297,16 @@ ${interpretation.enhancedPrompt}
                     </div>
                 </div>
 
-                {/* Input Area - Ultra Minimal Pill Design */}
+                {/* Input Area - Clean ChatGPT-Style Design */}
                 <div className="px-4 py-4 pb-6">
                     <div className="mx-auto" style={{ maxWidth: 'min(720px, calc(100% - 16px))' }}>
-                        {/* Input Box - Pill shaped with smooth subtle styling */}
+                        {/* Input Box - Clean rounded pill with minimal styling */}
                         <div className={`
-                            relative flex items-end gap-2 min-h-[48px] py-2 px-4 rounded-full transition-all duration-500 ease-out
+                            relative flex items-end gap-2 min-h-[52px] py-2.5 px-4 rounded-[26px] transition-all duration-300
                             ${isDark
-                                ? 'bg-white/[0.04] hover:bg-white/[0.06] focus-within:bg-white/[0.07] border border-white/[0.08] focus-within:border-white/15'
-                                : 'bg-gray-50 hover:bg-gray-100/80 focus-within:bg-white border border-gray-200/60 focus-within:border-gray-300/80 shadow-sm focus-within:shadow-lg'}
-                            backdrop-blur-xl
+                                ? 'bg-[#2f2f2f] hover:bg-[#3a3a3a] border border-white/10 focus-within:border-white/20'
+                                : 'bg-gray-100 hover:bg-gray-50 focus-within:bg-white border border-gray-300 focus-within:border-gray-400 focus-within:shadow-md'}
                         `}
-                            style={{
-                                boxShadow: isDark
-                                    ? '0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)'
-                                    : '0 2px 12px rgba(0,0,0,0.04)'
-                            }}
                         >
                             {/* Plus Button with Dropdown */}
                             <div className="relative">
@@ -3431,8 +3432,8 @@ ${interpretation.enhancedPrompt}
                                 className="hidden"
                             />
 
-                            {/* Attachment Preview */}
-                            {attachments.length > 0 && (
+                            {/* Attachment Preview - hide during initialization to prevent flash */}
+                            {attachments.length > 0 && !isInitializing && (
                                 <div className="flex items-center gap-2 mr-2">
                                     {attachments.map((attachment, index) => (
                                         <div
@@ -3473,7 +3474,7 @@ ${interpretation.enhancedPrompt}
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyPress}
-                                placeholder="Ask me anything... (Shift+Enter for new line)"
+                                placeholder="Ask anything"
                                 disabled={isLoading || clarifyingQuestions.length > 0}
                                 rows={1}
                                 aria-label="Message input"

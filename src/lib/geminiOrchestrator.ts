@@ -1886,15 +1886,19 @@ Return ONLY the enhanced prompt, nothing else. Do not include explanations or pr
  * Uses Gemini 2.0 Flash (free) to create a meaningful 2-5 word title
  */
 export async function generateChatName(firstMessage: string): Promise<string> {
+    console.log('🏷️ [generateChatName] Called with:', firstMessage);
     log('info', `Generating chat name for: "${firstMessage.substring(0, 50)}..."`);
 
-    // For very short messages, just capitalize them
-    if (firstMessage.length <= 15) {
-        // Capitalize first letter of each word
-        const capitalized = firstMessage.split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-        return capitalized || 'New Chat';
+    // For empty messages, return default
+    if (!firstMessage || firstMessage.trim().length === 0) {
+        console.log('🏷️ [generateChatName] Empty message - returning default');
+        return 'New Chat';
+    }
+
+    // For single character or very minimal messages, use a default contextual name
+    if (firstMessage.trim().length <= 2) {
+        console.log('🏷️ [generateChatName] Very short message - using default');
+        return 'Quick Chat';
     }
 
     const nameRequest = `Generate a very short, concise title for a chat conversation that starts with this message:
@@ -1918,11 +1922,15 @@ Return ONLY the title, nothing else:`;
 
     try {
         const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY || '';
+        console.log('🏷️ [generateChatName] API Key present:', !!apiKey, 'Length:', apiKey.length);
+
         if (!apiKey) {
+            console.log('🏷️ [generateChatName] ❌ No API key - using fallback');
             log('warning', 'No API key for chat name generation');
             return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
         }
 
+        console.log('🏷️ [generateChatName] Making API request to OpenRouter...');
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -1938,13 +1946,19 @@ Return ONLY the title, nothing else:`;
             }),
         });
 
+        console.log('🏷️ [generateChatName] Response status:', response.status, response.statusText);
+
         if (!response.ok) {
+            console.log('🏷️ [generateChatName] ❌ API error - using fallback');
             log('error', `Chat name API error: ${response.status}`);
             return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
         }
 
         const data = await response.json();
+        console.log('🏷️ [generateChatName] API response data:', JSON.stringify(data, null, 2));
+
         const result = data.choices?.[0]?.message?.content;
+        console.log('🏷️ [generateChatName] Raw result:', result);
 
         if (result && result.trim()) {
             // Clean up the result
@@ -1959,6 +1973,8 @@ Return ONLY the title, nothing else:`;
             const words = name.split(/\s+/).slice(0, 5);
             name = words.join(' ');
 
+            console.log('🏷️ [generateChatName] ✅ Cleaned name:', name);
+
             if (name.length > 0 && name.length <= 50) {
                 log('success', `Generated chat name: "${name}"`);
                 return name;
@@ -1966,9 +1982,11 @@ Return ONLY the title, nothing else:`;
         }
 
         // Fallback: truncate original message
+        console.log('🏷️ [generateChatName] ⚠️ Empty result - using fallback');
         log('warning', 'Name generation returned empty, using truncated message');
         return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
     } catch (error) {
+        console.log('🏷️ [generateChatName] ❌ Exception:', error);
         log('error', `Chat name generation failed: ${error}`);
         // Fallback: truncate original message
         return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');

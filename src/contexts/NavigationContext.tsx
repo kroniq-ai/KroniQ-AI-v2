@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Project } from '../types';
+import { getProject } from '../lib/supabaseClient';
 
 type ViewType = 'chat' | 'projects' | 'voice' | 'code' | 'design' | 'video' | 'ppt' | 'image' | 'music' | 'billing' | 'admin' | 'analytics' | 'settings' | 'profile' | 'backup' | 'business';
 
@@ -81,20 +82,43 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return projectId;
   });
 
-  // Load project from URL if specified
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
+
+  // Load project from URL if specified - fetch from Supabase if not in localStorage
   useEffect(() => {
-    if (urlProjectId && !activeProject) {
-      // Project ID is in URL but not loaded - try to load from localStorage
-      const saved = localStorage.getItem('kroniq_active_project');
-      if (saved) {
-        const project = JSON.parse(saved);
-        if (project.id === urlProjectId) {
-          setActiveProjectState(project);
+    const loadProjectFromUrl = async () => {
+      if (urlProjectId && !activeProject && !isLoadingProject) {
+        // Project ID is in URL but not loaded - try to load from localStorage first
+        const saved = localStorage.getItem('kroniq_active_project');
+        if (saved) {
+          const project = JSON.parse(saved);
+          if (project.id === urlProjectId) {
+            setActiveProjectState(project);
+            return;
+          }
+        }
+
+        // Project isn't in localStorage - fetch from Supabase
+        console.log('📂 [NavigationContext] Fetching project from URL:', urlProjectId);
+        setIsLoadingProject(true);
+        try {
+          const project = await getProject(urlProjectId);
+          if (project) {
+            console.log('✅ [NavigationContext] Loaded project from Supabase:', project.name);
+            setActiveProjectState(project);
+          } else {
+            console.warn('⚠️ [NavigationContext] Project not found:', urlProjectId);
+          }
+        } catch (error) {
+          console.error('❌ [NavigationContext] Failed to load project:', error);
+        } finally {
+          setIsLoadingProject(false);
         }
       }
-      // If project isn't in localStorage, AppShell will need to load it
-    }
-  }, [urlProjectId, activeProject]);
+    };
+
+    loadProjectFromUrl();
+  }, [urlProjectId, activeProject, isLoadingProject]);
 
   // Sync to localStorage
   useEffect(() => {
