@@ -94,6 +94,11 @@ const animationStyles = `
     50% { opacity: 0.8; }
   }
   
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
   .animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
   .animate-fade-in-up { animation: fade-in-up 0.6s ease-out forwards; }
   .animate-gradient { animation: gradient-shift 3s ease infinite; background-size: 200% 200%; }
@@ -2165,7 +2170,7 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                             : 'bg-gradient-to-r from-gray-50 to-white border border-gray-100'}`}>
                             <span className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-white/40' : 'text-gray-400'}`}>Tokens</span>
                             <span className={`text-xl font-bold tabular-nums ${userTier === 'PREMIUM'
-                                ? 'bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent'
+                                ? 'bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent'
                                 : isDark ? 'text-white' : 'text-gray-900'}`}>
                                 {tokensRemaining !== null
                                     ? (tokensRemaining >= 1000 ? `${Math.round(tokensRemaining / 1000)}K` : tokensRemaining.toLocaleString())
@@ -2173,25 +2178,43 @@ const Sidebar: React.FC<{ isDark: boolean; onNewChat?: () => void; onOpenProject
                             </span>
                         </div>
 
-                        {/* Premium progress bar with glow */}
-                        <div className={`relative mt-3 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
-                            {/* Glow effect behind progress */}
-                            <div
-                                className={`absolute h-4 -top-1 rounded-full blur-md ${userTier === 'PREMIUM' ? 'bg-amber-500/50' : 'bg-emerald-500/50'}`}
-                                style={{
-                                    width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%'
-                                }}
-                            />
-                            {/* Actual progress bar */}
+                        {/* Tier-Based Progress Bar - All Green, Different Quality */}
+                        <div className={`relative mt-3 overflow-hidden rounded-full ${userTier === 'PREMIUM' ? 'h-2.5' : userTier === 'PRO' ? 'h-2' : 'h-1.5'
+                            } ${isDark ? 'bg-white/[0.04]' : 'bg-gray-100'}`}>
+                            {/* Glow effect - stronger for higher tiers */}
+                            {(userTier === 'PRO' || userTier === 'PREMIUM') && (
+                                <div
+                                    className={`absolute rounded-full blur-md ${userTier === 'PREMIUM'
+                                        ? 'h-6 -top-1.5 bg-emerald-500/60'
+                                        : 'h-4 -top-1 bg-emerald-500/40'
+                                        }`}
+                                    style={{
+                                        width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%'
+                                    }}
+                                />
+                            )}
+                            {/* Actual progress bar - premium gets animation */}
                             <div
                                 className={`relative h-full rounded-full transition-all duration-700 ease-out ${userTier === 'PREMIUM'
-                                    ? 'bg-gradient-to-r from-amber-400 to-orange-500'
-                                    : 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                                    ? 'bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 animate-pulse'
+                                    : userTier === 'PRO'
+                                        ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                                        : 'bg-emerald-500/70'
                                     }`}
                                 style={{
                                     width: tokensRemaining !== null ? `${Math.min(100, (tokensRemaining / 20000) * 100)}%` : '0%'
                                 }}
-                            />
+                            >
+                                {/* Shimmer effect for Premium only */}
+                                {userTier === 'PREMIUM' && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
+                                        style={{
+                                            backgroundSize: '200% 100%',
+                                            animation: 'shimmer 2s linear infinite'
+                                        }}
+                                    />
+                                )}
+                            </div>
                         </div>
                     </div>
 
