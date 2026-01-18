@@ -3313,7 +3313,7 @@ ${interpretation.enhancedPrompt}
                         {/* Input Box - KroniQ Signature Floating Glass Design */}
                         <div
                             className={`
-                                relative flex items-end gap-3 min-h-[60px] py-3 px-5 rounded-2xl transition-all duration-300
+                                relative flex items-end gap-4 min-h-[56px] py-3 px-4 rounded-3xl transition-all duration-300
                                 ${isDark
                                     ? 'bg-gradient-to-br from-white/8 via-white/5 to-white/3 border border-white/15 focus-within:border-emerald-500/40 hover:border-white/25'
                                     : 'bg-white border-2 border-gray-200 focus-within:border-emerald-400 hover:border-gray-300 shadow-lg shadow-gray-200/50'}
@@ -3330,13 +3330,13 @@ ${interpretation.enhancedPrompt}
                                 <button
                                     onClick={() => setShowPlusMenu(!showPlusMenu)}
                                     className={`
-                                    w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ease-out
+                                    w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ease-out border
                                     ${showPlusMenu
-                                            ? 'bg-emerald-500/20 text-emerald-400 scale-110'
-                                            : isDark ? 'text-white/40 hover:text-white/70 hover:bg-white/10' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}
+                                            ? 'bg-emerald-500/20 text-emerald-400 scale-110 border-emerald-500/30'
+                                            : isDark ? 'text-white/50 hover:text-white border-white/20 hover:bg-white/10' : 'text-gray-500 hover:text-gray-700 border-gray-300 hover:bg-gray-100'}
                                 `}
                                 >
-                                    <Plus className={`w-4 h-4 transition-transform duration-300 ${showPlusMenu ? 'rotate-45' : ''}`} />
+                                    <Plus className={`w-5 h-5 transition-transform duration-300 ${showPlusMenu ? 'rotate-45' : ''}`} />
                                 </button>
 
                                 {/* Premium Dropdown Menu */}
@@ -3497,11 +3497,11 @@ ${interpretation.enhancedPrompt}
                                 aria-label="Message input"
                                 aria-describedby="char-count"
                                 className={`
-                                flex-1 bg-transparent border-none outline-none text-sm resize-none overflow-y-auto
-                                ${isDark ? 'text-white placeholder-white/40' : 'text-gray-900 placeholder-gray-400'}
+                                flex-1 bg-transparent border-none outline-none text-base resize-none overflow-y-auto leading-relaxed
+                                ${isDark ? 'text-white placeholder-white/50' : 'text-gray-900 placeholder-gray-500'}
                                 ${isLoading ? 'opacity-50' : ''}
                             `}
-                                style={{ maxHeight: '150px', minHeight: '24px' }}
+                                style={{ maxHeight: '150px', minHeight: '28px' }}
                             />
 
                             {/* Enhance Prompt button - Magic Wand */}
@@ -3511,19 +3511,19 @@ ${interpretation.enhancedPrompt}
                                 title="Enhance prompt with AI"
                                 aria-label="Enhance prompt with AI"
                                 className={`
-                                w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200
+                                w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200
                                 ${!inputValue.trim() || isEnhancing || isLoading
-                                        ? 'opacity-40 cursor-not-allowed'
+                                        ? 'opacity-30 cursor-not-allowed'
                                         : isDark
                                             ? 'hover:bg-purple-500/20 cursor-pointer'
                                             : 'hover:bg-purple-50 cursor-pointer'}
                             `}
                             >
                                 {isEnhancing ? (
-                                    <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
                                 ) : (
                                     <svg
-                                        className="w-4 h-4"
+                                        className="w-5 h-5"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
@@ -3553,21 +3553,21 @@ ${interpretation.enhancedPrompt}
                                     aria-label={isListening ? "Stop voice input" : "Start voice input"}
                                     aria-pressed={isListening}
                                     className={`
-                                    w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 relative
-                                    ${isLoading ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                                    w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 relative
+                                    ${isLoading ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
                                     ${isListening
                                             ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30'
                                             : isDark
-                                                ? 'hover:bg-white/10 text-white/60 hover:text-white'
+                                                ? 'hover:bg-white/10 text-white/50 hover:text-white'
                                                 : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700'}
                                 `}
                                 >
                                     {/* Pulse animation when listening */}
                                     {isListening && (
-                                        <span className="absolute inset-0 rounded-xl animate-ping bg-red-500/50" />
+                                        <span className="absolute inset-0 rounded-lg animate-ping bg-red-500/50" />
                                     )}
                                     <svg
-                                        className="w-4 h-4 relative z-10"
+                                        className="w-5 h-5 relative z-10"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
@@ -3588,10 +3588,10 @@ ${interpretation.enhancedPrompt}
                                     aria-label="Stop AI generation"
                                     className={`
                                     w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ease-out
-                                    bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/25 hover:scale-110 hover:shadow-xl
+                                    bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/25 hover:scale-105 hover:shadow-xl
                                 `}
                                 >
-                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                         <rect x="6" y="6" width="12" height="12" rx="3" />
                                     </svg>
                                 </button>
@@ -3603,11 +3603,11 @@ ${interpretation.enhancedPrompt}
                                     className={`
                                     w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ease-out
                                     ${inputValue.trim()
-                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-110 hover:shadow-xl'
-                                            : isDark ? 'bg-white/[0.08] text-white/30' : 'bg-gray-100 text-gray-400'}
+                                            ? 'bg-white text-black hover:scale-105 hover:shadow-lg'
+                                            : isDark ? 'bg-white/[0.08] text-white/30' : 'bg-gray-200 text-gray-400'}
                                 `}
                                 >
-                                    <Send className="w-3.5 h-3.5" aria-hidden="true" />
+                                    <Send className="w-4 h-4" aria-hidden="true" />
                                 </button>
                             )}
                         </div>
