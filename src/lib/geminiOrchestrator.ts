@@ -1884,6 +1884,7 @@ Return ONLY the enhanced prompt, nothing else. Do not include explanations or pr
 /**
  * Generate a concise chat name based on the user's first message
  * Uses Gemini 2.0 Flash (free) to create a meaningful 2-5 word title
+ * NEVER returns the raw message as the name
  */
 export async function generateChatName(firstMessage: string): Promise<string> {
     console.log('🏷️ [generateChatName] Called with:', firstMessage);
@@ -1895,10 +1896,15 @@ export async function generateChatName(firstMessage: string): Promise<string> {
         return 'New Chat';
     }
 
-    // For single character messages only, use a default
-    if (firstMessage.trim().length <= 1) {
-        console.log('🏷️ [generateChatName] Single char message - using default');
-        return 'Quick Chat';
+    const cleanedMsg = firstMessage.trim().toLowerCase();
+
+    // For short greetings, use friendly fallback immediately
+    if (cleanedMsg.length <= 15) {
+        const greeting = getGreetingFallback(cleanedMsg);
+        if (greeting) {
+            console.log('🏷️ [generateChatName] Short greeting detected - using:', greeting);
+            return greeting;
+        }
     }
 
     const nameRequest = `Generate a very short, concise title for a chat conversation that starts with this message:
@@ -1910,20 +1916,20 @@ Rules:
 - No quotes, no punctuation at the end
 - Title case (capitalize important words)
 - Focus on the main topic, intent, or context
-- For greetings, use friendly descriptive titles
+- NEVER just repeat the user's message back
+- Create a DIFFERENT, DESCRIPTIVE title
 
 Examples:
 - "hey" → "Friendly Chat"
 - "hello" → "Hello There"
 - "hi" → "Quick Hello"
-- "hi there" → "Casual Greeting"
+- "hey there" → "Casual Greeting"
+- "hi there" → "Friendly Hello"
 - "what's up" → "Casual Check-In"
 - "good morning" → "Morning Chat"
 - "Help me write a business plan" → "Business Plan Help"
 - "What is machine learning?" → "Machine Learning Basics"
 - "Create a logo for my startup" → "Startup Logo Design"
-- "Explain quantum physics" → "Quantum Physics Explained"
-- "Write code for a todo app" → "Todo App Code"
 
 Return ONLY the title, nothing else:`;
 
@@ -1932,9 +1938,9 @@ Return ONLY the title, nothing else:`;
         console.log('🏷️ [generateChatName] API Key present:', !!apiKey, 'Length:', apiKey.length);
 
         if (!apiKey) {
-            console.log('🏷️ [generateChatName] ❌ No API key - using fallback');
+            console.log('🏷️ [generateChatName] ❌ No API key - using smart fallback');
             log('warning', 'No API key for chat name generation');
-            return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+            return getSmartFallback(firstMessage);
         }
 
         console.log('🏷️ [generateChatName] Making API request to OpenRouter...');
@@ -1956,9 +1962,9 @@ Return ONLY the title, nothing else:`;
         console.log('🏷️ [generateChatName] Response status:', response.status, response.statusText);
 
         if (!response.ok) {
-            console.log('🏷️ [generateChatName] ❌ API error - using fallback');
+            console.log('🏷️ [generateChatName] ❌ API error - using smart fallback');
             log('error', `Chat name API error: ${response.status}`);
-            return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+            return getSmartFallback(firstMessage);
         }
 
         const data = await response.json();
@@ -1980,7 +1986,16 @@ Return ONLY the title, nothing else:`;
             const words = name.split(/\s+/).slice(0, 5);
             name = words.join(' ');
 
-            console.log('🏷️ [generateChatName] ✅ Cleaned name:', name);
+            console.log('🏷️ [generateChatName] Cleaned name:', name);
+
+            // CRITICAL: Validate that the name is NOT the same as the original message
+            const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normalizedMsg = cleanedMsg.replace(/[^a-z0-9]/g, '');
+
+            if (normalizedName === normalizedMsg || name.toLowerCase() === cleanedMsg) {
+                console.log('🏷️ [generateChatName] ⚠️ AI returned raw message - using smart fallback');
+                return getSmartFallback(firstMessage);
+            }
 
             if (name.length > 0 && name.length <= 50) {
                 log('success', `Generated chat name: "${name}"`);
@@ -1988,36 +2003,71 @@ Return ONLY the title, nothing else:`;
             }
         }
 
-        // Fallback: For short messages, use context-aware defaults rather than raw message
+        // Fallback
         console.log('🏷️ [generateChatName] ⚠️ Empty result - using smart fallback');
         log('warning', 'Name generation returned empty, using smart fallback');
-
-        // Smart fallback based on message content
-        const msg = firstMessage.toLowerCase().trim();
-        if (['hey', 'hi', 'hello', 'yo', 'sup'].some(g => msg.startsWith(g))) {
-            return 'Friendly Chat';
-        }
-        if (msg.includes('morning') || msg.includes('evening') || msg.includes('night')) {
-            return 'Greeting Chat';
-        }
-        if (firstMessage.length <= 10) {
-            return 'Quick Chat';
-        }
-        return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+        return getSmartFallback(firstMessage);
     } catch (error) {
         console.log('🏷️ [generateChatName] ❌ Exception:', error);
         log('error', `Chat name generation failed: ${error}`);
-
-        // Smart fallback for errors too
-        const msg = firstMessage.toLowerCase().trim();
-        if (['hey', 'hi', 'hello', 'yo', 'sup'].some(g => msg.startsWith(g))) {
-            return 'Friendly Chat';
-        }
-        if (firstMessage.length <= 10) {
-            return 'Quick Chat';
-        }
-        return firstMessage.substring(0, 40) + (firstMessage.length > 40 ? '...' : '');
+        return getSmartFallback(firstMessage);
     }
+}
+
+// Helper: Get greeting-based fallback
+function getGreetingFallback(msg: string): string | null {
+    const greetings: Record<string, string> = {
+        'hey there': 'Casual Greeting',
+        'hi there': 'Friendly Hello',
+        'hello there': 'Hello Chat',
+        'hey': 'Friendly Chat',
+        'hi': 'Quick Hello',
+        'hello': 'Hello There',
+        'yo': 'Quick Chat',
+        'sup': 'Casual Chat',
+        "what's up": 'Check-In Chat',
+        'whats up': 'Check-In Chat',
+        'good morning': 'Morning Chat',
+        'good evening': 'Evening Chat',
+        'good afternoon': 'Afternoon Chat',
+        'good night': 'Night Chat',
+        'thanks': 'Thank You Chat',
+        'thank you': 'Appreciation Chat',
+        'help': 'Help Request',
+        'help me': 'Assistance Needed',
+    };
+
+    for (const [pattern, title] of Object.entries(greetings)) {
+        if (msg === pattern || msg.startsWith(pattern + ' ')) {
+            return title;
+        }
+    }
+    return null;
+}
+
+// Helper: Smart fallback that NEVER returns raw message
+function getSmartFallback(message: string): string {
+    const msg = message.toLowerCase().trim();
+
+    // Check greetings first
+    const greetingFallback = getGreetingFallback(msg);
+    if (greetingFallback) return greetingFallback;
+
+    // Keyword-based fallback
+    if (msg.includes('code') || msg.includes('program') || msg.includes('function')) return 'Coding Help';
+    if (msg.includes('write') || msg.includes('draft')) return 'Writing Assistance';
+    if (msg.includes('explain') || msg.includes('what is')) return 'Learning Query';
+    if (msg.includes('create') || msg.includes('make') || msg.includes('generate')) return 'Creative Request';
+    if (msg.includes('help') || msg.includes('assist')) return 'Help Request';
+    if (msg.includes('image') || msg.includes('picture') || msg.includes('photo')) return 'Image Request';
+    if (msg.includes('video')) return 'Video Request';
+    if (msg.includes('business') || msg.includes('company')) return 'Business Discussion';
+    if (msg.includes('idea') || msg.includes('brainstorm')) return 'Brainstorming Session';
+
+    // Length-based generic fallback - NEVER raw message
+    if (msg.length <= 10) return 'Quick Chat';
+    if (msg.length <= 30) return 'New Conversation';
+    return 'New Discussion';
 }
 
 // ===== PHASE 2: UNIFIED PROCESSING FLOW =====

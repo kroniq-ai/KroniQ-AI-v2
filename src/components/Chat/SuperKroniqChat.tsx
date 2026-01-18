@@ -2423,13 +2423,23 @@ ${interpretation.enhancedPrompt}
                 flex flex-col h-full relative transition-all duration-300
                 ${activeStudio ? 'w-1/2' : 'w-full'}
             `}>
-                {/* Header - Ultra-Clean Premium Design */}
+                {/* Header - KroniQ Premium Design - Prominent but Clean */}
                 <div className={`
-                    flex items-center justify-between px-4 py-2
-                    ${isDark ? 'bg-transparent' : 'bg-white/50'}
+                    flex items-center justify-between px-6 py-4 border-b
+                    ${isDark ? 'bg-black/20 border-white/5' : 'bg-white/80 border-gray-100'}
                 `}>
-                    {/* Left - Editable Chat Title */}
-                    <div className="flex items-center">
+                    {/* Left - Editable Chat Title with Premium Styling */}
+                    <div className="flex items-center gap-3">
+                        {/* KroniQ logo icon */}
+                        <div className={`
+                            w-9 h-9 rounded-xl flex items-center justify-center
+                            ${isDark
+                                ? 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20'
+                                : 'bg-gradient-to-br from-emerald-50 to-teal-50'}
+                        `}>
+                            <span className="text-lg">✨</span>
+                        </div>
+
                         {isEditingTitle ? (
                             <div className="flex items-center gap-2">
                                 <input
@@ -2442,11 +2452,11 @@ ${interpretation.enhancedPrompt}
                                     }}
                                     onBlur={() => setIsEditingTitle(false)}
                                     className={`
-                                        px-3 py-1.5 rounded-lg text-sm font-medium min-w-[150px] max-w-[300px]
+                                        px-4 py-2 rounded-xl text-base font-semibold min-w-[180px] max-w-[350px]
                                         ${isDark
                                             ? 'bg-white/5 text-white border border-white/10 focus:border-emerald-500/50'
                                             : 'bg-gray-50 text-gray-900 border border-gray-200 focus:border-emerald-500'}
-                                        outline-none transition-colors
+                                        outline-none transition-all shadow-sm
                                     `}
                                     autoFocus
                                 />
@@ -2455,43 +2465,43 @@ ${interpretation.enhancedPrompt}
                             <button
                                 onClick={() => setIsEditingTitle(true)}
                                 className={`
-                                    text-sm font-medium flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all group
-                                    ${isDark ? 'text-white/90 hover:bg-white/5' : 'text-gray-800 hover:bg-gray-50'}
+                                    text-base font-semibold flex items-center gap-2 px-3 py-2 rounded-xl transition-all group
+                                    ${isDark ? 'text-white hover:bg-white/5' : 'text-gray-900 hover:bg-gray-50'}
                                 `}
                             >
                                 {chatTitle}
-                                <ChevronDown className="w-3.5 h-3.5 opacity-40 group-hover:opacity-70 transition-opacity" />
+                                <ChevronDown className="w-4 h-4 opacity-40 group-hover:opacity-70 transition-opacity" />
                             </button>
                         )}
                     </div>
 
-                    {/* Right - Ghost-Style Action Buttons */}
-                    <div className="flex items-center gap-1">
-                        {/* Share Button - Ghost style */}
+                    {/* Right - Refined Action Buttons with KroniQ branding */}
+                    <div className="flex items-center gap-2">
+                        {/* Share Button - Subtle Glass */}
                         <button
                             onClick={() => setShowShareModal(true)}
                             className={`
-                                flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium
+                                flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-medium
                                 ${isDark
-                                    ? 'text-white/50 hover:text-white/90 hover:bg-white/5'
-                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}
+                                    ? 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                                    : 'text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200'}
                             `}
                         >
-                            <Share2 className="w-3.5 h-3.5" />
+                            <Share2 className="w-4 h-4" />
                             <span>Share</span>
                         </button>
 
-                        {/* Settings Button - Ghost style */}
+                        {/* Settings Button - Subtle Glass */}
                         <button
                             onClick={() => setShowChatSettings(true)}
                             className={`
-                                flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium
+                                flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-sm font-medium
                                 ${isDark
-                                    ? 'text-white/50 hover:text-white/90 hover:bg-white/5'
-                                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'}
+                                    ? 'text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                                    : 'text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200'}
                             `}
                         >
-                            <Settings className="w-3.5 h-3.5" />
+                            <Settings className="w-4 h-4" />
                             <span>Settings</span>
                         </button>
                     </div>
@@ -3297,16 +3307,23 @@ ${interpretation.enhancedPrompt}
                     </div>
                 </div>
 
-                {/* Input Area - Clean ChatGPT-Style Design */}
-                <div className="px-4 py-4 pb-6">
-                    <div className="mx-auto" style={{ maxWidth: 'min(720px, calc(100% - 16px))' }}>
-                        {/* Input Box - Clean rounded pill with minimal styling */}
-                        <div className={`
-                            relative flex items-end gap-2 min-h-[52px] py-2.5 px-4 rounded-[26px] transition-all duration-300
-                            ${isDark
-                                ? 'bg-[#2f2f2f] hover:bg-[#3a3a3a] border border-white/10 focus-within:border-white/20'
-                                : 'bg-gray-100 hover:bg-gray-50 focus-within:bg-white border border-gray-300 focus-within:border-gray-400 focus-within:shadow-md'}
-                        `}
+                {/* Input Area - Unique KroniQ Premium Design */}
+                <div className="px-4 sm:px-6 py-5 pb-8">
+                    <div className="mx-auto" style={{ maxWidth: 'min(760px, calc(100% - 24px))' }}>
+                        {/* Input Box - KroniQ Signature Floating Glass Design */}
+                        <div
+                            className={`
+                                relative flex items-end gap-3 min-h-[60px] py-3 px-5 rounded-2xl transition-all duration-300
+                                ${isDark
+                                    ? 'bg-gradient-to-br from-white/8 via-white/5 to-white/3 border border-white/15 focus-within:border-emerald-500/40 hover:border-white/25'
+                                    : 'bg-white border-2 border-gray-200 focus-within:border-emerald-400 hover:border-gray-300 shadow-lg shadow-gray-200/50'}
+                            `}
+                            style={{
+                                backdropFilter: 'blur(20px)',
+                                boxShadow: isDark
+                                    ? 'inset 0 1px 1px rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)'
+                                    : '0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04), inset 0 -1px 0 rgba(0,0,0,0.05)'
+                            }}
                         >
                             {/* Plus Button with Dropdown */}
                             <div className="relative">
