@@ -1,8 +1,8 @@
 /**
  * Hero / marketing number = `dbCount + offset` (returned as `displayCount` from `/api/waitlist/stats`).
- * Default offset is 100. Set `NEXT_PUBLIC_WAITLIST_DISPLAY_OFFSET=0` to show the raw row count.
+ * Set `NEXT_PUBLIC_WAITLIST_DISPLAY_OFFSET=0` to show the raw DB count only; override for marketing (e.g. 40).
  */
-const DEFAULT_OFFSET = 50;
+const DEFAULT_OFFSET = 40;
 const MAX_OFFSET = 100;
 
 export function getWaitlistDisplayOffset(): number {

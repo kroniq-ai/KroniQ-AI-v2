@@ -93,7 +93,6 @@ export const metadata: Metadata = {
       { url: kroniqAppIconPath, sizes: "32x32", type: "image/png" },
       { url: kroniqAppIconPath, sizes: "48x48", type: "image/png" },
       { url: kroniqAppIconPath, sizes: "192x192", type: "image/png" },
-      { url: "/favicon.svg", type: "image/svg+xml", sizes: "any" },
     ],
     apple: [
       { url: kroniqAppIconPath, sizes: "180x180", type: "image/png" },

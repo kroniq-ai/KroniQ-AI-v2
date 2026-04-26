@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { LiquidMetalBadgeShell } from "@/components/ui/liquid-metal-badge";
-import { getWaitlistDisplayOffset } from "@/lib/waitlist/display-offset";
 import type { WaitlistHeroInitialStats } from "@/lib/waitlist/hero-initial-stats";
 
 type StatsPayload = {
@@ -111,39 +110,23 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
         );
     }
 
-    if (phase === "error" || (stats && !stats.configured)) {
-        const off = getWaitlistDisplayOffset();
-        const countLabel = `${off.toLocaleString()}+`;
-        const showDevHint = process.env.NODE_ENV === "development" && stats && !stats.configured;
+    if (phase === "error") {
         return shell(
-            <div className="max-w-[20rem] text-center sm:text-left">
-                <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-baseline sm:gap-2.5 sm:justify-center">
-                    <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/20 opacity-50" />
-                        <span
-                            className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white/50"
-                            aria-hidden
-                        />
+            <>
+                <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/20 opacity-50" />
+                    <span
+                        className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white/40"
+                        aria-hidden
+                    />
+                </span>
+                <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight text-white/55 md:text-[14px]">
+                    <span className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold text-white/50">
+                        —
                     </span>
-                    <p className="flex flex-wrap items-baseline justify-center gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight text-white/85 md:text-[14px]">
-                        <span
-                            className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold text-white"
-                            style={{ fontFeatureSettings: '"tnum"' }}
-                        >
-                            {countLabel}
-                        </span>
-                        <span className="font-normal text-white/50">on the waitlist</span>
-                    </p>
-                </div>
-                {showDevHint ? (
-                    <p className="mt-2 text-[10px] leading-snug text-white/30">
-                        Live count: add{" "}
-                        <code className="rounded bg-white/10 px-0.5 text-white/50">NEXT_PUBLIC_SUPABASE_URL</code> +{" "}
-                        <code className="rounded bg-white/10 px-0.5 text-white/50">SUPABASE_SERVICE_ROLE_KEY</code> and
-                        run <code className="rounded bg-white/10 px-0.5 text-white/50">db/migrations/002_waitlist_referrals.sql</code>.
-                    </p>
-                ) : null}
-            </div>
+                    <span className="font-normal text-white/45">on the waitlist</span>
+                </p>
+            </>
         );
     }
 
@@ -153,6 +136,7 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
 
     const n = Number(stats.displayCount);
     const countLabel = `${(Number.isFinite(n) ? n : 0).toLocaleString()}${stats.showPlus ? "+" : ""}`;
+    const showDevHint = process.env.NODE_ENV === "development" && !stats.configured;
 
     return shell(
         <>
@@ -172,6 +156,14 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
                 </span>
                 <span className="font-normal text-white/50">on the waitlist</span>
             </p>
+            {showDevHint ? (
+                <p className="mt-2 max-w-[20rem] text-center text-[10px] leading-snug text-white/30 sm:mx-auto sm:text-left">
+                    Live count: set{" "}
+                    <code className="rounded bg-white/10 px-0.5 text-white/50">NEXT_PUBLIC_SUPABASE_URL</code> +{" "}
+                    <code className="rounded bg-white/10 px-0.5 text-white/50">SUPABASE_SERVICE_ROLE_KEY</code> and
+                    apply <code className="rounded bg-white/10 px-0.5 text-white/50">db/migrations</code>.
+                </p>
+            ) : null}
         </>
     );
 }

@@ -38,15 +38,19 @@ export type PublicWaitlistStats = {
   leaderboard: { rank: number; displayName: string; referralPoints: number }[];
 };
 
-const empty: PublicWaitlistStats = {
-  configured: false,
-  dbCount: 0,
-  displayCount: 0,
-  displayOffset: 0,
-  showPlus: false,
-  leaderboardEnabled: false,
-  leaderboard: [],
-};
+function notConfiguredResponse(): PublicWaitlistStats {
+  const displayOffset = getWaitlistDisplayOffset();
+  return {
+    configured: false,
+    dbCount: 0,
+    /** Shown as exact number (no +) when the API cannot reach the DB. */
+    displayCount: displayOffset,
+    displayOffset,
+    showPlus: false,
+    leaderboardEnabled: process.env.NEXT_PUBLIC_WAITLIST_LEADERBOARD !== "false",
+    leaderboard: [],
+  };
+}
 
 /**
  * Shared by `GET /api/waitlist/stats` and the home page (SSR) so the hero can show a count on first paint.
@@ -54,7 +58,7 @@ const empty: PublicWaitlistStats = {
 export async function getPublicWaitlistStats(): Promise<PublicWaitlistStats> {
   try {
   if (!waitlistConfigured()) {
-    return { ...empty };
+    return notConfiguredResponse();
   }
 
   const leaderboardEnabled = process.env.NEXT_PUBLIC_WAITLIST_LEADERBOARD !== "false";
@@ -86,7 +90,7 @@ export async function getPublicWaitlistStats(): Promise<PublicWaitlistStats> {
     console.error(
       "[getPublicWaitlistStats] no REST credentials — cannot use PostgREST (set URL + service role, or fix DATABASE_URL pooler)"
     );
-    return { ...empty };
+    return notConfiguredResponse();
   }
 
   const supabase = await createServiceRoleClient();
@@ -98,9 +102,9 @@ export async function getPublicWaitlistStats(): Promise<PublicWaitlistStats> {
   if (countError) {
     console.error("[getPublicWaitlistStats] count", countError);
     if (isWaitlistTableMissing(countError)) {
-      return { ...empty };
+      return notConfiguredResponse();
     }
-    return { ...empty };
+    return notConfiguredResponse();
   }
 
   const dbCount = dbCountRaw ?? 0;
@@ -139,6 +143,6 @@ export async function getPublicWaitlistStats(): Promise<PublicWaitlistStats> {
   };
   } catch (e) {
     console.error("[getPublicWaitlistStats] unexpected", e);
-    return { ...empty };
+    return notConfiguredResponse();
   }
 }
