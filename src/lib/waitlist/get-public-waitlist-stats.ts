@@ -21,11 +21,15 @@ async function getWaitlistStatsPgWithRetry() {
   return withTimeout(getWaitlistStatsPg(), PG_STATS_TIMEOUT_MS);
 }
 
+function canUsePostgrestCount(): boolean {
+  return (
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
+  );
+}
+
 function waitlistConfigured(): boolean {
-  const rest =
-    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) &&
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim());
-  return isWaitlistDirectPg() || rest;
+  return isWaitlistDirectPg() || canUsePostgrestCount();
 }
 
 export type PublicWaitlistStats = {
@@ -53,94 +57,103 @@ function notConfiguredResponse(): PublicWaitlistStats {
 }
 
 /**
- * Shared by `GET /api/waitlist/stats` and the home page (SSR) so the hero can show a count on first paint.
+ * Build leaderboard from PostgREST (same shape as direct-PG path).
+ */
+async function buildLeaderboardPostgrest(
+  supabase: Awaited<ReturnType<typeof createServiceRoleClient>>
+): Promise<PublicWaitlistStats["leaderboard"]> {
+  const out: PublicWaitlistStats["leaderboard"] = [];
+  if (process.env.NEXT_PUBLIC_WAITLIST_LEADERBOARD === "false") {
+    return out;
+  }
+  const { data: rows, error: lbError } = await supabase
+    .from("waitlist_signups")
+    .select("name, referral_points")
+    .eq("disqualified", false)
+    .gt("referral_points", 0)
+    .order("referral_points", { ascending: false })
+    .limit(5);
+
+  if (lbError) {
+    console.error("[getPublicWaitlistStats] leaderboard", lbError);
+    return out;
+  }
+  if (!rows) return out;
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    displayName: publicLeaderboardName(r.name ?? ""),
+    referralPoints: r.referral_points ?? 0,
+  }));
+}
+
+/**
+ * Row count: **PostgREST (service role) first** so the hero matches the Supabase dashboard
+ * (direct Postgres was tried first before and a bad/empty pooler read could yield 0 → 0+40=40 only).
+ * Falls back to direct Postgres on PostgREST errors (e.g. PGRST cache / transient issues).
  */
 export async function getPublicWaitlistStats(): Promise<PublicWaitlistStats> {
   try {
-  if (!waitlistConfigured()) {
-    return notConfiguredResponse();
-  }
-
-  const leaderboardEnabled = process.env.NEXT_PUBLIC_WAITLIST_LEADERBOARD !== "false";
-  const displayOffset = getWaitlistDisplayOffset();
-
-  if (isWaitlistDirectPg()) {
-    try {
-      const { dbCount, leaderboard } = await getWaitlistStatsPgWithRetry();
-      const displayCount = dbCount + displayOffset;
-      return {
-        configured: true,
-        dbCount,
-        displayCount,
-        displayOffset,
-        showPlus: false,
-        leaderboardEnabled,
-        leaderboard,
-      };
-    } catch (e) {
-      const pgHint = waitlistPgFailureHint(e);
-      console.error("[getPublicWaitlistStats] direct Postgres failed", pgHint ?? e);
-    }
-  }
-
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
-    !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-  ) {
-    console.error(
-      "[getPublicWaitlistStats] no REST credentials — cannot use PostgREST (set URL + service role, or fix DATABASE_URL pooler)"
-    );
-    return notConfiguredResponse();
-  }
-
-  const supabase = await createServiceRoleClient();
-
-  const { count: dbCountRaw, error: countError } = await supabase
-    .from("waitlist_signups")
-    .select("*", { count: "exact", head: true });
-
-  if (countError) {
-    console.error("[getPublicWaitlistStats] count", countError);
-    if (isWaitlistTableMissing(countError)) {
+    if (!waitlistConfigured()) {
       return notConfiguredResponse();
     }
-    return notConfiguredResponse();
-  }
 
-  const dbCount = dbCountRaw ?? 0;
-  const displayCount = dbCount + displayOffset;
+    const leaderboardEnabled = process.env.NEXT_PUBLIC_WAITLIST_LEADERBOARD !== "false";
+    const displayOffset = getWaitlistDisplayOffset();
+    const canRest = canUsePostgrestCount();
+    const canDirectPg = isWaitlistDirectPg();
 
-  let leaderboard: PublicWaitlistStats["leaderboard"] = [];
+    if (canRest) {
+      try {
+        const supabase = await createServiceRoleClient();
+        const { count: dbCountRaw, error: countError } = await supabase
+          .from("waitlist_signups")
+          .select("*", { count: "exact", head: true });
 
-  if (leaderboardEnabled) {
-    const { data: rows, error: lbError } = await supabase
-      .from("waitlist_signups")
-      .select("name, referral_points")
-      .eq("disqualified", false)
-      .gt("referral_points", 0)
-      .order("referral_points", { ascending: false })
-      .limit(5);
+        if (!countError) {
+          const dbCount = dbCountRaw ?? 0;
+          const displayCount = dbCount + displayOffset;
+          const leaderboard = leaderboardEnabled ? await buildLeaderboardPostgrest(supabase) : [];
+          return {
+            configured: true,
+            dbCount,
+            displayCount,
+            displayOffset,
+            showPlus: false,
+            leaderboardEnabled,
+            leaderboard,
+          };
+        }
 
-    if (lbError) {
-      console.error("[getPublicWaitlistStats] leaderboard", lbError);
-    } else if (rows) {
-      leaderboard = rows.map((r, i) => ({
-        rank: i + 1,
-        displayName: publicLeaderboardName(r.name ?? ""),
-        referralPoints: r.referral_points ?? 0,
-      }));
+        console.error("[getPublicWaitlistStats] PostgREST count", countError);
+        if (isWaitlistTableMissing(countError)) {
+          return notConfiguredResponse();
+        }
+        /* else fall through to direct PG */
+      } catch (e) {
+        console.error("[getPublicWaitlistStats] PostgREST unexpected", e);
+        /* fall through to direct PG */
+      }
     }
-  }
 
-  return {
-    configured: true,
-    dbCount,
-    displayCount,
-    displayOffset,
-    showPlus: false,
-    leaderboardEnabled,
-    leaderboard,
-  };
+    if (canDirectPg) {
+      try {
+        const { dbCount, leaderboard } = await getWaitlistStatsPgWithRetry();
+        return {
+          configured: true,
+          dbCount,
+          displayCount: dbCount + displayOffset,
+          displayOffset,
+          showPlus: false,
+          leaderboardEnabled,
+          leaderboard,
+        };
+      } catch (e) {
+        const pgHint = waitlistPgFailureHint(e);
+        console.error("[getPublicWaitlistStats] direct Postgres failed", pgHint ?? e);
+      }
+    }
+
+    return notConfiguredResponse();
   } catch (e) {
     console.error("[getPublicWaitlistStats] unexpected", e);
     return notConfiguredResponse();

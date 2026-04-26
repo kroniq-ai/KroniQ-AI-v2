@@ -88,17 +88,19 @@ export const metadata: Metadata = {
     },
   },
   ...(siteVerification ? { verification: siteVerification } : {}),
+  /** 48×48+ first (Google’s favicon guidance). Root `/favicon.ico` helps crawlers that only fetch the default path. */
   icons: {
     icon: [
-      { url: kroniqAppIconPath, sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
       { url: kroniqAppIconPath, sizes: "48x48", type: "image/png" },
+      { url: kroniqAppIconPath, sizes: "32x32", type: "image/png" },
       { url: kroniqAppIconPath, sizes: "192x192", type: "image/png" },
     ],
     apple: [
       { url: kroniqAppIconPath, sizes: "180x180", type: "image/png" },
       { url: kroniqAppIconPath, sizes: "192x192", type: "image/png" },
     ],
-    shortcut: kroniqAppIconPath,
+    shortcut: "/favicon.ico",
   },
   manifest: "/site.webmanifest",
   appleWebApp: {
@@ -121,7 +123,6 @@ export default function RootLayout({
   return (
     <html lang="en-CA" suppressHydrationWarning className={`${inter.variable} ${outfit.variable}`}>
       <head>
-        <link rel="icon" href={kroniqAppIconPath} type="image/png" sizes="32x32" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(rootJsonLd) }}

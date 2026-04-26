@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
     },
     async headers() {
         return [
+            /* Public root `favicon.ico` is a PNG; correct MIME helps Google and browsers (ico extension, PNG content). */
+            {
+                source: "/favicon.ico",
+                headers: [
+                    { key: "Content-Type", value: "image/png" },
+                    { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+                ],
+            },
             {
                 source: "/:path*",
                 headers: [
