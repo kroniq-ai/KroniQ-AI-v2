@@ -1,8 +1,30 @@
+import type { Metadata } from "next";
 import HomeLanding from "@/components/home/HomeLanding";
+import { defaultDescription, openGraphImage, siteName, siteTagline } from "@/lib/seo/site";
 import { getPublicWaitlistStats } from "@/lib/waitlist/get-public-waitlist-stats";
 import type { WaitlistHeroInitialStats } from "@/lib/waitlist/hero-initial-stats";
 
 const SSR_STATS_BUDGET_MS = 2500;
+
+export const metadata: Metadata = {
+  title: `KroniQ — ${siteTagline}`,
+  description: defaultDescription,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: `KroniQ — ${siteTagline}`,
+    description: defaultDescription,
+    type: "website",
+    url: "/",
+    siteName,
+    images: [openGraphImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `KroniQ — ${siteTagline}`,
+    description: defaultDescription,
+    images: [openGraphImage.url],
+  },
+};
 
 /**
  * Server fetch is bounded so a slow/hung DB does not block RSC (infinite `loading.tsx`).

@@ -67,6 +67,12 @@ export async function middleware(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return response;
 
+  /** Public marketing pages: skip Supabase session — less CPU per request, faster TTFB. */
+  const needsUserSession = isProtected(pathname) || isAuthPath(pathname);
+  if (!needsUserSession) {
+    return response;
+  }
+
   try {
     const supabase = createServerClient(url, key, {
       cookies: {
@@ -110,6 +116,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Skip static, SEO files, and brand assets (less middleware = faster responses).
+    "/((?!_next/static|_next/image|favicon|robots\\.txt|sitemap\\.xml|site\\.webmanifest|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest|json|woff2)$).*)",
   ],
 };

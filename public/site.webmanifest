@@ -1,9 +1,13 @@
 {
+  "id": "/",
   "name": "KroniQ — Your autonomous AI CMO",
   "short_name": "KroniQ",
-  "description": "Your autonomous AI CMO. Private beta waitlist.",
-  "start_url": "/",
+  "description": "KroniQ is your autonomous AI CMO: outreach, content, leads, and follow-up from one mission. Private beta waitlist.",
+  "start_url": "/?utm_source=pwa",
   "display": "standalone",
+  "lang": "en-CA",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
   "background_color": "#050607",
   "theme_color": "#050607",
   "icons": [

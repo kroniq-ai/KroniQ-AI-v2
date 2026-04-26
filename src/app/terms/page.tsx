@@ -1,19 +1,32 @@
 import type { Metadata } from "next";
 import { LegalDocShell } from "@/components/legal/LegalDocShell";
 import { LEGAL_LAST_UPDATED_ISO, formatLegalLastUpdatedDisplay } from "@/lib/legal-last-updated";
+import { openGraphImage, siteName } from "@/lib/seo/site";
 
 const lastDisplay = formatLegalLastUpdatedDisplay(LEGAL_LAST_UPDATED_ISO);
 
+const title = "Terms of service";
+const description = "Terms for using the KroniQ website, waitlist, and preview or beta features.";
+
 export const metadata: Metadata = {
-    title: "Terms of Service",
-    description: "Terms for using the KroniQ website, waitlist, and preview features.",
-    robots: { index: true, follow: true },
-    alternates: { canonical: "/terms" },
-    openGraph: {
-        title: "Terms of Service | KroniQ",
-        description: "Rules for using the KroniQ site and waitlist.",
-        url: "/terms",
-    },
+  title,
+  description,
+  robots: { index: true, follow: true },
+  alternates: { canonical: "/terms" },
+  openGraph: {
+    title: `${title} | ${siteName}`,
+    description: "Rules for using the KroniQ site, waitlist, and previews.",
+    url: "/terms",
+    type: "website",
+    siteName,
+    images: [openGraphImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${title} | ${siteName}`,
+    description: "Rules for the KroniQ site, waitlist, and beta access.",
+    images: [openGraphImage.url],
+  },
 };
 
 export default function TermsPage() {

@@ -1,11 +1,16 @@
 import type { MetadataRoute } from "next";
-import { resolvePublicSiteOriginServer } from "@/lib/waitlist/public-site-url";
+import { getSiteUrl } from "@/lib/seo/site";
 
-const base = resolvePublicSiteOriginServer();
+const origin = getSiteUrl();
 
 export default function robots(): MetadataRoute.Robots {
-    return {
-        rules: { userAgent: "*", allow: "/", disallow: ["/dashboard", "/project", "/api/"] },
-        sitemap: `${base}/sitemap.xml`,
-    };
+  return {
+    rules: {
+      userAgent: "*",
+      allow: "/",
+      disallow: ["/dashboard", "/project/", "/dev-access", "/sigma", "/api/"],
+    },
+    sitemap: `${origin}/sitemap.xml`,
+    host: origin,
+  };
 }

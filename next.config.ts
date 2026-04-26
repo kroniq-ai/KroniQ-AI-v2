@@ -2,12 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
     reactStrictMode: true,
+    poweredByHeader: false,
+    productionBrowserSourceMaps: false,
     /** Reduces dev-only UI that can trip RSC manifest errors when `.next` cache is corrupted. */
     devIndicators: false,
-    /** Smaller, more stable lucide imports — helps dev chunk paths stay consistent. */
+    compress: true,
+    /** Smaller, more stable client chunks for icon/motion heavy UI. */
     experimental: {
-        optimizePackageImports: ["lucide-react"],
-        /** Avoids dev-only RSC manifest errors (`SegmentViewNode` missing) that break chunk loading (404 + text/plain). */
+        optimizePackageImports: ["lucide-react", "framer-motion"],
         devtoolSegmentExplorer: false,
     },
     images: {

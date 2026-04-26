@@ -1,20 +1,33 @@
 import type { Metadata } from "next";
 import { LegalDocShell } from "@/components/legal/LegalDocShell";
 import { LEGAL_LAST_UPDATED_ISO, formatLegalLastUpdatedDisplay } from "@/lib/legal-last-updated";
+import { openGraphImage, siteName } from "@/lib/seo/site";
 
 const lastDisplay = formatLegalLastUpdatedDisplay(LEGAL_LAST_UPDATED_ISO);
 
+const title = "Privacy policy";
+const description =
+  "How KroniQ collects, uses, and protects information when you use our site, join the waitlist, or contact us.";
+
 export const metadata: Metadata = {
-    title: "Privacy Policy",
-    description:
-        "How KroniQ collects, uses, and protects information when you use our site, join the waitlist, or contact us.",
-    robots: { index: true, follow: true },
-    alternates: { canonical: "/privacy" },
-    openGraph: {
-        title: "Privacy Policy | KroniQ",
-        description: "How we handle your data for the waitlist and website.",
-        url: "/privacy",
-    },
+  title,
+  description,
+  robots: { index: true, follow: true },
+  alternates: { canonical: "/privacy" },
+  openGraph: {
+    title: `${title} | ${siteName}`,
+    description: "How we handle your data for the KroniQ site and private beta waitlist.",
+    url: "/privacy",
+    type: "website",
+    siteName,
+    images: [openGraphImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${title} | ${siteName}`,
+    description: "Data and privacy for the KroniQ site and waitlist.",
+    images: [openGraphImage.url],
+  },
 };
 
 export default function PrivacyPage() {
