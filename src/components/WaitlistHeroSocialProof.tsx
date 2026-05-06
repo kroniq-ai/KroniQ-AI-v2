@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
-import { LiquidMetalBadgeShell } from "@/components/ui/liquid-metal-badge";
 import type { WaitlistHeroInitialStats } from "@/lib/waitlist/hero-initial-stats";
 
 type StatsPayload = {
@@ -84,9 +83,13 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className={`mt-8 flex w-full justify-center px-2 ${className ?? ""}`}
+            className={`flex justify-center ${className ?? ""}`}
         >
-            <LiquidMetalBadgeShell className="shadow-[0_14px_44px_rgba(0,0,0,0.55)]">{children}</LiquidMetalBadgeShell>
+            <div
+                className="inline-flex items-center justify-center gap-2.5 rounded-xl px-5 md:px-6 py-4 bg-white/[0.03] border border-white/[0.08] backdrop-blur-md shadow-sm min-h-full"
+            >
+                {children}
+            </div>
         </motion.div>
     );
 
@@ -94,17 +97,12 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
         return shell(
             <>
                 <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/20 opacity-50" />
-                    <span
-                        className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white/40"
-                        aria-hidden
-                    />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/30 opacity-70" />
+                    <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white/20" aria-hidden />
                 </span>
-                <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight text-white/85 md:text-[14px]">
-                    <span className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold text-white/45">
-                        —
-                    </span>
-                    <span className="font-normal text-white/45">on the waitlist</span>
+                <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight md:text-[14px]" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    <span className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold" style={{ color: "rgba(255,255,255,0.3)" }}>—</span>
+                    <span className="font-normal" style={{ color: "rgba(255,255,255,0.35)" }}>on the waitlist</span>
                 </p>
             </>
         );
@@ -114,17 +112,12 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
         return shell(
             <>
                 <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/20 opacity-50" />
-                    <span
-                        className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white/40"
-                        aria-hidden
-                    />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/20 opacity-60" />
+                    <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white/20" aria-hidden />
                 </span>
-                <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight text-white/55 md:text-[14px]">
-                    <span className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold text-white/50">
-                        —
-                    </span>
-                    <span className="font-normal text-white/45">on the waitlist</span>
+                <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight md:text-[14px]" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <span className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold" style={{ color: "rgba(255,255,255,0.3)" }}>—</span>
+                    <span className="font-normal" style={{ color: "rgba(255,255,255,0.3)" }}>on the waitlist</span>
                 </p>
             </>
         );
@@ -141,27 +134,27 @@ export default function WaitlistHeroSocialProof({ className, initialStats = null
     return shell(
         <>
             <span className="relative flex h-2 w-2 shrink-0 items-center justify-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/20 opacity-60" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40 opacity-70" />
                 <span
-                    className="relative inline-flex h-[7px] w-[7px] rounded-full bg-white shadow-[0_0_0_1px_rgba(255,255,255,0.35),0_0_12px_rgba(255,255,255,0.35)]"
+                    className="relative inline-flex h-[6px] w-[6px] rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                     aria-hidden
                 />
             </span>
-            <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight text-white/85 md:text-[14px]">
+            <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-[13px] font-medium leading-none tracking-tight md:text-[14px]" style={{ color: "rgba(255,255,255,0.55)" }}>
                 <span
-                    className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-semibold text-white"
+                    className="inline-flex min-w-[2.75ch] justify-center tabular-nums font-bold text-white"
                     style={{ fontFeatureSettings: '"tnum"' }}
                 >
                     {countLabel}
                 </span>
-                <span className="font-normal text-white/50">on the waitlist</span>
+                <span className="font-normal" style={{ color: "rgba(255,255,255,0.4)" }}>on the waitlist</span>
             </p>
             {showDevHint ? (
-                <p className="mt-2 max-w-[20rem] text-center text-[10px] leading-snug text-white/30 sm:mx-auto sm:text-left">
+                <p className="mt-2 max-w-[20rem] text-center text-[10px] leading-snug text-gray-400 sm:mx-auto sm:text-left">
                     Live count: set{" "}
-                    <code className="rounded bg-white/10 px-0.5 text-white/50">NEXT_PUBLIC_SUPABASE_URL</code> +{" "}
-                    <code className="rounded bg-white/10 px-0.5 text-white/50">SUPABASE_SERVICE_ROLE_KEY</code> and
-                    apply <code className="rounded bg-white/10 px-0.5 text-white/50">db/migrations</code>.
+                    <code className="rounded bg-gray-100 px-0.5 text-gray-600">NEXT_PUBLIC_SUPABASE_URL</code> +{" "}
+                    <code className="rounded bg-gray-100 px-0.5 text-gray-600">SUPABASE_SERVICE_ROLE_KEY</code> and
+                    apply <code className="rounded bg-gray-100 px-0.5 text-gray-600">db/migrations</code>.
                 </p>
             ) : null}
         </>

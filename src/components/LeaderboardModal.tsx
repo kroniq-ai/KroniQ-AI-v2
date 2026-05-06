@@ -11,7 +11,7 @@ import {
   type WaitlistMemberSession,
 } from "@/lib/waitlist/client-session";
 import Link from "next/link";
-import { ChevronDown, Link2, Sparkles, Trophy, Users } from "lucide-react";
+import { ChevronDown, Link2, Sparkles, Trophy, Users, Copy, Check } from "lucide-react";
 import { fetchWithTimeout, isTimeoutAbort } from "@/lib/waitlist/client-fetch";
 import { normalizeReferralCode } from "@/lib/waitlist/referral-code-normalize";
 
@@ -47,23 +47,23 @@ type Props = {
 };
 
 function rankAccent(rank: number) {
-  if (rank === 1) return "text-white";
-  if (rank === 2) return "text-zinc-200/90";
-  if (rank === 3) return "text-zinc-300/80";
+  if (rank === 1) return "text-amber-400 drop-shadow-[0_2px_10px_rgba(251,191,36,0.5)]";
+  if (rank === 2) return "text-slate-300 drop-shadow-[0_2px_10px_rgba(203,213,225,0.3)]";
+  if (rank === 3) return "text-orange-400 drop-shadow-[0_2px_10px_rgba(251,146,60,0.3)]";
   return "text-white/55";
 }
 
 function podiumBlockClass(rank: number) {
   if (rank === 1) {
-    return "border-white/25 bg-gradient-to-b from-white/[0.12] via-zinc-900/30 to-black/40 shadow-[0_0_32px_-12px_rgba(255,255,255,0.08)]";
+    return "border-amber-500/30 bg-gradient-to-b from-amber-500/20 via-black/40 to-black/60 shadow-[0_0_30px_rgba(245,158,11,0.15),inset_0_1px_0_rgba(251,191,36,0.4)]";
   }
   if (rank === 2) {
-    return "border-white/18 bg-gradient-to-b from-zinc-300/12 via-zinc-900/25 to-black/35";
+    return "border-slate-400/30 bg-gradient-to-b from-slate-400/15 via-black/40 to-black/60 shadow-[inset_0_1px_0_rgba(203,213,225,0.4)]";
   }
   if (rank === 3) {
-    return "border-white/16 bg-gradient-to-b from-zinc-500/10 via-zinc-900/20 to-black/35";
+    return "border-orange-500/30 bg-gradient-to-b from-orange-500/15 via-black/40 to-black/60 shadow-[inset_0_1px_0_rgba(249,115,22,0.4)]";
   }
-  return "border-white/[0.08] bg-white/[0.03]";
+  return "border-white/[0.08] bg-white/[0.03] backdrop-blur-md";
 }
 
 function podiumHeightClass(rank: number) {
@@ -288,7 +288,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -320,10 +320,15 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                     Leaderboard
                   </h2>
                 </div>
-                <p className="mt-1 flex items-center gap-1.5 text-[11px] text-white/45">
-                  <Sparkles className="size-3 shrink-0 text-white/40" aria-hidden />
-                  Every referral counts — top 3 win big at launch.
-                </p>
+                <div className="mt-3 flex flex-col gap-1 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(251,191,36,0.2)]">
+                  <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-amber-400">
+                    <Sparkles className="size-3.5 shrink-0" aria-hidden />
+                    Top 5 win KroniQ PRO for 6 months
+                  </p>
+                  <p className="text-[11px] font-medium text-amber-200/70">
+                    Plus early access to all new features for free, forever. Climb the ranks to win!
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -339,13 +344,13 @@ export default function LeaderboardModal({ open, onClose }: Props) {
 
             <div className="space-y-5 px-5 pb-6">
               {referralLinkCode ? (
-                <div className="rounded-2xl border border-white/[0.08] bg-black/30 p-3">
-                  <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/40">
-                    <Link2 className="size-3 opacity-70" aria-hidden />
+                <div className="rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                  <div className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                    <Link2 className="size-3.5 opacity-80" aria-hidden />
                     Your referral link
                   </div>
                   <div className="flex gap-2">
-                    <div className="min-w-0 flex-1 truncate rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-2 font-mono text-[11px] text-white/65">
+                    <div className="flex items-center min-w-0 flex-1 truncate rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 font-mono text-[12px] text-white/70">
                       {referralShareUrl}
                     </div>
                     <button
@@ -359,9 +364,14 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                           setCopied(false);
                         }
                       }}
-                      className="shrink-0 rounded-lg bg-white px-3 text-[11px] font-semibold text-zinc-950 transition hover:bg-white/90"
+                      className={`shrink-0 flex items-center justify-center gap-1.5 rounded-xl px-4 text-[12px] font-semibold transition-all duration-300 min-w-[90px] cursor-pointer hover:scale-[1.02] active:scale-[0.98] ${
+                        copied 
+                          ? "bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] border border-emerald-400" 
+                          : "bg-white text-black hover:bg-white/90"
+                      }`}
                     >
-                      {copied ? "Copied" : "Copy"}
+                      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                      {copied ? "Copied!" : "Copy Link"}
                     </button>
                   </div>
                 </div>
@@ -386,7 +396,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                       Account under review — points may be paused.
                     </p>
                   ) : null}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-3">
                     {[
                       { label: "Referrals", value: String(me.referralPoints), sub: "points" },
                       {
@@ -398,20 +408,20 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                     ].map((cell) => (
                       <div
                         key={cell.label}
-                        className="rounded-xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent px-2 py-3 text-center"
+                        className="rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-xl px-2 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
                       >
-                        <p className="text-[9px] font-medium uppercase tracking-[0.16em] text-white/35">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
                           {cell.label}
                         </p>
-                        <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-white">{cell.value}</p>
-                        {cell.sub ? <p className="mt-0.5 text-[9px] text-white/30">{cell.sub}</p> : null}
+                        <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-white drop-shadow-md">{cell.value}</p>
+                        {cell.sub ? <p className="mt-1 text-[10px] font-medium text-white/30">{cell.sub}</p> : null}
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3">
-                    <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
-                      <Users className="size-3.5 text-cyan-200/50" aria-hidden />
+                  <div className="mt-5 rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                    <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/50">
+                      <Users className="size-4 text-cyan-400/80" aria-hidden />
                       People you invited
                     </div>
                     {me.invitees.length === 0 ? (
@@ -423,7 +433,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                         {me.invitees.map((inv) => (
                           <li
                             key={`${inv.email}-${inv.joinedAt}`}
-                            className="flex flex-col gap-0.5 rounded-xl border border-white/[0.05] bg-black/25 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                            className="flex flex-col gap-0.5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3.5 py-2.5 sm:flex-row sm:items-center sm:justify-between transition hover:bg-white/[0.04]"
                           >
                             <div className="min-w-0">
                               <p className="truncate text-[13px] font-medium text-white/88">{inv.displayName}</p>
@@ -461,7 +471,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
               ) : null}
 
               <div>
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Live podium</p>
+                <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">Live podium</p>
                 {loadError ? (
                   <p className="text-[12px] text-white/35">{loadError}</p>
                 ) : statsLoading ? (
@@ -494,21 +504,21 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                     </div>
 
                     {restLb.length > 0 ? (
-                      <div>
-                        <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.16em] text-white/32">Closing in</p>
-                        <ul className="space-y-1.5">
+                      <div className="mt-6">
+                        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">Closing in</p>
+                        <ul className="space-y-2">
                           {restLb.map((row) => (
                             <li
                               key={row.rank}
-                              className="flex items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2.5"
+                              className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-black/40 backdrop-blur-lg px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
                             >
                               <span
-                                className={`w-8 shrink-0 text-center text-sm font-bold tabular-nums ${rankAccent(row.rank)}`}
+                                className={`w-8 shrink-0 text-center text-[15px] font-bold tabular-nums ${rankAccent(row.rank)}`}
                               >
                                 {row.rank}
                               </span>
-                              <span className="min-w-0 flex-1 truncate text-[13px] text-white/85">{row.displayName}</span>
-                              <span className="shrink-0 text-[12px] tabular-nums text-white/40">{row.referralPoints} pts</span>
+                              <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-white/90">{row.displayName}</span>
+                              <span className="shrink-0 text-[13px] font-semibold tabular-nums text-white/50">{row.referralPoints} pts</span>
                             </li>
                           ))}
                         </ul>
@@ -518,8 +528,8 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                 )}
               </div>
 
-              <details className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[11px] font-medium text-white/45 outline-none marker:content-none [&::-webkit-details-marker]:hidden">
+              <details className="group mt-2 rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-xl px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[12px] font-semibold text-white/50 outline-none marker:content-none [&::-webkit-details-marker]:hidden">
                   <span>Quick rules</span>
                   <ChevronDown className="size-4 shrink-0 text-white/35 transition group-open:rotate-180" />
                 </summary>
@@ -531,7 +541,7 @@ export default function LeaderboardModal({ open, onClose }: Props) {
                   <li className="flex gap-2">
                     <span className="text-white/50">•</span>
                     <span>
-                      Top 3 on the pre-launch leaderboard get early access and complimentary Pro when KroniQ launches
+                      Top 5 on the pre-launch leaderboard get early access and complimentary Pro for 6 months when KroniQ launches
                       (subject to fair-play review).
                     </span>
                   </li>
@@ -566,11 +576,11 @@ function PodiumCard({
     row.rank === 1 ? "1st" : row.rank === 2 ? "2nd" : row.rank === 3 ? "3rd" : `#${row.rank}`;
   return (
     <div
-      className={`flex min-w-0 flex-1 flex-col rounded-xl border px-2 pb-3 pt-3 text-center ${accentClass} ${heightClass}`}
+      className={`flex min-w-0 flex-1 flex-col rounded-2xl border px-3 pb-4 pt-4 text-center transition-all ${accentClass} ${heightClass}`}
     >
-      <span className={`text-lg font-bold tabular-nums ${rankAccent(row.rank)}`}>{tier}</span>
-      <span className="mt-1 line-clamp-2 text-[11px] font-semibold leading-tight text-white/90">{row.displayName}</span>
-      <span className="mt-auto pt-2 text-[11px] font-semibold tabular-nums text-white/50">{row.referralPoints} pts</span>
+      <span className={`text-[22px] font-extrabold tabular-nums tracking-tight ${rankAccent(row.rank)}`}>{tier}</span>
+      <span className="mt-2 line-clamp-2 text-[13px] font-bold leading-tight text-white">{row.displayName}</span>
+      <span className="mt-auto pt-3 text-[12px] font-semibold tabular-nums text-white/60">{row.referralPoints} pts</span>
     </div>
   );
 }

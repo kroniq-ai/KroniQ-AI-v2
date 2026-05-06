@@ -75,22 +75,22 @@ export default function CEOAssistant({
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-white/15 to-white/[0.06] border border-white/20 flex items-center justify-center hover:from-white/20 hover:to-white/10 transition shadow-lg hover:scale-105"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-black/60 backdrop-blur-2xl border border-white/10 flex items-center justify-center hover:bg-black/80 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.6)] group hover:scale-105"
         aria-label="CEO Assistant"
       >
-        <Sparkles size={22} className="text-white/90" />
+        <Sparkles size={22} className="text-white/80 group-hover:text-emerald-400 transition-colors" />
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-48px)] rounded-2xl bg-black/98 border border-white/[0.12] shadow-2xl overflow-hidden flex flex-col max-h-[75vh]">
-          <div className="p-4 border-b border-white/[0.06] bg-gradient-to-r from-white/[0.04] to-transparent">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                <Sparkles size={16} className="text-white/80" />
+        <div className="fixed bottom-24 right-6 z-50 w-[420px] max-w-[calc(100vw-48px)] rounded-3xl bg-black/80 backdrop-blur-3xl border border-white/[0.08] shadow-[0_16px_64px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)] overflow-hidden flex flex-col max-h-[75vh]">
+          <div className="p-5 border-b border-white/[0.08] bg-white/[0.02]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-[14px] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                <Sparkles size={18} className="text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
               </div>
               <div>
-                <h3 className="font-semibold text-white">CEO Assistant</h3>
-                <p className="text-xs text-white/50">
+                <h3 className="font-semibold text-white tracking-tight">CEO Assistant</h3>
+                <p className="text-[12px] font-medium text-white/50 tracking-wide">
                   Orchestrates all agents — ask for anything
                 </p>
               </div>
@@ -126,10 +126,10 @@ export default function CEOAssistant({
                 className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[90%] px-4 py-2.5 rounded-2xl text-sm ${
+                  className={`max-w-[85%] px-5 py-3 rounded-2xl text-[13px] font-medium leading-relaxed shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_4px_16px_rgba(0,0,0,0.3)] border ${
                     m.role === "user"
-                      ? "bg-white/15 text-white/95 rounded-br-md"
-                      : "bg-white/5 text-white/80 rounded-bl-md border border-white/[0.06]"
+                      ? "bg-white/10 backdrop-blur-md text-white rounded-tr-sm border-white/[0.08]"
+                      : "bg-white/[0.03] text-white/80 rounded-tl-sm border-white/[0.04]"
                   }`}
                 >
                   {m.text}
@@ -138,28 +138,30 @@ export default function CEOAssistant({
             ))}
           </div>
 
-          <div className="p-4 border-t border-white/[0.06] flex gap-2 bg-black/30">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={isRunning ? "Running…" : "e.g. Add a dark mode, focus on B2B..."}
-              disabled={isRunning}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/[0.12] text-white placeholder-white/40 focus:outline-none focus:border-white/35 focus:ring-1 focus:ring-white/10 text-sm disabled:opacity-50 transition"
-            />
-            <button
-              onClick={handleSend}
-              disabled={isRunning || !input.trim()}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-white/90 to-neutral-200 hover:from-white hover:to-neutral-100 text-black transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isRunning ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Send size={18} />
-              )}
-            </button>
+          <div className="p-5 border-t border-white/[0.08] bg-black/40">
+            <div className="flex items-end gap-2 rounded-[20px] border border-white/[0.08] bg-black/60 px-2 py-2 focus-within:border-white/20 focus-within:shadow-[0_0_20px_rgba(255,255,255,0.05),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-300">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder={isRunning ? "Running…" : "e.g. Add a dark mode..."}
+                disabled={isRunning}
+                className="flex-1 min-h-[40px] px-3 bg-transparent text-white placeholder-white/40 focus:outline-none text-[13px] font-medium disabled:opacity-50 tracking-wide"
+              />
+              <button
+                onClick={handleSend}
+                disabled={isRunning || !input.trim()}
+                className="shrink-0 w-10 h-10 rounded-[14px] bg-white/10 hover:bg-emerald-500/20 text-white hover:text-emerald-400 hover:border hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300"
+              >
+                {isRunning ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

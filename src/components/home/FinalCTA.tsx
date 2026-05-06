@@ -1,41 +1,66 @@
 "use client";
 
+import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import ScrollSection from "./ScrollSection";
-import { FinalCtaAtmosphere } from "@/components/home/section-atmospheres";
-import { HeroGlassShell } from "@/components/ui/hero-glass-shell";
-import { CountdownCta } from "@/components/ui/the-future-arrives-soon-cta";
+import { HeroWaitlistForm } from "@/components/HeroWaitlistForm";
+import { ArrowRight } from "lucide-react";
 
-export default function FinalCTA() {
-    const sectionRef = useRef<HTMLElement>(null);
+export function FinalCTA() {
+    const ref = useRef<HTMLElement>(null);
+    const inView = useInView(ref, { once: true, amount: 0.2 });
 
     return (
-        <ScrollSection
-            id="final-cta"
-            ref={sectionRef}
-            className="relative min-h-[min(100dvh,920px)] overflow-hidden bg-black py-28 md:py-40"
+        <section
+            ref={ref}
+            className="relative overflow-hidden"
+            style={{ background: "#080808" }}
         >
-            <FinalCtaAtmosphere />
-            <div className="relative z-10 mx-auto flex max-w-4xl justify-center px-6">
-                <HeroGlassShell
-                    className="w-full max-w-3xl shadow-[0_40px_120px_-60px_rgba(0,0,0,0.95)] ring-1 ring-white/[0.07]"
-                    paddingClassName="px-5 py-10 md:px-10 md:py-12"
+            {/* Emerald radial glow */}
+            <div
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-[700px] h-[500px] opacity-60"
+                style={{
+                    background: "radial-gradient(ellipse 50% 60% at 50% 50%, rgba(16,185,129,0.14) 0%, transparent 70%)",
+                    filter: "blur(60px)",
+                }}
+            />
+
+            <div className="section-container relative z-10 py-28 md:py-36 lg:py-44">
+                <motion.div
+                    className="mx-auto max-w-2xl text-center"
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={inView ? { opacity: 1, y: 0 } : undefined}
+                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 >
-                    <CountdownCta
-                        embedded
-                        showCountdown={false}
-                        badgeText="Early access"
-                        title={
-                            <>
-                                <span className="text-foreground">Your autonomous AI CMO that </span>
-                                <span className="gradient-heading">runs growth while you build</span>
-                            </>
-                        }
-                        description="KroniQ learns your company once, then runs every growth campaign from that context — around the clock."
-                        className="text-foreground"
-                    />
-                </HeroGlassShell>
+                    <span className="pill-label mb-6 mx-auto">
+                        <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Private beta — join now
+                    </span>
+
+                    <h2
+                        className="text-white mt-4"
+                        style={{
+                            fontFamily: "var(--font-heading)",
+                            fontWeight: 800,
+                            fontSize: "clamp(2.25rem, 5vw, 3.5rem)",
+                            letterSpacing: "-0.03em",
+                            lineHeight: 1.08,
+                        }}
+                    >
+                        Your AI CMO is{" "}
+                        <span className="gradient-heading">waiting for a brief.</span>
+                    </h2>
+
+                    <p className="mt-5 text-[16px] md:text-[17px] leading-relaxed max-w-lg mx-auto"
+                       style={{ color: "rgba(255,255,255,0.45)" }}>
+                        Join the waitlist. Top 5 on the referral leaderboard get free Pro access at launch.
+                    </p>
+
+                    <div className="mt-10 max-w-md mx-auto">
+                        <HeroWaitlistForm />
+                    </div>
+                </motion.div>
             </div>
-        </ScrollSection>
+        </section>
     );
 }

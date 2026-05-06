@@ -130,8 +130,8 @@ export default function PrivacyPage() {
             <h2>Contact</h2>
             <p>
                 Questions:{" "}
-                <a href="mailto:atirek.sd11@gmail.com" className="text-foreground underline-offset-4 hover:underline">
-                    atirek.sd11@gmail.com
+                <a href="mailto:support@kroniqai.com" className="text-foreground underline-offset-4 hover:underline">
+                    support@kroniqai.com
                 </a>
             </p>
         </LegalDocShell>

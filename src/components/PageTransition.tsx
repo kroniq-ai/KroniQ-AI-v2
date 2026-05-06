@@ -2,11 +2,12 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useLayoutEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { KroniqWordmark } from "@/components/brand/kroniq-mark";
 import { ShaderAnimation } from "@/components/ui/shader-lines";
 
-/** Set `NEXT_PUBLIC_KRONIQ_INTRO=1` in .env to enable. Default: off (avoids blank + broken PNGs). */
-const introEnabled = process.env.NEXT_PUBLIC_KRONIQ_INTRO === "1";
+/** Enabled by default to show on every page load. */
+const introEnabled = true;
 
 /** Main shader + logo visible before crossfade to black. */
 const INTRO_MIN_MS = 3200;
@@ -22,6 +23,7 @@ const SAFETY_FUSE_MS = 6000;
 
 const easeOutSoft: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const easeInOutSmooth: [number, number, number, number] = [0.45, 0, 0.55, 1];
+const linearEase: [number, number, number, number] = [0, 0, 1, 1];
 
 type OverlayMode = "shader" | "black" | null;
 
@@ -33,11 +35,18 @@ function dispatchIntroDone() {
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
     const reduceMotion = useReducedMotion();
+    const pathname = usePathname();
     const [overlayMode, setOverlayMode] = useState<OverlayMode>(() => (introEnabled ? "shader" : null));
 
     const introMs = reduceMotion ? 1000 : INTRO_MIN_MS;
     const crossfadeMs = reduceMotion ? 200 : CROSSFADE_TO_BLACK_MS;
     const holdMs = reduceMotion ? 100 : BLACK_HOLD_MS;
+
+    // Re-trigger intro when pathname changes
+    useEffect(() => {
+        if (!introEnabled || reduceMotion) return;
+        setOverlayMode("shader");
+    }, [pathname, reduceMotion]);
 
     useLayoutEffect(() => {
         if (reduceMotion) {
@@ -115,27 +124,9 @@ export default function PageTransition({ children }: { children: React.ReactNode
             {introEnabled && showHeavyOverlay ? (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-black">
                     <motion.div
-                        className="absolute inset-0 z-0"
+                        className="absolute inset-0 z-0 bg-black"
                         initial={false}
                         animate={{ opacity: isBlackPhase ? 0 : 1 }}
-                        transition={{ duration: crossfadeMs / 1000, ease: easeInOutSmooth }}
-                    >
-                        <div aria-hidden className="pointer-events-none absolute inset-0 z-0 bg-black" />
-                        <div className="absolute inset-0 z-[1] flex items-stretch justify-stretch">
-                            <ShaderAnimation
-                                variant="loading"
-                                monochrome
-                                maxDpr={1}
-                                renderScale={0.25}
-                                className="h-full min-h-[100dvh] w-full min-w-full flex-1 opacity-[0.88]"
-                            />
-                        </div>
-                    </motion.div>
-
-                    <motion.div
-                        className="absolute inset-0 z-[2] bg-black"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: isBlackPhase ? 1 : 0 }}
                         transition={{ duration: crossfadeMs / 1000, ease: easeInOutSmooth }}
                     />
 
@@ -143,13 +134,22 @@ export default function PageTransition({ children }: { children: React.ReactNode
                         variants={logoVariants}
                         initial={false}
                         animate={isBlackPhase ? "shaderHidden" : "show"}
-                        className="relative z-10 flex items-center justify-center px-6"
+                        className="relative z-10 flex flex-col items-center justify-center px-6 gap-8"
                     >
-                        <KroniqWordmark
-                            iconSize={36}
-                            variant="mono"
-                            className="scale-110 text-white drop-shadow-[0_0_48px_rgba(255,255,255,0.12)] sm:scale-125"
-                        />
+                        <div className="h-28 w-28 flex items-center justify-center shrink-0 rounded-2xl">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/logos/kroniqlogowithbg.png" alt="KroniQ" className="object-contain h-28 w-28 rounded-2xl" />
+                        </div>
+                        
+                        {/* Loading Bar */}
+                        <div className="w-40 h-[2px] bg-white/10 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-white rounded-full"
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: introMs / 1000, ease: "linear" }}
+                            />
+                        </div>
                     </motion.div>
                 </div>
             ) : null}

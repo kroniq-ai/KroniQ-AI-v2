@@ -84,17 +84,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="border-b border-white/10">
+    <div className="min-h-screen bg-[#050607] text-white">
+      <header className="border-b border-white/[0.08] bg-black/40 backdrop-blur-2xl">
         <div className="section-container py-4 flex justify-between items-center">
-          <Link href="/" className="font-display font-bold text-xl">
+          <Link href="/" className="font-display font-bold text-xl tracking-tight">
             KroniQ
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-white/60">Dashboard</span>
+          <div className="flex items-center gap-6">
+            <span className="text-sm font-medium text-white/50 tracking-wide uppercase">Dashboard</span>
             <button
               onClick={handleLogout}
-              className="text-sm text-white/60 hover:text-white transition"
+              className="text-sm font-medium text-white/40 hover:text-white transition-colors"
             >
               Log out
             </button>
@@ -102,20 +102,20 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="section-container section-spacing">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-semibold">Projects</h1>
+      <main className="section-container section-spacing pt-12">
+        <div className="flex justify-between items-center mb-10">
+          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
           <button
             onClick={() => setShowNewProject(true)}
-            className="btn-gradient px-5 py-2.5"
+            className="px-6 py-2.5 rounded-full bg-white/10 text-white font-semibold text-sm border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/15 transition-all"
           >
             New Project
           </button>
         </div>
 
         {showNewProject && (
-          <div className="glass-card mb-8">
-            <h2 className="text-lg font-semibold mb-4">Enter your idea</h2>
+          <div className="bg-black/60 backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.1)] rounded-3xl p-6 md:p-8 mb-10">
+            <h2 className="text-lg font-semibold mb-6 text-white/90">Enter your idea</h2>
             <IdeaInput
               onSubmit={handleCreateProject}
               onCancel={() => setShowNewProject(false)}
@@ -127,13 +127,13 @@ export default function DashboardPage() {
         {loading ? (
           <DashboardSkeleton />
         ) : !projects.length ? (
-          <div className="glass-card text-center py-16">
-            <p className="text-white/60 mb-4">
+          <div className="bg-black/40 backdrop-blur-xl border border-white/[0.06] rounded-3xl text-center py-20 flex flex-col items-center justify-center">
+            <p className="text-white/40 mb-6 font-medium">
               No projects yet. Create one to get started.
             </p>
             <button
               onClick={() => setShowNewProject(true)}
-              className="btn-gradient px-5 py-2.5"
+              className="px-6 py-2.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold text-sm border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.2),inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-emerald-500/30 transition-all"
             >
               New Project
             </button>

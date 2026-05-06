@@ -6,6 +6,7 @@ import { waitlistPgFailureHint } from "@/lib/waitlist/pg-connect-errors";
 import { getWaitlistMemberReferralStatsPg } from "@/lib/waitlist/pg-handlers";
 import { normalizeReferralCode } from "@/lib/waitlist/referral-code";
 import { checkWaitlistMemberStatsRateLimit } from "@/lib/waitlist/rate-limit";
+import { getWaitlistDisplayOffset } from "@/lib/waitlist/display-offset";
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -35,6 +36,7 @@ async function memberStatsByReferralCode(codeNorm: string) {
       }
       return NextResponse.json({
         ...result,
+        dbCount: result.dbCount + getWaitlistDisplayOffset(),
         authSource: "referral_code" as const,
       });
     } catch (e) {
@@ -61,6 +63,7 @@ async function memberStatsByReferralCode(codeNorm: string) {
   }
   return NextResponse.json({
     ...result,
+    dbCount: result.dbCount + getWaitlistDisplayOffset(),
     authSource: "referral_code" as const,
   });
 }
@@ -139,6 +142,7 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({
         ...result,
+        dbCount: result.dbCount + getWaitlistDisplayOffset(),
         authSource: "session" as const,
       });
     } catch (e) {
@@ -167,6 +171,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     ...result,
+    dbCount: result.dbCount + getWaitlistDisplayOffset(),
     authSource: "session" as const,
   });
 }

@@ -195,7 +195,7 @@ export default function AgentChatPanel({
   };
 
   return (
-    <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden bg-zinc-950">
+    <div className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden bg-transparent">
       <div
         ref={scrollRef}
         className="flex-1 min-h-0 basis-0 w-full overflow-y-auto overflow-x-hidden overscroll-contain px-6 py-8 space-y-8"
@@ -211,7 +211,7 @@ export default function AgentChatPanel({
           <div key={job.id} className="space-y-6 max-w-3xl mx-auto">
             {job.prompt && (
               <div className="flex justify-end">
-                <div className="max-w-[80%] px-5 py-3 rounded-full bg-zinc-800 text-zinc-100 text-sm">
+                <div className="max-w-[80%] px-5 py-3 rounded-2xl rounded-tr-sm bg-white/10 backdrop-blur-md text-white text-[13px] font-medium leading-relaxed border border-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_4px_16px_rgba(0,0,0,0.4)]">
                   {job.prompt}
                 </div>
               </div>
@@ -226,7 +226,7 @@ export default function AgentChatPanel({
         {showPendingBlock && (
           <div className="space-y-6 max-w-3xl mx-auto">
             <div className="flex justify-end">
-              <div className="max-w-[80%] px-5 py-3 rounded-full bg-zinc-800 text-zinc-100 text-sm">
+              <div className="max-w-[80%] px-5 py-3 rounded-2xl rounded-tr-sm bg-white/10 backdrop-blur-md text-white text-[13px] font-medium leading-relaxed border border-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_4px_16px_rgba(0,0,0,0.4)]">
                 {pendingPrompt}
               </div>
             </div>
@@ -257,9 +257,9 @@ export default function AgentChatPanel({
         </button>
       )}
 
-      {/* Input bar - ChatGPT style pill */}
+      {/* Input bar - Premium Glass Pill */}
       <div className="flex-shrink-0 px-6 pb-6 pt-2">
-        <div className="max-w-3xl mx-auto flex items-end gap-2 rounded-2xl border border-zinc-700 bg-zinc-900/80 px-4 py-2 focus-within:border-zinc-600 focus-within:ring-1 focus-within:ring-zinc-600 transition-all">
+        <div className="max-w-3xl mx-auto flex items-end gap-2 rounded-[24px] border border-white/10 bg-black/80 backdrop-blur-2xl px-3 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.1)] focus-within:border-white/20 focus-within:shadow-[0_12px_40px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.2),0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -272,13 +272,13 @@ export default function AgentChatPanel({
             placeholder={placeholder ?? `Ask ${agentLabel} anything…`}
             disabled={disabled || busy}
             rows={1}
-            className="flex-1 min-h-[48px] max-h-32 px-2 py-3 text-zinc-100 placeholder-zinc-500 text-sm focus:outline-none resize-none disabled:opacity-50 bg-transparent"
+            className="flex-1 min-h-[44px] max-h-32 px-3 py-3 text-white placeholder-white/40 text-[14px] font-medium focus:outline-none resize-none disabled:opacity-50 bg-transparent tracking-wide leading-relaxed"
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={disabled || busy || !input.trim()}
-            className="shrink-0 w-10 h-10 rounded-full bg-zinc-700 hover:bg-zinc-600 text-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition mb-1"
+            className="shrink-0 w-11 h-11 rounded-[18px] bg-white/10 hover:bg-emerald-500/20 text-white hover:text-emerald-400 hover:border hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 mb-0.5"
           >
             {busy ? (
               <Loader2 size={18} className="animate-spin" />

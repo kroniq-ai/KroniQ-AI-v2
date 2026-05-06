@@ -2,23 +2,22 @@
 
 import React, { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { GradientBackground } from "@/components/ui/paper-design-shader-background";
 import { cn } from "@/lib/utils";
 
 const INTRO_STYLE_ID = "faq-monocrhome-animations";
 
 const palette = {
-    /* Let parent `section#faq` keep bg-black; FAQ’s own `GradientBackground` + scrims carry the look. */
-    surface: "bg-transparent text-foreground",
-    panel: "bg-white/[0.04]",
-    border: "border-white/[0.1]",
+    /* Dark-mode palette: glass cards on dark bg, white text */
+    surface: "bg-transparent text-white",
+    panel: "bg-[rgba(18,18,18,0.9)]",
+    border: "border-white/[0.06]",
     heading: "text-white",
-    muted: "text-white/50",
-    iconRing: "border-white/20",
-    iconSurface: "bg-white/[0.05]",
-    icon: "text-white",
-    glow: "rgba(120, 130, 150, 0.12)",
-    shadow: "shadow-[0_36px_140px_-60px_rgba(10,10,10,0.95)]",
+    muted: "text-white/60",
+    iconRing: "border-white/[0.08]",
+    iconSurface: "bg-white/[0.02]",
+    icon: "text-white/70",
+    glow: "rgba(16, 185, 129, 0.15)",
+    shadow: "shadow-[0_12px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)]",
 };
 
 export type FaqMonoEntry = {
@@ -229,53 +228,35 @@ export function FaqMonochromeSection({
 
     return (
         <div className={cn("relative w-full overflow-hidden transition-colors duration-700", palette.surface, className)}>
-            <GradientBackground />
-            {/* Tame any residual highlight from the grain shader */}
-            <div className="pointer-events-none absolute inset-0 z-[1] bg-black/35" aria-hidden />
-            <div
-                className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-[min(40vh,420px)] bg-[linear-gradient(to_bottom,#000_0%,rgba(0,0,0,0.88)_18%,rgba(0,0,0,0.5)_45%,rgba(0,0,0,0.2)_70%,transparent_100%)]"
-                aria-hidden
-            />
-            <div
-                className="pointer-events-none absolute inset-y-0 left-0 z-[2] w-[min(55%,420px)] bg-[linear-gradient(to_right,#000_0%,rgba(0,0,0,0.82)_40%,rgba(0,0,0,0.35)_70%,transparent_100%)]"
-                aria-hidden
-            />
-            <div
-                className="pointer-events-none absolute inset-y-0 right-0 z-[2] w-[min(45%,360px)] bg-[linear-gradient(to_left,#000_0%,rgba(0,0,0,0.55)_55%,transparent_100%)]"
-                aria-hidden
-            />
-            <div
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-32 bg-[linear-gradient(to_top,rgba(0,0,0,0.9)_0%,rgba(0,0,0,0.4)_50%,transparent_100%)] md:h-40"
-                aria-hidden
-            />
 
             <div
                 className={cn(
-                    "relative z-10 mx-auto flex max-w-4xl flex-col gap-10 px-4 pb-12 pt-10 md:gap-12 md:px-8 md:pb-16 md:pt-12 lg:max-w-5xl lg:px-12 lg:pb-20 lg:pt-14",
+                    "relative z-[2] mx-auto flex max-w-4xl flex-col gap-10 px-4 pb-12 pt-12 md:gap-12 md:px-8 md:pb-16 md:pt-14 lg:max-w-5xl lg:px-12 lg:pb-20 lg:pt-16",
                     hasEntered ? "faq1-fade--ready" : "faq1-fade"
                 )}
             >
-                <div className={cn("faq1-intro", introReady ? "faq1-intro--active" : "")}>
-                    <span className="faq1-intro__beam" aria-hidden="true" />
-                    <span className="faq1-intro__pulse" aria-hidden="true" />
-                    <span className="faq1-intro__label">{introLabel}</span>
-                    <span className="faq1-intro__meter" aria-hidden="true" />
-                    <span className="faq1-intro__tick" aria-hidden="true" />
+                {/* Dark-mode intro pill */}
+                <div className="flex justify-center">
+                    <span className="inline-flex items-center gap-2 rounded-lg border border-white/[0.09] bg-white/[0.04] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/48">
+                        {introLabel}
+                    </span>
                 </div>
 
-                <header className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-                    <div className="space-y-4">
-                        <p className={cn("text-xs uppercase tracking-[0.35em]", palette.muted)}>{kicker}</p>
-                        <h1 className={cn("text-3xl font-semibold leading-tight md:text-4xl lg:text-5xl", palette.heading)}>
+                <header className="text-center">
+                    <div className="space-y-3">
+                        <p className={cn("text-[11px] font-semibold uppercase tracking-[0.15em]", palette.muted)}>{kicker}</p>
+                        <h2 className={cn("text-3xl font-bold leading-tight tracking-[-0.03em] md:text-4xl lg:text-5xl", palette.heading)}
+                            style={{ fontFamily: "var(--font-heading)" }}
+                        >
                             {title}
-                        </h1>
+                        </h2>
                         {subtitle ? (
-                            <div className={cn("max-w-xl text-base leading-relaxed", palette.muted)}>{subtitle}</div>
+                            <div className={cn("mx-auto max-w-xl text-[15px] leading-relaxed", palette.muted)}>{subtitle}</div>
                         ) : null}
                     </div>
                 </header>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start md:gap-3" role="tablist" aria-label="FAQ categories">
+                <div className="flex flex-wrap items-center justify-center gap-2" role="tablist" aria-label="FAQ categories">
                     {keys.map((key) => {
                         const isSel = selected === key;
                         return (
@@ -286,19 +267,13 @@ export function FaqMonochromeSection({
                                 aria-selected={isSel}
                                 onClick={() => setSelected(key)}
                                 className={cn(
-                                    "relative inline-flex items-center rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-300",
+                                    "relative inline-flex items-center rounded-xl border px-5 py-2.5 text-[13px] font-semibold transition-all duration-300 backdrop-blur-xl",
                                     isSel
-                                        ? "border-white/25 bg-white/[0.12] text-white shadow-[0_0_28px_rgba(255,255,255,0.08)]"
-                                        : "border-white/10 bg-white/[0.04] text-white/55 hover:border-white/18 hover:bg-white/[0.08] hover:text-white/85"
+                                        ? "border-white/20 bg-gradient-to-b from-white/[0.12] to-white/[0.05] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_8px_20px_rgba(0,0,0,0.4)]"
+                                        : "border-white/[0.08] bg-white/[0.02] text-white/50 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white/90"
                                 )}
                             >
                                 <span className="relative z-10">{categories[key]}</span>
-                                {isSel ? (
-                                    <span
-                                        aria-hidden
-                                        className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.12] to-white/[0.04]"
-                                    />
-                                ) : null}
                             </button>
                         );
                     })}
@@ -315,7 +290,8 @@ export function FaqMonochromeSection({
                             <li
                                 key={`${selected}-${item.question}`}
                                 className={cn(
-                                    "group relative overflow-hidden rounded-[1.35rem] border border-white/[0.09] bg-[linear-gradient(165deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.02)_48%,rgba(0,0,0,0.15)_100%)] shadow-[0_24px_80px_-48px_rgba(0,0,0,0.9)] ring-1 ring-white/[0.04] backdrop-blur-xl transition-all duration-500 hover:-translate-y-0.5 hover:border-white/[0.14] hover:ring-white/[0.07] focus-within:-translate-y-0.5",
+                                    "group relative overflow-hidden rounded-[1.75rem] border bg-black/40 backdrop-blur-2xl transition-all duration-400 hover:-translate-y-1 hover:border-white/[0.12] focus-within:-translate-y-1",
+                                    palette.border,
                                     palette.shadow
                                 )}
                                 onMouseMove={setCardGlow}
@@ -341,22 +317,15 @@ export function FaqMonochromeSection({
                                 >
                                     <span
                                         className={cn(
-                                            "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-all duration-500 group-hover:scale-105 md:h-12 md:w-12",
-                                            palette.iconRing,
-                                            palette.iconSurface
+                                            "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-500 md:h-12 md:w-12",
+                                            open
+                                                ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                                                : "border-white/[0.08] bg-white/[0.02] text-white/60 group-hover:bg-white/[0.05]"
                                         )}
                                     >
-                                        <span
-                                            className={cn(
-                                                "pointer-events-none absolute inset-0 rounded-full border opacity-30",
-                                                palette.iconRing,
-                                                open ? "animate-ping" : ""
-                                            )}
-                                        />
                                         <svg
                                             className={cn(
                                                 "relative h-5 w-5 transition-transform duration-500",
-                                                palette.icon,
                                                 open ? "rotate-45" : ""
                                             )}
                                             viewBox="0 0 24 24"
@@ -364,14 +333,14 @@ export function FaqMonochromeSection({
                                             xmlns="http://www.w3.org/2000/svg"
                                             aria-hidden
                                         >
-                                            <path d="M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                            <path d="M5 12h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                            <path d="M12 5v14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                                            <path d="M5 12h14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                                         </svg>
                                     </span>
 
                                     <div className="flex min-w-0 flex-1 flex-col gap-4">
                                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                                            <h3 className={cn("text-base font-medium leading-tight sm:text-lg md:text-xl", palette.heading)}>
+                                            <h3 className={cn("text-[15px] font-semibold leading-tight tracking-[-0.01em] sm:text-[17px] md:text-[1.15rem] transition-colors duration-300", open ? "text-emerald-50" : "text-white/90")}>
                                                 {item.question}
                                             </h3>
                                             {meta ? (

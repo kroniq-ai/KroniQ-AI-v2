@@ -60,7 +60,7 @@ export default function ReferralLeaderboardNotice() {
                             className="liquid-blob-a pointer-events-none absolute -left-[20%] -top-[60%] h-[140%] w-[55%] rounded-full opacity-[0.35]"
                             style={{
                                 background:
-                                    "radial-gradient(circle at 30% 40%, rgba(130,220,200,0.45) 0%, transparent 62%)",
+                                    "radial-gradient(circle at 30% 40%, rgba(245,158,11,0.45) 0%, transparent 62%)",
                                 filter: "blur(28px)",
                             }}
                             aria-hidden
@@ -69,7 +69,7 @@ export default function ReferralLeaderboardNotice() {
                             className="liquid-blob-b pointer-events-none absolute -bottom-[50%] -right-[15%] h-[130%] w-[50%] rounded-full opacity-[0.3]"
                             style={{
                                 background:
-                                    "radial-gradient(circle at 60% 50%, rgba(140,160,255,0.42) 0%, transparent 58%)",
+                                    "radial-gradient(circle at 60% 50%, rgba(249,115,22,0.42) 0%, transparent 58%)",
                                 filter: "blur(32px)",
                             }}
                             aria-hidden
@@ -92,12 +92,12 @@ export default function ReferralLeaderboardNotice() {
                             <p className="min-w-0 flex-1 text-[12px] leading-snug text-white/[0.88] sm:text-[13px] sm:leading-relaxed">
                                 <span className="text-white/95">
                                     Join the waitlist—share your link to earn referral points and climb the pre-launch
-                                    leaderboard. Top 3 get early access and free Pro at launch.
+                                    leaderboard. Top 5 get KroniQ PRO for 6 months and early access.
                                 </span>{" "}
                                 <button
                                     type="button"
                                     data-waitlist-trigger
-                                    className="font-semibold text-teal-200/95 underline decoration-teal-400/35 underline-offset-2 transition hover:text-teal-100 hover:decoration-teal-300/60"
+                                    className="font-semibold text-amber-200/95 underline decoration-amber-400/35 underline-offset-2 transition hover:text-amber-100 hover:decoration-amber-300/60"
                                 >
                                     Get started
                                 </button>

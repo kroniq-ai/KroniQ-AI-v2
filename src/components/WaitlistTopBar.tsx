@@ -25,7 +25,7 @@ export default function WaitlistTopBar() {
   const [launchAllowed, setLaunchAllowed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const [menuPosition, setMenuPosition] = useState<{ bottom: number; right: number }>({ bottom: 0, right: 0 });
 
   const refresh = () => setSession(getWaitlistMemberSession());
 
@@ -37,7 +37,7 @@ export default function WaitlistTopBar() {
     if (!menuOpen || !menuButtonRef.current) return;
     const r = menuButtonRef.current.getBoundingClientRect();
     setMenuPosition({
-      top: r.bottom + 8,
+      bottom: window.innerHeight - r.top + 8,
       right: Math.max(8, window.innerWidth - r.right),
     });
   }, [menuOpen]);
@@ -97,16 +97,16 @@ export default function WaitlistTopBar() {
         />
         <div
           role="menu"
-          className="fixed z-[231] min-w-[200px] overflow-hidden rounded-xl border border-white/10 bg-[#0a0a0a] py-1 shadow-[0_24px_64px_rgba(0,0,0,0.55)]"
+          className="fixed z-[231] min-w-[200px] overflow-hidden rounded-xl border border-white/[0.08] bg-black/60 backdrop-blur-xl py-1 shadow-[0_8px_32px_rgba(0,0,0,0.4)] mb-2"
           style={{
-            top: menuPosition.top,
+            bottom: menuPosition.bottom,
             right: menuPosition.right,
           }}
         >
           {launchAllowed ? (
             <Link
               href="/login"
-              className="block px-4 py-2.5 text-[13px] font-medium text-white/90 transition hover:bg-white/[0.06] sm:hidden"
+              className="block px-4 py-2.5 text-[13px] font-medium text-white/80 transition hover:bg-white/10 sm:hidden"
               onClick={() => setMenuOpen(false)}
             >
               Open app
@@ -118,7 +118,7 @@ export default function WaitlistTopBar() {
           <button
             type="button"
             role="menuitem"
-            className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-white/90 transition hover:bg-white/[0.06]"
+            className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-white/80 transition hover:bg-white/10"
             onClick={async () => {
               setMenuOpen(false);
               const supabase = createClient();
@@ -127,7 +127,7 @@ export default function WaitlistTopBar() {
               router.refresh();
             }}
           >
-            <LogOut className="size-4 shrink-0 text-white/50" aria-hidden />
+            <LogOut className="size-4 shrink-0 text-white/40" aria-hidden />
             Sign out
           </button>
         </div>
@@ -138,19 +138,19 @@ export default function WaitlistTopBar() {
   return (
     <>
       <AnimatePresence>
-        {session && (
+        {mounted && session && (
           <motion.header
-            initial={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none fixed left-0 right-0 z-[110] top-[calc(1.25rem+env(safe-area-inset-top,0px))] px-3 pb-2 pt-0 sm:top-[calc(1.75rem+env(safe-area-inset-top,0px))] sm:px-6 sm:pb-3"
+            className="pointer-events-none fixed left-0 right-0 z-[110] bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] px-3 pb-2 pt-0 sm:bottom-[calc(1.75rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pb-3"
           >
             <div className="pointer-events-none mx-auto w-full max-w-3xl">
-              <div className="pointer-events-auto overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-[0_12px_40px_-20px_rgba(0,0,0,0.9)]">
+              <div className="pointer-events-auto overflow-hidden rounded-2xl border border-white/[0.08] bg-black/40 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
                 <div className="flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-3 sm:py-2.5">
                   <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.04] sm:h-11 sm:w-11">
+                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/[0.1] bg-black sm:h-11 sm:w-11 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
                       {session.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element -- external avatar URLs vary by host
                         <img
@@ -162,7 +162,13 @@ export default function WaitlistTopBar() {
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <KroniQMarkBadgePng size={22} className="opacity-95" />
+                        <img 
+                          src="/logos/kroniqlogowithbg.png" 
+                          alt="KroniQ" 
+                          width={44} 
+                          height={44} 
+                          className="h-full w-full object-cover" 
+                        />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -172,7 +178,7 @@ export default function WaitlistTopBar() {
                       <p className="truncate text-[13px] font-semibold leading-tight text-white sm:text-[14px]">
                         {session.name}
                       </p>
-                      <p className="truncate text-[11px] text-white/35">{session.email}</p>
+                      <p className="truncate text-[11px] text-white/60">{session.email}</p>
                     </div>
                   </div>
 
@@ -180,7 +186,7 @@ export default function WaitlistTopBar() {
                     {launchAllowed ? (
                       <Link
                         href="/login"
-                        className="hidden rounded-full border border-white/15 bg-white px-3.5 py-2 text-[11px] font-semibold text-black transition hover:bg-white/90 sm:inline-block"
+                        className="hidden rounded-full border border-white/[0.1] bg-white px-3.5 py-2 text-[11px] font-semibold text-black transition hover:bg-gray-200 sm:inline-block"
                       >
                         Open app
                       </Link>
@@ -188,9 +194,9 @@ export default function WaitlistTopBar() {
                     <button
                       type="button"
                       onClick={() => openLeaderboardModal()}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-white/90 transition hover:border-white/20 hover:bg-white/[0.07] sm:px-4 sm:text-[12px]"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-[11px] font-semibold text-white/80 transition hover:border-white/[0.14] hover:bg-white/[0.08] sm:px-4 sm:text-[12px]"
                     >
-                      <Trophy className="size-3.5 text-white/70" aria-hidden />
+                      <Trophy className="size-3.5 text-white/50" aria-hidden />
                       Board
                     </button>
                     <div className="relative">
@@ -198,7 +204,7 @@ export default function WaitlistTopBar() {
                         ref={menuButtonRef}
                         type="button"
                         onClick={() => setMenuOpen((v) => !v)}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/50 transition hover:border-white/15 hover:bg-white/[0.06] hover:text-white/80"
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-white/50 transition hover:border-white/[0.12] hover:bg-white/[0.08] hover:text-white"
                         aria-label="Menu"
                         aria-expanded={menuOpen}
                         aria-haspopup="menu"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { Footer } from "@/components/Footer";
 import MissionSection from "@/components/about/MissionSection";
 import RoadmapTimeline from "@/components/about/RoadmapTimeline";
 import TeamSection from "@/components/about/TeamSection";
@@ -31,17 +31,18 @@ export const metadata: Metadata = {
   },
 };
 
+import { CinematicFooterKroniq } from "@/components/home/CinematicFooterKroniq";
+
 export default function AboutPage() {
     return (
-        <>
-            <Header />
-            <main className="pt-[var(--header-height)]">
+        <div className="bg-black text-white min-h-screen">
+            <main className="pt-32 pb-20">
                 <MissionSection />
                 <RoadmapTimeline />
                 <TeamSection />
                 <InvestorContact />
             </main>
-            <Footer />
-        </>
+            <CinematicFooterKroniq />
+        </div>
     );
 }

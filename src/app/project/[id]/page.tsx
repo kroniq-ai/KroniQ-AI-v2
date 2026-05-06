@@ -154,7 +154,7 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="h-screen bg-zinc-950 text-zinc-100 flex overflow-hidden">
+    <div className="h-screen bg-[#050607] text-white flex overflow-hidden">
       <AppSidebar
         projectId={id}
         projectTitle={project.title}
@@ -163,32 +163,36 @@ export default function ProjectPage() {
         agentRunning={agentRunning}
       />
 
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-zinc-950">
-        <header className="border-b border-zinc-800 px-6 py-4 flex justify-between items-center">
-          <p className="text-zinc-400 text-sm max-w-2xl truncate">
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden bg-transparent">
+        <header className="border-b border-white/[0.08] bg-black/40 backdrop-blur-2xl px-8 py-5 flex justify-between items-center shadow-[0_4px_24px_rgba(0,0,0,0.4)] z-10">
+          <p className="text-white/60 text-[13px] font-medium max-w-2xl truncate tracking-wide">
             {project.idea_text}
           </p>
           <button
             onClick={() => handleRun()}
             disabled={isBusy}
-            className="btn-gradient px-5 py-2.5 rounded-xl disabled:opacity-50 shrink-0 text-sm font-medium"
+            className="px-6 py-2.5 rounded-full bg-white/10 text-white font-semibold text-sm border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-white/15 transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             {isBusy ? "Running…" : "Run KroniQ"}
           </button>
         </header>
 
         {isBusy && (
-          <div className="mx-6 mt-4 p-4 rounded-2xl bg-zinc-800/60 border border-zinc-700/40">
-            <p className="text-neutral-400 text-sm">
+          <div className="mx-6 mt-6 p-5 rounded-2xl bg-black/40 backdrop-blur-md border border-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_24px_rgba(0,0,0,0.3)]">
+            <p className="text-emerald-400/80 text-[13px] font-semibold tracking-wide flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
               Research → Product → CTO → Marketing → Finance
             </p>
-            <p className="text-zinc-500 text-xs mt-1">
+            <p className="text-white/40 text-xs mt-2 font-medium">
               This may take 1–2 minutes. Refreshing automatically.
             </p>
           </div>
         )}
 
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
           {activeTab === "research" && (
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
               <AgentChatPanel

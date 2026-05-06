@@ -1,6 +1,6 @@
 "use client";
 
-import Footer from "@/components/Footer";
+import { Footer } from "@/components/Footer";
 import CTOHero from "@/components/cto/CTOHero";
 import CapabilitiesGrid from "@/components/cto/CapabilitiesGrid";
 import DemoCarousel from "@/components/cto/DemoCarousel";

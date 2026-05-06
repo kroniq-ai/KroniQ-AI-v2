@@ -45,17 +45,17 @@ export default function AppSidebar({
   agentRunning,
 }: AppSidebarProps) {
   return (
-    <aside className="w-56 shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950">
-      <div className="p-4 border-b border-zinc-800">
-        <Link href="/dashboard" className="flex items-center gap-2 text-zinc-100 hover:text-white">
-          <Home size={18} />
-          <span className="font-medium">KroniQ</span>
+    <aside className="w-64 shrink-0 flex flex-col border-r border-white/[0.08] bg-black/60 backdrop-blur-3xl shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-20">
+      <div className="p-5 border-b border-white/[0.08]">
+        <Link href="/dashboard" className="flex items-center gap-2.5 text-white/80 hover:text-white transition-colors">
+          <Home size={18} className="drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+          <span className="font-bold tracking-tight">KroniQ</span>
         </Link>
-        <p className="text-xs text-zinc-500 mt-2 truncate" title={projectTitle}>
+        <p className="text-xs text-white/40 mt-3 truncate font-medium" title={projectTitle}>
           {projectTitle}
         </p>
       </div>
-      <nav className="flex-1 p-3 space-y-0.5">
+      <nav className="flex-1 p-4 space-y-1">
         {TABS.map(({ id, label, Icon }) => {
           const isActive = activeTab === id;
           const isRunning = agentRunning && AGENT_TAB_MAP[agentRunning] === id;
@@ -63,28 +63,31 @@ export default function AppSidebar({
             <button
               key={id}
               onClick={() => onTabChange(id)}
-              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition ${
+              className={`flex items-center gap-3 w-full px-3.5 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 ${
                 isActive
-                  ? "bg-zinc-800 text-zinc-100"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                  ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_4px_16px_rgba(0,0,0,0.4)] border border-white/[0.05]"
+                  : "text-white/40 hover:text-white/90 hover:bg-white/[0.04] border border-transparent"
               }`}
             >
-              <Icon size={18} className="shrink-0" />
-              {label}
+              <Icon size={18} className={`shrink-0 transition-all ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]' : ''}`} />
+              <span className="tracking-wide">{label}</span>
               {isRunning && (
-                <span className="ml-auto w-2 h-2 rounded-full bg-neutral-400 animate-pulse" />
+                <span className="ml-auto flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                </span>
               )}
             </button>
           );
         })}
       </nav>
-      <div className="p-3 border-t border-zinc-800">
+      <div className="p-4 border-t border-white/[0.08]">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 transition"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/10 border border-white/[0.05] hover:border-white/20 transition-all shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
         >
-          <Plus size={18} />
-          New Project
+          <Plus size={16} />
+          <span>New Project</span>
         </Link>
       </div>
     </aside>

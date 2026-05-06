@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 import CustomCursor from "@/components/CustomCursor";
@@ -23,11 +23,11 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const outfit = Outfit({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display",
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const siteUrl = resolvePublicSiteOriginServer();
@@ -35,8 +35,8 @@ const siteVerification = verificationMetadata();
 const canonicalBase = getSiteUrl();
 
 export const viewport: Viewport = {
-  themeColor: "#050607",
-  colorScheme: "dark",
+  themeColor: "#FAFAFA",
+  colorScheme: "light",
 };
 
 export const metadata: Metadata = {
@@ -110,7 +110,7 @@ export const metadata: Metadata = {
   },
 };
 
-import DockNav from "@/components/DockNav";
+import { KroniQNav } from "@/components/ui/kroniq-nav";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const rootJsonLd = buildRootJsonLd();
@@ -121,7 +121,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-CA" suppressHydrationWarning className={`${inter.variable} ${outfit.variable}`}>
+    <html lang="en-CA" suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <head>
         <script
           type="application/ld+json"
@@ -129,10 +129,8 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <VignetteProvider>
-            <CustomCursor />
-            <Vignette />
             <SmoothScroll>
               <PageTransition>
                 {children}
@@ -140,8 +138,7 @@ export default function RootLayout({
             </SmoothScroll>
             <WaitlistTopBar />
             <LeaderboardModalHost />
-            <DockNav />
-            <LandingProgressiveBlur />
+            <KroniQNav />
             <WaitlistUrlEffects />
             <WaitlistModal />
             <WaitlistExtraDetailsModal />

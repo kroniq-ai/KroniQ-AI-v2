@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { KroniQMarkBadgePng } from "@/components/brand/kroniq-logo-png";
 import { openLeaderboardModal } from "@/lib/waitlist/client-session";
 import { cn } from "@/lib/utils";
-import { Trophy } from "lucide-react";
+import { Trophy, ArrowRight } from "lucide-react";
 
 const navItems = [
     { label: "Home", href: "/", sectionId: null as string | null },
@@ -52,9 +52,7 @@ export default function DockNav() {
     useEffect(() => {
         setMounted(true);
         const handleMouseMove = (e: globalThis.MouseEvent) => {
-            if (e.clientY > window.innerHeight - 88) {
-                setIsVisible(true);
-            }
+            if (e.clientY > window.innerHeight - 88) setIsVisible(true);
             if (navRef.current) {
                 const rect = navRef.current.getBoundingClientRect();
                 setMouseX(e.clientX - rect.left);
@@ -65,41 +63,24 @@ export default function DockNav() {
     }, []);
 
     useEffect(() => {
-        if (pathname !== "/") {
-            setActiveSection(null);
-            return;
-        }
-
+        if (pathname !== "/") { setActiveSection(null); return; }
         const sectionIds = navItems.map((n) => n.sectionId).filter(Boolean) as string[];
         const elements = sectionIds.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
         if (elements.length === 0) return;
-
         const observer = new IntersectionObserver(
             (entries) => {
                 const visible = entries
                     .filter((e) => e.isIntersecting)
                     .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-                if (visible[0]?.target.id) {
-                    setActiveSection(visible[0].target.id);
-                }
+                if (visible[0]?.target.id) setActiveSection(visible[0].target.id);
             },
             { root: null, rootMargin: "-40% 0px -46% 0px", threshold: [0, 0.08, 0.15, 0.25] }
         );
-
         elements.forEach((el) => observer.observe(el));
-
-        const onScroll = () => {
-            if (window.scrollY < 120) {
-                setActiveSection(null);
-            }
-        };
+        const onScroll = () => { if (window.scrollY < 120) setActiveSection(null); };
         window.addEventListener("scroll", onScroll, { passive: true });
         onScroll();
-
-        return () => {
-            observer.disconnect();
-            window.removeEventListener("scroll", onScroll);
-        };
+        return () => { observer.disconnect(); window.removeEventListener("scroll", onScroll); };
     }, [pathname]);
 
     if (isAppRoute || !mounted) return null;
@@ -118,50 +99,44 @@ export default function DockNav() {
                     transition={spring}
                     className="fixed z-[100] left-1/2 w-[calc(100%-18px)] max-w-[min(920px,calc(100vw-18px))] -translate-x-1/2"
                     style={{ bottom: "max(14px, env(safe-area-inset-bottom, 0px))" }}
-                    aria-label="Site"
+                    aria-label="Site navigation"
                 >
                     <div
                         ref={navRef}
-                        className="relative flex min-h-[54px] items-stretch overflow-hidden rounded-[26px] border border-white/12 bg-zinc-950/60 shadow-[0_24px_80px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl"
+                        className="relative flex min-h-[52px] items-stretch overflow-hidden rounded-[26px] border border-black/[0.07] bg-white/85 shadow-[0_8px_40px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-2xl"
                     >
+                        {/* Mouse spotlight — subtle on light bg */}
                         <div
-                            className="pointer-events-none absolute inset-0 opacity-90"
-                            aria-hidden
+                            className="pointer-events-none absolute inset-0 opacity-30"
                             style={{
-                                background:
-                                    "radial-gradient(ellipse 120% 180% at 50% -40%, rgba(255,255,255,0.08), transparent 50%), radial-gradient(ellipse 70% 100% at 100% 50%, rgba(255,255,255,0.04), transparent 45%), radial-gradient(ellipse 60% 90% at 0% 60%, rgba(255,255,255,0.03), transparent 40%)",
-                            }}
-                        />
-                        <div
-                            className="pointer-events-none absolute inset-0 opacity-40"
-                            style={{
-                                background: `radial-gradient(180px circle at ${mouseX}px 50%, rgba(255,255,255,0.14), transparent 65%)`,
+                                background: `radial-gradient(180px circle at ${mouseX}px 50%, rgba(0,0,0,0.04), transparent 65%)`,
                             }}
                             aria-hidden
                         />
 
+                        {/* Logo */}
                         <Link
                             href="/"
-                            className="relative z-10 flex shrink-0 items-center justify-center border-r border-white/10 px-3.5 sm:px-4"
+                            className="relative z-10 flex shrink-0 items-center justify-center border-r border-black/[0.06] px-3.5 sm:px-4"
                             aria-label="KroniQ home"
+                            style={{ filter: "invert(1)" }}
                         >
                             <motion.div
                                 whileHover={reduceMotion ? undefined : { scale: 1.06 }}
-                                className="text-zinc-300 transition-colors hover:text-white"
+                                className="text-gray-600 transition-colors hover:text-gray-900"
                             >
-                                <KroniQMarkBadgePng size={20} className="opacity-90" />
+                                <KroniQMarkBadgePng size={20} className="opacity-80" />
                             </motion.div>
                         </Link>
 
+                        {/* Nav links */}
                         <div className="relative z-10 flex min-w-0 flex-1 items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden">
                             {navItems.map((item, i) => {
                                 const isHome = item.sectionId === null;
                                 const isActive =
                                     pathname === "/"
-                                        ? isHome
-                                            ? activeSection === null
-                                            : activeSection === item.sectionId
-                                        : pathname === item.href.split("#")[0] && item.href.includes("#") === false;
+                                        ? isHome ? activeSection === null : activeSection === item.sectionId
+                                        : pathname === item.href.split("#")[0] && !item.href.includes("#");
 
                                 const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
                                     e.preventDefault();
@@ -179,29 +154,29 @@ export default function DockNav() {
                                     >
                                         <span
                                             className={cn(
-                                                "relative block whitespace-nowrap px-3 py-3.5 text-[12px] font-semibold tracking-wide transition-colors duration-200 sm:px-4 sm:text-[13px]",
+                                                "relative block whitespace-nowrap px-3 py-3 text-[12px] font-semibold tracking-wide transition-colors duration-200 sm:px-4 sm:text-[13px]",
                                                 isActive
-                                                    ? "text-white"
-                                                    : "text-zinc-400 hover:text-zinc-100"
+                                                    ? "text-gray-900"
+                                                    : "text-gray-400 hover:text-gray-700"
                                             )}
                                         >
-                                            {isActive ? (
+                                            {isActive && (
                                                 <motion.span
                                                     layoutId="dock-nav-active-pill"
-                                                    className="absolute inset-x-1.5 inset-y-1.5 -z-10 rounded-full bg-white/[0.12] shadow-[0_0_20px_rgba(255,255,255,0.06)] ring-1 ring-white/15"
+                                                    className="absolute inset-x-1.5 inset-y-1.5 -z-10 rounded-full bg-black/[0.05] ring-1 ring-black/[0.06]"
                                                     transition={spring}
                                                 />
-                                            ) : null}
-                                            {hoveredIndex === i && !isActive ? (
+                                            )}
+                                            {hoveredIndex === i && !isActive && (
                                                 <motion.span
                                                     layoutId="dock-nav-hover-pill"
-                                                    className="absolute inset-x-2 inset-y-1.5 -z-10 rounded-full bg-white/[0.07] ring-1 ring-white/10"
+                                                    className="absolute inset-x-2 inset-y-1.5 -z-10 rounded-full bg-black/[0.03]"
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
                                                     exit={{ opacity: 0 }}
                                                     transition={{ duration: 0.12 }}
                                                 />
-                                            ) : null}
+                                            )}
                                             {item.label}
                                         </span>
                                     </button>
@@ -209,32 +184,24 @@ export default function DockNav() {
                             })}
                         </div>
 
-                        <div className="relative z-10 hidden shrink-0 items-center gap-1 border-l border-white/10 pl-1 pr-1 sm:flex">
+                        {/* CTA — desktop */}
+                        <div className="relative z-10 hidden shrink-0 items-center gap-1 border-l border-black/[0.06] pl-1 pr-1 sm:flex">
                             <button
                                 type="button"
                                 data-waitlist-trigger
-                                className="btn-glass-primary relative z-10 mx-1 my-2 whitespace-nowrap !gap-1.5 !rounded-full !border-white/20 !px-4 !py-2 !text-[11px] !font-semibold"
+                                className="inline-flex items-center gap-1.5 mx-1 my-2 px-4 py-2 text-[12px] font-semibold rounded-full bg-[#0F0F0F] text-white hover:bg-[#1A1A1A] transition-colors whitespace-nowrap"
                             >
                                 Join Waitlist
-                                <svg
-                                    width="11"
-                                    height="11"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    aria-hidden
-                                >
-                                    <path d="M5 12h14M12 5l7 7-7 7" />
-                                </svg>
+                                <ArrowRight className="size-3" aria-hidden />
                             </button>
                         </div>
 
-                        <div className="relative z-10 flex shrink-0 items-center gap-0.5 border-l border-white/10 pl-1 pr-1 sm:hidden">
+                        {/* CTA — mobile */}
+                        <div className="relative z-10 flex shrink-0 items-center gap-0.5 border-l border-black/[0.06] pl-1 pr-1 sm:hidden">
                             <button
                                 type="button"
                                 onClick={() => openLeaderboardModal()}
-                                className="mx-0.5 my-2 inline-flex items-center justify-center rounded-full border border-white/12 bg-white/[0.04] p-2 text-zinc-200 hover:bg-white/[0.08]"
+                                className="mx-0.5 my-2 inline-flex items-center justify-center rounded-full border border-black/[0.07] bg-black/[0.03] p-2 text-gray-600 hover:bg-black/[0.06]"
                                 aria-label="Leaderboard"
                             >
                                 <Trophy className="size-3.5" aria-hidden />
@@ -242,20 +209,10 @@ export default function DockNav() {
                             <button
                                 type="button"
                                 data-waitlist-trigger
-                                className="btn-glass-primary mx-0.5 my-2 !rounded-full !border-white/20 !px-3 !py-2 !text-[10px] !font-semibold !gap-1"
+                                className="mx-0.5 my-2 inline-flex items-center gap-1 px-3 py-2 text-[10px] font-semibold rounded-full bg-[#0F0F0F] text-white hover:bg-[#1A1A1A] transition-colors"
                             >
                                 Waitlist
-                                <svg
-                                    width="10"
-                                    height="10"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    aria-hidden
-                                >
-                                    <path d="M5 12h14M12 5l7 7-7 7" />
-                                </svg>
+                                <ArrowRight className="size-3" aria-hidden />
                             </button>
                         </div>
                     </div>
