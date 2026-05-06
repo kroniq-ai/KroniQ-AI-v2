@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
@@ -56,7 +57,7 @@ export function KroniQNav() {
                     <nav className="flex items-center justify-between px-3 py-2">
 
                         {/* Logo */}
-                        <a href="/" className="flex items-center gap-2.5 shrink-0 group">
+                        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
                             <div className="h-8 w-8 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -73,7 +74,7 @@ export function KroniQNav() {
                             >
                                 KroniQ
                             </span>
-                        </a>
+                        </Link>
 
                         {/* Center links — desktop */}
                         <div className="hidden lg:flex items-center gap-0.5">

@@ -23,6 +23,7 @@ export function LiquidMetalButton({
   >([]);
   const shaderRef = useRef<HTMLDivElement>(null);
   // biome-ignore lint/suspicious/noExplicitAny: External library without types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const shaderMount = useRef<any>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const rippleId = useRef(0);

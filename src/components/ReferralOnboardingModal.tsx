@@ -57,7 +57,7 @@ export default function ReferralOnboardingModal({ open, onClose, referralShareUr
                   <Sparkles className="size-6 text-cyan-300" />
                 </div>
                 <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl" style={{ fontFamily: "var(--font-heading)" }}>
-                  You're on the list!
+                  You&apos;re on the list!
                 </h2>
                 <p className="mt-2.5 text-[14px] leading-relaxed text-white/60">
                   Secure your spot at the top. The top 5 referrers win a <strong className="font-semibold text-white">6-Month KroniQ PRO</strong> membership and lifetime early access.

@@ -12,6 +12,7 @@ interface TimelineItem {
   date: string;
   content: string;
   category: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   icon: React.ElementType<any>;
   relatedIds: number[];
   status: "completed" | "in-progress" | "pending";
@@ -217,6 +218,7 @@ export function RadialOrbitalTimeline({
             const position = calculateNodePosition(index, timelineData.length);
             const isExpanded = expandedItems[item.id];
             const isRelated = isRelatedToActive(item.id);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const Icon = item.icon as any;
 
             return (
