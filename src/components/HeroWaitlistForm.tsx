@@ -1,6 +1,6 @@
 "use client";
 
-import { getWaitlistMemberSession, setWaitlistMemberSession } from "@/lib/waitlist/client-session";
+import { getWaitlistMemberSession, setWaitlistMemberSession, clearWaitlistMemberSession } from "@/lib/waitlist/client-session";
 import { requestLaunchAccess } from "@/lib/launch-access-client";
 import { fetchWithTimeout, isTimeoutAbort } from "@/lib/waitlist/client-fetch";
 import { formatWaitlistClientError } from "@/lib/waitlist/client-waitlist-error";
@@ -37,6 +37,7 @@ export function HeroWaitlistForm({ className }: HeroWaitlistFormProps) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
@@ -45,8 +46,18 @@ export function HeroWaitlistForm({ className }: HeroWaitlistFormProps) {
     if (m?.email) {
       setDone(true);
       setAlreadyJoined(true);
+      setSessionEmail(m.email);
     }
   }, []);
+
+  const leaveWaitlistOnDevice = () => {
+    clearWaitlistMemberSession();
+    setDone(false);
+    setAlreadyJoined(false);
+    setSessionEmail(null);
+    setEmail("");
+    setError("");
+  };
 
   const joinWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +179,17 @@ export function HeroWaitlistForm({ className }: HeroWaitlistFormProps) {
             <p className="mx-auto mt-1 max-w-sm text-[13px] leading-relaxed text-white/45">
               We&apos;ll email you when your spot opens. Watch your inbox for the invite.
             </p>
+            {sessionEmail ? (
+              <p className="mt-2 text-[12px] text-white/35">{sessionEmail}</p>
+            ) : null}
           </div>
+          <button
+            type="button"
+            onClick={leaveWaitlistOnDevice}
+            className={cn(glassDark.navLink, "text-[12px] text-white/40")}
+          >
+            Use a different email
+          </button>
         </motion.div>
       )}
     </div>

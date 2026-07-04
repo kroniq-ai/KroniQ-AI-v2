@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { getPostLoginAppUrl } from "@/lib/app-url";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { glassDark } from "@/components/ui/glass-surface";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,9 @@ function friendlyAuthError(message: string) {
   if (m.includes("invalid login credentials") || m.includes("invalid email or password")) {
     return "Wrong email or password. Check what we sent your team.";
   }
+  if (m.includes("not configured")) {
+    return "Sign-in is not configured on this site yet. Contact support.";
+  }
   return message;
 }
 
@@ -35,15 +38,28 @@ export function PasswordAuthForm() {
   const signIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!isSupabaseConfigured()) {
+      setError("Sign-in is not configured yet. Supabase env vars are missing on this deployment.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
       });
-      if (err) {
-        setError(friendlyAuthError(err.message));
+
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (!res.ok) {
+        setError(friendlyAuthError(data.error ?? "Wrong email or password."));
         return;
       }
 
@@ -55,7 +71,7 @@ export function PasswordAuthForm() {
 
       router.replace(nextPath ?? "/dashboard");
     } catch {
-      setError("Could not sign in. Try again.");
+      setError("Network error. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +127,7 @@ export function PasswordAuthForm() {
               disabled
               className="inline-flex min-h-[3rem] cursor-not-allowed items-center justify-center rounded-full bg-white/50 px-8 text-[14px] font-bold text-black"
             >
-              …
+              Signing in…
             </button>
           ) : (
             <LiquidMetalButton label="Sign in" />
