@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="KroniQ">
+  <!-- Mirrors public/logos/kroniqlogowithbg.png for clients that request /favicon.svg (no green “K” tab icon). -->
+  <image
+    width="32"
+    height="32"
+    href="/logos/kroniqlogowithbg.png"
+    preserveAspectRatio="xMidYMid meet"
+  />
+</svg>
