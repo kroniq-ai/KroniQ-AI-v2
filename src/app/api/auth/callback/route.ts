@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { withSharedAuthCookieOptions } from "@/lib/supabase/cookie-domain";
 
 /**
  * Exchanges Supabase PKCE `code` from magic-link / OAuth redirects and sets session cookies
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
             },
             setAll(cookiesToSet) {
                 cookiesToSet.forEach(({ name, value, options }) => {
-                    response.cookies.set(name, value, options);
+                    response.cookies.set(name, value, withSharedAuthCookieOptions(options));
                 });
             },
         },

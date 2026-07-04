@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { DEV_ACCESS_COOKIE } from "@/lib/app-access";
 import { hasValidLaunchAccessCookie } from "@/lib/launch-access";
 import { getAppUrl, usesSplitDeploy } from "@/lib/app-url";
+import { withSharedAuthCookieOptions } from "@/lib/supabase/cookie-domain";
 
 const PROTECTED_PATHS = ["/dashboard", "/project"];
 
@@ -19,6 +20,12 @@ function isProtected(pathname: string) {
 
 function isLegacySignupPath(pathname: string) {
   return pathname === "/signup" || pathname.startsWith("/signup/");
+}
+
+function appDestFromNext(request: NextRequest): string {
+  const nextRaw = request.nextUrl.searchParams.get("next");
+  const nextPath = nextRaw?.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/home";
+  return `${getAppUrl()}${nextPath}`;
 }
 
 function isWaitlistMode() {
@@ -43,16 +50,10 @@ function isAppApiPath(pathname: string) {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const split = usesSplitDeploy(request.nextUrl.origin);
 
   if (isLegacySignupPath(pathname)) {
     return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // Product routes on marketing domain → real app (app.kroniqai.com)
-  if (usesSplitDeploy(request.nextUrl.origin)) {
-    if (isProtected(pathname)) {
-      return NextResponse.redirect(`${getAppUrl()}/home`);
-    }
   }
 
   const waitlist = isWaitlistMode();
@@ -84,10 +85,15 @@ export async function middleware(request: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return response;
-
-  /** Public marketing pages: skip Supabase session — less CPU per request, faster TTFB. */
   const needsUserSession = isProtected(pathname) || isAuthPath(pathname);
+
+  if (!url || !key) {
+    if (split && isProtected(pathname)) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return response;
+  }
+
   if (!needsUserSession) {
     return response;
   }
@@ -100,7 +106,7 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, withSharedAuthCookieOptions(options)),
           );
         },
       },
@@ -112,7 +118,7 @@ export async function middleware(request: NextRequest) {
     const allowlistRaw = process.env.DEV_ALLOWED_EMAILS?.trim();
     if (user?.email && allowlistRaw) {
       const allowed = new Set(
-        allowlistRaw.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
+        allowlistRaw.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean),
       );
       const email = user.email.toLowerCase();
       if (allowed.size > 0 && !allowed.has(email) && (isProtected(pathname) || isAuthPath(pathname))) {
@@ -123,8 +129,16 @@ export async function middleware(request: NextRequest) {
     if (isProtected(pathname) && !user) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
+
     if (isAuthPath(pathname) && user) {
+      if (split) {
+        return NextResponse.redirect(appDestFromNext(request));
+      }
       return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    if (split && isProtected(pathname) && user) {
+      return NextResponse.redirect(`${getAppUrl()}/home`);
     }
   } catch {
     // Supabase unreachable — pass through
@@ -135,7 +149,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip static, SEO files, and brand assets (less middleware = faster responses).
     "/((?!_next/static|_next/image|favicon|robots\\.txt|sitemap\\.xml|site\\.webmanifest|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest|json|woff2)$).*)",
   ],
 };
